@@ -129,13 +129,6 @@ class Meta(commands.Cog):
                 json.dump(data, f)
             self.bot.guild_prefixes = {}
 
-    # @commands.Cog.listener("on_error")
-    # async def _dm_dev(self, event):
-    #     e = sys.exc_info()
-    #     full =''.join(traceback.format_exception(type(e), e, e.__traceback__, 1))
-    #     owner = self.bot.get_user(self.bot.owner_id)
-    #     await owner.send(f"Error in {event}:```py\n{full}```")
-
     def cog_unload(self):
         self.bot.help_command = self._original_help_command
 
@@ -167,10 +160,11 @@ class Meta(commands.Cog):
         em.description = description
         em.set_footer(icon_url=self.bot.user.avatar_url)
         await ctx.send(embed=em)
+    
 
     def get_guild_prefixes(self, guild):
         if not guild:
-            return "`c.` or when mentioned"
+            return "`r!` or when mentioned"
         guild = guild.id
         if str(guild) in self.bot.guild_prefixes.keys():
             prefixes = [f"`{p}`" for p in self.bot.guild_prefixes.get(str(guild))]
