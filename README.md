@@ -6,4 +6,10 @@ https://discordapp.com/oauth2/authorize?client_id=639607732202110977&permissions
 
 ## About
 
-This bot is a multipurpose bot that can do many things. It's feautres are: human like conversations with the bot, tools, moderation (Not a full moderation, just a few usefull features), fun, games, notes, and reminders.
+This bot is a multipurpose bot that can do many things. It's feautres are: conversations, tools, moderation (Not a full moderation, just a few usefull features), fun, games, notes, and reminders.
+
+Here are a few cool things it can do:
+Have human like conversations (r!help Conversation).
+Change it's status like a human.
+A few games. Some of them won't work unless the bot has manage channels and messages. (r!help Games)
+Make notes on things to do and be reminded about things by the bot. (r!help Notes) and (r!help Reminders)
