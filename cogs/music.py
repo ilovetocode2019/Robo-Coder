@@ -211,7 +211,7 @@ class Player:
 
 
 class Music(commands.Cog):
-    """Music for your server"""
+    """This cog is not for use on all servers. Run it yourself. The code is at https://github.com/ilovetocode2019/Robo-Coder/blob/master/cogs/music.py."""
     def __init__(self, bot):
         self.bot = bot
 
@@ -256,7 +256,11 @@ class Music(commands.Cog):
             await session.close()
             return f
 
-
+    
+    def cog_check(self, ctx):
+        if ctx.guild.id in self.bot.config["homeservers"]:
+            return True
+        return False
     @commands.command(name="newlist", description="Generate a playlist off of a keyword", usage="[search word]")
     async def newlist(self, ctx, *, keyword):
         if isinstance(ctx.channel, discord.channel.DMChannel):
