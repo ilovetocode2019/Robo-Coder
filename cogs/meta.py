@@ -67,7 +67,7 @@ class MyHelpCommand(commands.HelpCommand):
         emojis = {"Conversation":"😃", "Mail":"📧", "Meta":"⚙️", "Moderation":"🚓", "Music":"🎵", "Tools":"🧰", "Fun":"🎡", "Games":"🎮", "Notes":"📓", "Reminders":"🗒️"}
         ctx = self.context
         bot = ctx.bot
-        em = discord.Embed(title="Robo Coder Help", description="General bot help \n[arg]: Required argument \n(arg): Optional argument", color=0x00ff00)
+        em = discord.Embed(title="Robo Coder Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument", color=0x00ff00)
         for name, cog in bot.cogs.items():
             if not cog.description:
                 cog.description = ""
