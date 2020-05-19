@@ -162,18 +162,13 @@ class Meta(commands.Cog):
         await ctx.send(embed=em)
     
 
-    def get_guild_prefixes(self, guild):
+    def get_guild_prefix(self, guild):
         if not guild:
-            return "`r!` or when mentioned"
-        guild = guild.id
-        if str(guild) in self.bot.guild_prefixes.keys():
-            prefixes = [f"`{p}`" for p in self.bot.guild_prefixes.get(str(guild))]
-            prefixes.append("or when mentioned")
-            return ", ".join(prefixes)
-        return " ".join(self.bot.prefixes)
-        
+            return "r!"
+        return self.bot.guild_prefixes[str(guild.id)][0]
 
     @commands.command(name="add", description="add a prefix", usage="[prefix]")
+    @commands.guild_only()
     @has_manage_guild()
     async def add(self, ctx, *, arg):
         #global self.bot.guild_prefixes
@@ -195,7 +190,7 @@ class Meta(commands.Cog):
                 self.bot.guild_prefixes[str(ctx.guild.id)].remove(arg)
                 await ctx.send("Removed prefix: " + arg)
             else:
-                await ctx.send("That prefix does not exist. Try 'r! prefixes' to get a list of prefixes")
+                await ctx.send(f"That prefix does not exist. Try '{self.get_guild_prefix(ctx.guild)}prefixes' to get a list of prefixes")
             if self.bot.guild_prefixes[str(ctx.guild.id)] == []:
                 del self.bot.guild_prefixes[str(ctx.guild.id)]
             with open("prefixes.json", "w") as f:
@@ -209,6 +204,10 @@ class Meta(commands.Cog):
         #if str(ctx.guild.id) in self.bot.guild_prefixes.keys():
         server_prefixes = self.bot.guild_prefixes[str(ctx.guild.id)]
         await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))
+
+    @commands.command(name="prefix_main")
+    async def preifx_main(self, ctx):
+        await ctx.send(self.get_guild_prefix(ctx.guild))
 
 
         
