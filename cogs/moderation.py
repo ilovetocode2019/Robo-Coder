@@ -111,7 +111,6 @@ class Moderation(commands.Cog):
         for channel in self.open_channels:
             channels.append(self.bot.get_channel(channel).name)
         await ctx.send("\n".join(channels))
-
-    @commands.command(name="")
+        
 def setup(bot):
     bot.add_cog(Moderation(bot))
