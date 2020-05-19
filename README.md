@@ -5,6 +5,14 @@ to your server.
 
 ## About
 
-This bot is a multipurpose bot that can do many things. It's features are: conversations, tools, moderation (Not a full moderation, just a few useful features), fun, games, notes, and reminders.
+This bot is a multipurpose bot that can do many things.
 
-Here are a few cool things it can do: Have human like conversations (r!help Conversation). Change it's status like a human. A few games. Some of them won't work unless the bot has manage channels and messages. (r!help Games) Make notes on things to do and be reminded about things by the bot. (r!help Notes) and (r!help Reminders)
+## Features
+
+- Lots of tools for your server (r!help Tools)
+
+- Games to play with your friends (r!help Games)
+
+- Reminders and notes (r!help Reminders) (r!help Notes)
+
+- Custom Prefixes (r!help Meta)
