@@ -37,7 +37,12 @@ class CogHelp(menus.ListPageSource):
 
     async def format_page(self, menu, entries):
         offset = menu.current_page * self.per_page
-        em = discord.Embed(title=self.cog.qualified_name, description="", color=0x00ff00)
+
+        if not self.cog.description:
+            cogdescription = ""
+        else:
+            cogdescription = self.cog.description
+        em = discord.Embed(title=self.cog.qualified_name, description=cogdescription+"\n", color=0x00ff00)
 
         for i, command in enumerate(entries, start=offset):
             if command.hidden != True:
