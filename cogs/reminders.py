@@ -7,7 +7,7 @@ from datetime import datetime, date, time, timedelta, timezone
 import datetime as dt
 
 class Reminders(commands.Cog):
-    """Reminders for you"""
+    """Reminders from the bot."""
     def __init__(self, bot):
         self.bot = bot
         self.timer.start()

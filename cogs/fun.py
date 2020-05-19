@@ -3,7 +3,7 @@ from discord.ext import menus
 from discord.ext import commands
 
 class Fun(commands.Cog):
-    """Fun for your server"""
+    """Fun things for your server"""
     def __init__(self, bot):
         self.bot = bot
 

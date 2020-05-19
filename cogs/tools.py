@@ -15,7 +15,7 @@ def snowstamp(snowflake):
     
 
 class Tools(commands.Cog):
-    """A bunch of tools you can use"""
+    """A bunch of tools you can use on your server."""
     def __init__(self, bot):
         self.bot = bot
 

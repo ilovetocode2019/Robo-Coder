@@ -19,7 +19,7 @@ def send_email(sender_email, password, receiver_email, subj, txt, domain):
         server.sendmail(sender_email, receiver_email, message)
         #Show succsesfuly sent message
 class Mail(commands.Cog):
-    """Sending email"""
+    """Sending emails though the bot."""
     def __init__(self, bot):
         self.bot = bot
     @commands.cooldown(1, 300)
