@@ -1,6 +1,6 @@
 # Robo-Coder
 
-My discord bot. click [here](https://discordapp.com/oauth2/authorize?client_id=639607732202110977&permissions=0&scope=bot) to add it
+My discord bot. Click [here](https://discordapp.com/oauth2/authorize?client_id=639607732202110977&permissions=0&scope=bot) to add it
 to your server.
 
 ## About
