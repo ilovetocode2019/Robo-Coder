@@ -281,7 +281,8 @@ class Games(commands.Cog):
         self.opengames = {}
         self.unogames = {}
         self.tttgames = {}
-
+    
+    @commands.cooldown(1, 10*60)
     @commands.command(name="uno", description="Start a uno game")
     async def start(self, ctx):
         #Setup the game

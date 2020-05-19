@@ -139,31 +139,24 @@ class Meta(commands.Cog):
 
     @commands.Cog.listener("on_command_error")
     async def _send_error(self, ctx, e: commands.CommandError):
-        error = ''.join(traceback.format_exception(type(e), e, e.__traceback__, 1))
-        print('Ignoring exception in command {}:'.format(ctx.command), file=sys.stderr)
+        error = "".join(traceback.format_exception(type(e), e, e.__traceback__, 1))
+        print("Ignoring exception in command {}:".format(ctx.command), file=sys.stderr)
         traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
+        if isinstance(e, discord.ext.commands.errors.CheckFailure):
+            return await ctx.send(":x: You are forbidden from using this command")
+        if isinstance(e, discord.ext.commands.errors.MissingPermissions):
+            return await ctx.send(":x: I don't have the permissions to do this") 
+        if isinstance(e, discord.ext.commands.errors.MissingRequiredArgument):
+            return await ctx.send(":x: You are missing a required argument")
+        if isinstance(e, discord.ext.commands.errors.BadArgument):
+            return await ctx.send(":x: You are giving a bad argument")  
         self.bot.previous_error = e
-        if isinstance(e, commands.errors.CommandNotFound):
-            return
-        if isinstance(e, commands.errors.MissingPermissions):
-            return
-        if isinstance(e, commands.errors.CheckFailure):
-            return
-        if isinstance(e, commands.errors.NotOwner):
-            return
-        if isinstance(e, commands.errors.BadArgument):
-            return await ctx.send("**:x: You provided a bad argument.** "
-                                  "Make sure you are using the command correctly!")
-        if isinstance(e, commands.errors.MissingRequiredArgument):
-            return await ctx.send("**:x: Missing a required argument.** "
-                                  "Make sure you are using the command correctly!")
-        em = discord.Embed(title=":warning: Unexpected Error",
-                           color=discord.Color.gold(),
+        em = discord.Embed(title=":warning:",
+                           color=0xff0000,
                            timestamp=d.utcnow())
-        description = ("An unexpected error has occured:"
-                       f"```py\n{e}```\n The developer has been notified.")
+        description = ("Oops! An error has occured:"
+                       f"```py\n{str(e)}```\n")
         em.description = description
-        em.set_footer(icon_url=self.bot.user.avatar_url)
         await ctx.send(embed=em)
     
 
