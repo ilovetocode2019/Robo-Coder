@@ -144,12 +144,14 @@ class Meta(commands.Cog):
         traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
         if isinstance(e, discord.ext.commands.errors.CheckFailure):
             return await ctx.send(":x: You are forbidden from using this command")
-        if isinstance(e, discord.ext.commands.errors.MissingPermissions):
+        elif isinstance(e, discord.ext.commands.errors.MissingPermissions):
             return await ctx.send(":x: I don't have the permissions to do this") 
-        if isinstance(e, discord.ext.commands.errors.MissingRequiredArgument):
+        elif isinstance(e, discord.ext.commands.errors.MissingRequiredArgument):
             return await ctx.send(":x: You are missing a required argument")
-        if isinstance(e, discord.ext.commands.errors.BadArgument):
-            return await ctx.send(":x: You are giving a bad argument")  
+        elif isinstance(e, discord.ext.commands.errors.BadArgument):
+            return await ctx.send(":x: You are giving a bad argument")
+        elif isinstance(e, discord.ext.commands.errors.CommandNotFound):
+            return
         self.bot.previous_error = e
         em = discord.Embed(title=":warning:",
                            color=0xff0000,
