@@ -17,11 +17,12 @@ class Reminders(commands.Cog):
 
     @commands.command(name="remindlist", description="Get a list of your reminders")
     async def remindlist(self, ctx):
-        cursor = await self.bot.db.execute(f"SELECT Content FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}'")
+        cursor = await self.bot.db.execute(f"SELECT Time, Content FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}'")
         rows = await cursor.fetchall()
         em = discord.Embed(title="Reminders", color=0X00ff00)
         for row in rows:
-            em.add_field(name="A reminder", value=row[0], inline=False)
+            time = datetime.fromtimestamp(row[0])-datetime.now()
+            em.add_field(name=f"in {str(time)}", value=row[1], inline=False)
         await ctx.send(embed=em)
         await cursor.close()
 
