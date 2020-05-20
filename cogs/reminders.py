@@ -6,6 +6,27 @@ import pathlib
 from datetime import datetime, date, time, timedelta, timezone
 import datetime as dt
 
+def readable_time(time):
+    readable = []
+    if time.strftime("%Y") != 0:
+        readable.append(time.strftime("%Y")+" years")
+
+    if time.strftime("%m") != 0:
+        readable.append(time.strftime("%m")+" months")
+
+    if time.strftime("%d") != 0:
+        readable.append(time.strftime("%d")+" days")
+
+    if time.strftime("%H") != 0:
+        readable.append(time.strftime("%H")+" hours")
+
+    if time.strftime("%M") != 0:
+        readable.append(time.strftime("%M")+" minutes")
+
+    if time.strftime("%S") != 0:
+        readable.append(time.strftime("%S")+" seconds")
+
+    return ", ".join(readable)
 class Reminders(commands.Cog):
     """Reminders from the bot."""
     def __init__(self, bot):
