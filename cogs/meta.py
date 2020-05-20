@@ -143,7 +143,7 @@ class Meta(commands.Cog):
         print("Ignoring exception in command {}:".format(ctx.command), file=sys.stderr)
         traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
         if isinstance(e, discord.ext.commands.errors.CheckFailure):
-            return await ctx.send(":x: You are forbidden from using this command")
+            return
         elif isinstance(e, discord.ext.commands.errors.MissingPermissions):
             return await ctx.send(":x: I don't have the permissions to do this") 
         elif isinstance(e, discord.ext.commands.errors.MissingRequiredArgument):
