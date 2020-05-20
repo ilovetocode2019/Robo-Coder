@@ -79,6 +79,7 @@ class Tools(commands.Cog):
         await ctx.channel.purge(limit=int(arg)+1)
 
     @commands.command(name="serverinfo", description="Get info on the server", aliases=["guildinfo"])
+    @commands.guild_only()
     async def serverinfo(self, ctx):
         guild = ctx.guild
 
@@ -107,6 +108,7 @@ class Tools(commands.Cog):
 
         await ctx.send(embed=em)
     @commands.command(name="userinfo", description="Get info on a user", usage="[member]")
+    @commands.guild_only()
     async def userinfo(self, ctx, user:discord.Member=None):
         if not user:
             user = ctx.author
