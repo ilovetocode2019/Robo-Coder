@@ -133,12 +133,5 @@ class Tools(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.command(name="usersend", description="Send a message to a user", usage="[id]")
-    @commands.is_owner()
-    async def usersend(self, ctx, arg):
-        user = self.bot.get_user(int(arg))
-        await ctx.send("Sending message...")
-        await user.send("Hey there! I am a bot")
-
 def setup(bot):
     bot.add_cog(Tools(bot))
