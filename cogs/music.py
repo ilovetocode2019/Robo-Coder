@@ -201,7 +201,6 @@ class Player:
             self.event.set()
 
     async def stop(self):
-        await self.menu.clear_buttons(react=True)
         self.queue._queue.clear()
         if self.voice:
             await self.voice.disconnect()
