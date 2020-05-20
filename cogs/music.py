@@ -409,12 +409,9 @@ class Music(commands.Cog):
 
             await player.msg.edit(embed=player.player_update())            
 
-
+    @commands.guild_only()
     @commands.command(name="newlist", description="Generate a playlist off of a keyword", usage="[search word]")
     async def newlist(self, ctx, *, keyword):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            await ctx.send("You cannot use music in a DM")
-
         ctx.player = await self.get_player(ctx)
         if not ctx.author.voice:
                 return await ctx.send("Looks like you need to join a voice channel")
@@ -431,12 +428,9 @@ class Music(commands.Cog):
 
         await ctx.player.msg.edit(embed=ctx.player.player_update())
 
-
+    @commands.guild_only()
     @commands.command(name="playlist", description="Get playlist", usage="[bin url]")
     async def playlistget(self, ctx, site):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         ctx.player = await self.get_player(ctx)
         if not ctx.author.voice:
                 return await ctx.send("Looks like you need to join a voice channel")
@@ -480,11 +474,9 @@ class Music(commands.Cog):
             viewsongs.append(song.split(".mp3")[0])
         await ctx.send("```"+"\n".join(sorted(viewsongs))+"```")
 
+    @commands.guild_only()
     @commands.command(name="join", description = "Join a voice channel")
     async def join(self, ctx):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         if not ctx.author.voice:
             return await ctx.send("Please join a voice channel so I know where to go")
         ctx.player = await self.get_player(ctx)
@@ -496,11 +488,10 @@ class Music(commands.Cog):
             
         await ctx.send("Joining your call")
 
+
+    @commands.guild_only()
     @commands.command(name="leave", description="Leave a voice channel")
     async def leave(self, ctx):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         try:
             ctx.player = self.players[ctx.guild.id]
         except:
@@ -514,11 +505,9 @@ class Music(commands.Cog):
         await ctx.send("Leaving")
         del self.players[ctx.guild.id]
 
-    @commands.command(name="summon", description="Summon the bot to a new channel")
+    @commands.guild_only()
+    @commands.command(name="summon", description="Summon the bot to a new text channel")
     async def summon(self, ctx):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         try:
             ctx.player = self.players[ctx.guild.id]
         except:
@@ -529,11 +518,9 @@ class Music(commands.Cog):
         ctx.player.ctx = ctx
         await ctx.send("The music has now been summoned to this channel.")
 
+    @commands.guild_only()
     @commands.command(name="play", description="Play a song", usage="[song name]", aliases=["p"])
     async def play(self, ctx, *, query):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         if not ctx.author.voice:
             return await ctx.send("Join a call")
         ctx.player = await self.get_player(ctx)
@@ -552,12 +539,11 @@ class Music(commands.Cog):
         await ctx.player.queue.put(song)
 
         await ctx.player.msg.edit(embed=ctx.player.player_update())
+    
 
+    @commands.guild_only()
     @commands.command(name="playfile", descrcription="Play a link", usage="[file]")
     async def playfile(self, ctx):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         if not ctx.author.voice:
             return await ctx.send("Join a call")
         ctx.player = await self.get_player(ctx)
@@ -582,12 +568,10 @@ class Music(commands.Cog):
         await ctx.player.queue.put(song)
 
         await ctx.player.msg.edit(embed=ctx.player.player_update())
-
+    
+    @commands.guild_only()
     @commands.command(name="playurl", descrcription="Play a link", usage="[link]")
     async def playurl(self, ctx, attachment_url):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         if not ctx.author.voice:
             return await ctx.send("Join a call")
         ctx.player = await self.get_player(ctx)
@@ -614,12 +598,9 @@ class Music(commands.Cog):
         await ctx.player.msg.edit(embed=ctx.player.player_update())
     
         
-
+    @commands.guild_only()
     @commands.command(name="unqueue", description="Remove a song from the queue", usage="[number]")
     async def remove(self, ctx, number):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         try:
             ctx.player = self.players[ctx.guild.id]
         except:
@@ -629,11 +610,9 @@ class Music(commands.Cog):
         await ctx.player.msg.edit(embed=ctx.player.player_update())
         await ctx.send("Removed song from queue")
 
+    @commands.guild_only()
     @commands.command(name="pause", description="Pause music")
     async def pause(self, ctx):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         try:
             ctx.player = self.players[ctx.guild.id]
         except:
@@ -651,11 +630,9 @@ class Music(commands.Cog):
         else:
             await ctx.send("Not playing")
 
+    @commands.guild_only()
     @commands.command(name="resume", description="Resume music")
     async def resume(self, ctx):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         try:
             ctx.player = self.players[ctx.guild.id]
         except:
@@ -673,12 +650,9 @@ class Music(commands.Cog):
         else:
             await ctx.send("Not playing")
 
-
+    @commands.guild_only()
     @commands.command(name="stop", description = "Stop the playing song")
     async def stop(self, ctx):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         try:
             ctx.player = self.players[ctx.guild.id]
         except:
@@ -693,12 +667,9 @@ class Music(commands.Cog):
         ctx.player.voice.stop()
         await ctx.send("Stopping ⏹️")
         
-
+    @commands.guild_only()
     @commands.command(name="skip", description="Skip the current song")
     async def skip(self, ctx):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         try:
             ctx.player = self.players[ctx.guild.id]
         except:
@@ -711,11 +682,9 @@ class Music(commands.Cog):
         ctx.player.voice.stop()
         await ctx.send("Skipped song ⏭️")
 
+    @commands.guild_only()
     @commands.command(name="shuffle", description="Shuffle all the music")
     async def shuffle(self, ctx):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         try:
             ctx.player = self.players[ctx.guild.id]
         except:
@@ -730,11 +699,9 @@ class Music(commands.Cog):
         await ctx.player.msg.edit(embed=ctx.player.player_update())
         await ctx.send("Shuffled 🔀")
 
+    @commands.guild_only()
     @commands.command(name="announce", description="Turn 'Now playing' announcments on/off")
     async def announce(self, ctx):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         try:
             ctx.player = self.players[ctx.guild.id]
         except:
@@ -752,12 +719,9 @@ class Music(commands.Cog):
         
 
 
-
+    @commands.guild_only()
     @commands.command(name="player", description="Bring the player embed down to the bottom", aliases=["np", "now"])
     async def player(self, ctx):
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            return await ctx.send("You cannot use music in a DM")
-
         try:
             self.players[ctx.guild.id]
             ctx.player = await self.get_player(ctx)
