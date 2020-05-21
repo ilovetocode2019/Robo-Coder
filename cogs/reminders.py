@@ -60,6 +60,10 @@ class Reminders(commands.Cog):
 
     @commands.command(name="unremind", description="Remove a reminder", usage="'[reminder]'")
     async def remindremove(self, ctx, content):
+        cursor = await self.bot.db.execute(f"SELECT * FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}' and Reminders.Content='{content}';")
+        if len(await cursor.fetchall()) == 0:
+            return await ctx.send("That reminder doesn't exist")
+        await cursor.close()
         await self.bot.db.execute(f"DELETE FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}' and Reminders.Content='{content}';")
         await self.bot.db.commit()
         await ctx.send("Reminder deleted")
