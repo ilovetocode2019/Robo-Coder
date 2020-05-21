@@ -5,7 +5,7 @@ to your server.
 
 ## About
 
-This bot is a multipurpose bot that can do many things.
+This bot is a multipurpose bot that can do many things. Use r!help to get started.
 
 ## Features
 
