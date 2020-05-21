@@ -16,106 +16,18 @@ import importlib
 import sys
 import traceback
 
-class PlayerMenu(menus.Menu):
-    async def send_initial_message(self, ctx, channel):
-        self.bot = ctx.bot
-        self.guildid = ctx.guild.id
-        em = discord.Embed(title="Player", color=0X00ff00)
-        em.add_field(name="Playing", value="No song is playing", inline=False)
-        return await channel.send(embed=em)
+class MusicList(menus.ListPageSource):
+    def __init__(self, data):
+        super().__init__(data, per_page=30)
 
-    def reaction_check(self, payload):
-
-        if payload.user_id == self.bot.user.id:
-            return False
-
-        player = self.bot.get_cog("Music").players[self.guildid]
+    async def format_page(self, menu, entries):
+        offset = menu.current_page * self.per_page
         
-
-        if payload.message_id != self.message.id:
-            return False
-
-        if int(payload.user_id) not in [member.id for member in player.voice.channel.members]:
-            return False
-        
-        return payload.emoji in self.buttons
-    
-    @menus.button("⏸️")
-    async def pause(self, payload):
-        player = self.bot.get_cog("Music").players[self.guildid]
-        if player.voice.is_playing():
-            player.voice.pause()
-            player.now.status = "paused"
-        elif player.voice.is_paused():
-            player.voice.resume()
-            player.now.status = "playing"
-        else:
-            pass
-        await player.msg.edit(embed=player.player_update())
-    @menus.button("⏹️")
-    async def stop(self, payload):
-        player = self.bot.get_cog("Music").players[self.guildid]
-        player.queue._queue.clear()
-        player.voice.stop()
-        await player.msg.edit(embed=player.player_update())
-    @menus.button("⏭️")
-    async def skip(self, payload):
-        player = self.bot.get_cog("Music").players[self.guildid]
-        player.voice.stop()
-        await player.msg.edit(embed=player.player_update())
-    @menus.button("🔀")
-    async def shuffle(self, payload):
-        player = self.bot.get_cog("Music").players[self.guildid]
-        random.shuffle(player.queue._queue)
-        await player.msg.edit(embed=player.player_update())
-    @menus.button("🆕")
-    async def new(self, payload):
-        player = self.bot.get_cog("Music").players[self.guildid]
-        ask_msg = await self.ctx.send("What is your song name?")
-
-        def check(msg):
-            return msg.author.id == payload.user_id and msg.channel == self.ctx.channel
-
-        msg = await self.bot.wait_for("message", check=check)
-        query = msg.content
-        if query+".mp3" not in os.listdir(os.getcwd()+"/music/"):
-            return await self.ctx.send("Song not avalible")
-        filename = "music/"+query+".mp3"
-        #source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(filename))
-        song = Song(query, None, "in queue")
-        if player.voice.is_playing() or player.voice.is_paused():
-            queue_msg = await self.ctx.send("📄 Enqueued " + query)
-            if self.ctx.guild.me.guild_permissions.manage_messages:
-                await queue_msg.delete()
-        
-        if self.bot.get_guild(self.guildid).me.guild_permissions.manage_messages:
-            await msg.delete()
-            await ask_msg.delete()
-
-        await player.queue.put(song)
-        await player.msg.edit(embed=player.player_update())
-
-    @menus.button("❌")
-    async def remove_song(self, payload):
-        player = self.bot.get_cog("Music").players[self.guildid]
-
-        ask_msg = await self.ctx.send("What is your song index?")
-
-        def check(msg):
-            return msg.author.id == payload.user_id and msg.channel == self.ctx.channel
-
-        msg = await self.bot.wait_for("message", check=check)
-        del player.queue._queue[int(msg.content)-1]
-        await player.msg.edit(embed=player.player_update())
-        okay_msg = await self.ctx.send("Removed song from queue")
-
-        if self.bot.get_guild(self.guildid).me.guild_permissions.manage_messages:
-            await okay_msg.delete()
-            await msg.delete()
-            await ask_msg.delete()
-
-
-        await player.msg.edit(embed=player.player_update())
+        em = discord.Embed(title="Songs", description="")
+        for i, song in enumerate(entries, start=offset):
+            em.description += "\n" + song
+        return em
+            
 
 class Song():
     def __init__(self, song, source, status):
@@ -472,7 +384,9 @@ class Music(commands.Cog):
         viewsongs = []
         for song in songs:
             viewsongs.append(song.split(".mp3")[0])
-        await ctx.send("```"+"\n".join(sorted(viewsongs))+"```")
+            
+        pages = menus.MenuPages(source=MusicList(sorted(viewsongs)), clear_reactions_after=True)
+        await pages.start(ctx)
 
     @commands.guild_only()
     @commands.command(name="join", description = "Join a voice channel")
