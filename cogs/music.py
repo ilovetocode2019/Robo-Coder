@@ -7,6 +7,7 @@ import asyncio
 from async_timeout import timeout
 from urllib.parse import urlparse
 from aiohttp import ClientSession
+from io import BytesIO
 import random
 
 import re
@@ -175,6 +176,16 @@ class Music(commands.Cog):
         if close_after:
             await session.close()
             return f
+
+    async def get_song(self, url):
+        async with ClientSession() as session:
+            async with session.get(url) as resp:
+                if resp.status == 200:
+                    data = await resp.read()
+                    song = BytesIO(data)
+                    return 200, song
+                else:
+                    return int(resp.status), None
 
     
     def cog_check(self, ctx):
@@ -467,13 +478,16 @@ class Music(commands.Cog):
         if ctx.author not in ctx.player.voice.channel.members:
             return await ctx.send("You can't play without being in the call")
         attachment_url = ctx.message.attachments[0].url
-        file_request = requests.get(attachment_url)
-        if file_request.headers["Content-Type"] != "audio/mpeg":
-            return await ctx.send("❌ This is not a mpeg format")
-        f = open(file_request.url.split("/")[-1], "wb")
-        f.write(file_request.content)
+        
+        file_request = await self.get_song(attachment_url)
+        """if file_request.headers["Content-Type"] != "audio/mpeg":
+            return await ctx.send("❌ This is not a mpeg format")"""
+        if file_request[0] != 200:
+            return await ctx.send(str(file_request[0]))
+        f = open(attachment_url.split("/")[-1], "wb")
+        f.write(file_request[1].read())
         f.close()
-        query = os.path.splitext(file_request.url.split("/")[-1])[0]
+        query = os.path.splitext(attachment_url.split("/")[-1])[0]
         song = Song(query, None, "in queue")
         if ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
             await ctx.send("📄 Enqueued " + query)
@@ -495,13 +509,15 @@ class Music(commands.Cog):
         if ctx.author not in ctx.player.voice.channel.members:
             return await ctx.send("You can't play without being in the call")
 
-        file_request = requests.get(attachment_url)
-        if file_request.headers["Content-Type"] != "audio/mpeg":
-            return await ctx.send("❌ This is not a mpeg format")
-        f = open(file_request.url.split("/")[-1], "wb")
-        f.write(file_request.content)
+        file_request = await self.get_song(attachment_url)
+        """if file_request.headers["Content-Type"] != "audio/mpeg":
+            return await ctx.send("❌ This is not a mpeg format")"""
+        if file_request[0] != 200:
+            return await ctx.send(str(file_request[0]))
+        f = open(attachment_url.split("/")[-1], "wb")
+        f.write(file_request[1].read())
         f.close()
-        query = os.path.splitext(file_request.url.split("/")[-1])[0]
+        query = os.path.splitext(attachment_url.split("/")[-1])[0]
         song = Song(query, None, "in queue")
         if ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
             await ctx.send("📄 Enqueued " + query)

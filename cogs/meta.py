@@ -203,14 +203,7 @@ class Meta(commands.Cog):
     async def prefixes(self, ctx):
         #if str(ctx.guild.id) in self.bot.guild_prefixes.keys():
         server_prefixes = self.bot.guild_prefixes[str(ctx.guild.id)]
-        await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))
-
-    @commands.command(name="prefix_main")
-    async def preifx_main(self, ctx):
-        await ctx.send(self.get_guild_prefix(ctx.guild))
-
-
-        
+        await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))        
         
     @commands.command(name="reload", description="Reload an extension", aliases=['load'], usage="[cog]", hidden=True)
     @commands.is_owner()
@@ -240,6 +233,12 @@ class Meta(commands.Cog):
             traceback_data = ''.join(traceback.format_exception(type(e), e, e.__traceback__, 1))
             await ctx.send(f"**:warning: Extension `{cog.lower()}` not loaded.**\n```py\n{traceback_data}```")
             print(f"Extension 'cogs.{cog.lower()}' not loaded.\n{traceback_data}")
+
+    @commands.command(name="log", description="Get the log for the bot")
+    @commands.is_owner()
+    async def log(self, ctx):
+        file = discord.File("coder.log", filename="log.txt")
+        await ctx.send(content="Here is the log", file=file)
 
         
     @commands.command(name = "ping", description = "Test the bots's latency")
