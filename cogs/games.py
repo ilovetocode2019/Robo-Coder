@@ -282,7 +282,7 @@ class Games(commands.Cog):
         self.unogames = {}
         self.tttgames = {}
     
-    @commands.cooldown(1, 10*60)
+    @commands.cooldown(1, 60)
     @commands.command(name="uno", description="Start a uno game")
     async def start(self, ctx):
         #Setup the game
@@ -385,7 +385,7 @@ class Games(commands.Cog):
     @commands.Cog.listener("on_reaction_add")
     async def reaction(self, reaction, user):
         #This function waits for a reaction
-        if reaction.message.guild.id in self.opengames:
+        if reaction.message.guild.id in self.opengames and not user.bot and reaction.emoji == "✅":
             if str(reaction.message) == self.opengames[reaction.message.guild.id][0] and user != self.bot.user:
                 #Announce the join
                 await reaction.message.channel.send(str(user) + " has joined the game")
