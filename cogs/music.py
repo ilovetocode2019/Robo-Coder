@@ -514,10 +514,10 @@ class Music(commands.Cog):
             return await ctx.send("❌ This is not a mpeg format")"""
         if file_request[0] != 200:
             return await ctx.send(str(file_request[0]))
-        f = open(attachment_url.split("/")[-1], "wb")
+        f = open(attachment_url.split("/")[-1].split(".mp3")[0][:30]+".mp3", "wb")
         f.write(file_request[1].read())
         f.close()
-        query = os.path.splitext(attachment_url.split("/")[-1])[0]
+        query = attachment_url.split("/")[-1].split(".mp3")[0][:30]
         song = Song(query, None, "in queue")
         if ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
             await ctx.send("📄 Enqueued " + query)
