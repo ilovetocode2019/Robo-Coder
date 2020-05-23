@@ -28,7 +28,7 @@ class Moderation(commands.Cog):
                 json.dump(self.open_channels, f)
 
     def check(self, msg):
-        if msg.author == self.bot.user or msg.author.id in [695463365400592476, 639607732202110977, 639234650782564362] or str(msg.guild.id) not in self.bot.logging:
+        if msg.author == self.bot.user or msg.author.bot or str(msg.guild.id) not in self.bot.logging:
             return False
         else:
             return True
@@ -42,7 +42,7 @@ class Moderation(commands.Cog):
 
         msg = "user: " + str(message.author) + "\nDeleted: " + str(message.content)
         title = "Deletion"
-        em = discord.Embed(title = title, description = msg, color = 0x66FFCC)
+        em = discord.Embed(title=title, description=msg, color=0X00ff00)
         em.set_author(name = str(message.author.display_name), icon_url = message.author.avatar_url)
         em.set_footer(text = "Robo Coder")
         #await message.channel.send(embed=em)
@@ -55,10 +55,9 @@ class Moderation(commands.Cog):
         chanid = self.bot.logging[str(before.guild.id)]
         channel = self.bot.get_channel(int(chanid))
 
-        #channel = self.bot.get_channel(699273282913959967)
         msg = "user: " + str(before.author) + "\nEdited: " + str(before.content) + "\nTo: " + str(after.content)
         title = "Edit"
-        em = discord.Embed(title = title, description = msg, color = 0x66FFCC)
+        em = discord.Embed(title = title, description = msg, color=0X00ff00)
         em.set_author(name = str(before.author.display_name), icon_url = before.author.avatar_url)
         em.set_footer(text = "Robo Coder")
         #await message.channel.send(embed=em)
