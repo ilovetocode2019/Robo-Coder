@@ -118,11 +118,14 @@ class Player:
         if self.voice:
             await self.voice.disconnect()
         for song in self.temporary:
-            os.remove(song+".mp3")
+            try:
+                os.remove(song+".mp3")
+            except FileNotFoundError:
+                await self.ctx.send(f"The file to delete, {song} was not found.")
 
 
 class Music(commands.Cog):
-    """This cog is not for use on all servers. Run it yourself. The code is at https://github.com/ilovetocode2019/Robo-Coder/blob/master/cogs/music.py."""
+    """This cog is private and not for public use. You can still view the code here: https://github.com/ilovetocode2019/Robo-Coder/blob/master/cogs/music.py."""
     def __init__(self, bot):
         self.bot = bot
 
@@ -141,6 +144,7 @@ class Music(commands.Cog):
                 await msg.add_reaction("⏭️")
                 await msg.add_reaction("🔀")
                 await msg.add_reaction("🆕")
+                await msg.add_reaction("🔗")
                 await msg.add_reaction("❌")
                 player = Player(ctx, msg)
             except:
@@ -192,9 +196,8 @@ class Music(commands.Cog):
         if ctx.guild.id in self.bot.config["homeservers"]:
             return True
         return False
-    
-    @commands.Cog.listener("on_reaction_add")
-    async def reaction_add(self, reaction, user):
+
+    async def player_emoji_update(self, reaction, user):
         try:
             player = self.players[reaction.message.guild.id]
         except:
@@ -243,7 +246,33 @@ class Music(commands.Cog):
                     await msg.delete()
                     await ask_msg.delete()
 
+                await player.queue.put(song)
 
+            elif str(reaction.emoji) == "🔗":
+                ask_msg = await reaction.message.channel.send("What is your url?")
+                def check(msg):
+                    return msg.author == user and msg.channel == reaction.message.channel
+                msg = await self.bot.wait_for("message")
+                attachment_url = msg.content
+                file_request = await self.get_song(attachment_url)
+
+                if file_request[0] != 200:
+                    return await reaction.message.channel.send(str(file_request[0]))
+                f = open(attachment_url.split("/")[-1].split(".mp3")[0][:30]+".mp3", "wb")
+                f.write(file_request[1].read())
+                f.close()
+                query = attachment_url.split("/")[-1].split(".mp3")[0][:30]
+                song = Song(query, None, "in queue")
+                if player.voice.is_playing() or player.voice.is_paused():
+                    queue_msg = await reaction.message.channel.send("📄 Enqueued " + query)
+                    if reaction.message.guild.me.guild_permissions.manage_messages:
+                        await queue_msg.delete()
+
+                if reaction.message.guild.me.guild_permissions.manage_messages:
+                    await msg.delete()
+                    await ask_msg.delete()
+
+                player.temporary.append(query)
 
                 await player.queue.put(song)
 
@@ -264,73 +293,13 @@ class Music(commands.Cog):
 
             await player.msg.edit(embed=player.player_update())
 
+
+    @commands.Cog.listener("on_reaction_add")
+    async def reaction_add(self, reaction, user):
+        await self.player_emoji_update(reaction, user)
     @commands.Cog.listener("on_reaction_remove")
     async def reaction_remove(self, reaction, user):
-        try:
-            player = self.players[reaction.message.guild.id]
-        except:
-            return
-        if user != self.bot.user and reaction.message.id == player.msg.id and user in player.voice.channel.members:
-            if str(reaction.emoji) == "⏸️":
-                if player.voice.is_playing():
-                    player.voice.pause()
-                    #await reaction.message.channel.send("Pausing ▶️")
-                    player.now.status = "paused"
-                elif player.voice.is_paused():
-                    player.voice.resume()
-                    #await reaction.message.channel.send("Resumeing ⏸️")
-                    player.now.status = "playing"
-                else:
-                    pass
-            elif str(reaction.emoji) == "⏹️":
-                player.queue._queue.clear()
-                player.voice.stop()
-
-            elif str(reaction.emoji) == "⏭️":
-                player.voice.stop()
-
-            elif str(reaction.emoji) == "🔀":
-                random.shuffle(player.queue._queue)
-                await player.msg.edit(embed=player.player_update())
-
-                #await reaction.message.channel.send("Skipped song ⏭️")
-            elif str(reaction.emoji) == "🆕":
-                await reaction.message.channel.send("What is your song name?")
-                def check(msg):
-                    return msg.author == user and msg.channel == reaction.message.channel
-                msg = await self.bot.wait_for("message", check=check)
-                query = msg.content
-                if query+".mp3" not in os.listdir(os.getcwd()+"/music/"):
-                    return await reaction.message.channel.send("Song not avalible")
-                filename = "music/"+query+".mp3"
-                #source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(filename))
-                song = Song(query, None, "in queue")
-                if player.voice.is_playing() or player.voice.is_paused():
-                    queue_msg = await reaction.message.channel.send("📄 Enqueued " + query)
-                    if reaction.message.guild.me.guild_permissions.manage_messages:
-                        await queue_msg.delete()
-                
-                if reaction.message.guild.me.guild_permissions.manage_messages:
-                    await msg.delete()
-                    await ask_msg.delete()
-
-                await player.queue.put(song)
-
-            elif str(reaction.emoji) == "❌":
-                await reaction.message.channel.send("What is your song index?")
-                def check(msg):
-                    return msg.author == user and msg.channel == reaction.message.channel
-                msg = await self.bot.wait_for("message", check=check)
-                del player.queue._queue[int(msg.content)-1]
-                await player.msg.edit(embed=player.player_update())
-                await reaction.message.channel.send("Removed song from queue")
-
-                if reaction.message.guild.me.guild_permissions.manage_messages:
-                    await okay_msg.delete()
-                    await msg.delete()
-                    await ask_msg.delete()
-
-            await player.msg.edit(embed=player.player_update())            
+        await self.player_emoji_update(reaction, user)
 
     @commands.guild_only()
     @commands.command(name="newlist", description="Generate a playlist off of a keyword", usage="[search word]")
@@ -663,6 +632,7 @@ class Music(commands.Cog):
         await ctx.player.msg.add_reaction("⏭️")
         await ctx.player.msg.add_reaction("🔀")
         await ctx.player.msg.add_reaction("🆕")
+        await ctx.player.msg.add_reaction("🔗")
         await ctx.player.msg.add_reaction("❌")
 
     @commands.command(name="players", description="Get all the running players", hidden=True)
