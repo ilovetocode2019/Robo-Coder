@@ -234,7 +234,7 @@ class Meta(commands.Cog):
             await ctx.send(f"**:warning: Extension `{cog.lower()}` not loaded.**\n```py\n{traceback_data}```")
             print(f"Extension 'cogs.{cog.lower()}' not loaded.\n{traceback_data}")
 
-    @commands.command(name="log", description="Get the log for the bot")
+    @commands.command(name="log", description="Get the log for the bot", hidden=True)
     @commands.is_owner()
     async def log(self, ctx):
         file = discord.File("coder.log", filename="log.txt")
