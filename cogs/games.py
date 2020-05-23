@@ -355,6 +355,8 @@ class Games(commands.Cog):
 
     @commands.command(name="tictactoe", description="A tic tac toe game", aliases=["ttt"], usage="[opponent]")
     async def ttt(self, ctx, *, opponent: discord.Member):
+        if ctx.guild.id in self.tttgames:
+            return await ctx.send("Someone is already trying to play on this server.")
         msg = await ctx.send("Setting up the game....")
         await msg.add_reaction("1\N{combining enclosing keycap}")
         await msg.add_reaction("2\N{combining enclosing keycap}")
@@ -380,6 +382,7 @@ class Games(commands.Cog):
                     await self.tttgames[ctx.guild.id].update("The game was a tie")
                     game = False
                     break
+        self.tttgames.pop(ctx.guild.id)
                 
 
     @commands.Cog.listener("on_reaction_add")

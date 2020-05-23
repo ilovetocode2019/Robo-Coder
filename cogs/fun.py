@@ -2,6 +2,8 @@ import discord
 from discord.ext import menus
 from discord.ext import commands
 
+import random
+
 class Fun(commands.Cog):
     """Fun things for your server"""
     def __init__(self, bot):
@@ -34,6 +36,13 @@ class Fun(commands.Cog):
         if emoji != None:
             await ctx.send(str(emoji))
     
+    @commands.command(name="flipcoin", description="Flip a coin")
+    async def flipcoin(self, ctx):
+        await ctx.send(f"You got a {random.choice(['Head', 'Tail'])}")
+
+    @commands.command(name="8ball", description="Use a 8 ball")
+    async def magic8ball(self, ctx):
+        await ctx.send(f"{random.choice(['Yes', 'No', 'Maybe'])}")
 
 def setup(bot):
     bot.add_cog(Fun(bot))
