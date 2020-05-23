@@ -480,8 +480,7 @@ class Music(commands.Cog):
         attachment_url = ctx.message.attachments[0].url
         
         file_request = await self.get_song(attachment_url)
-        """if file_request.headers["Content-Type"] != "audio/mpeg":
-            return await ctx.send("❌ This is not a mpeg format")"""
+
         if file_request[0] != 200:
             return await ctx.send(str(file_request[0]))
         f = open(attachment_url.split("/")[-1], "wb")
@@ -510,8 +509,7 @@ class Music(commands.Cog):
             return await ctx.send("You can't play without being in the call")
 
         file_request = await self.get_song(attachment_url)
-        """if file_request.headers["Content-Type"] != "audio/mpeg":
-            return await ctx.send("❌ This is not a mpeg format")"""
+
         if file_request[0] != 200:
             return await ctx.send(str(file_request[0]))
         f = open(attachment_url.split("/")[-1].split(".mp3")[0][:30]+".mp3", "wb")
