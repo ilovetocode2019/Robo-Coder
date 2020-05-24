@@ -14,7 +14,7 @@ class Conversation(commands.Cog):
     
     @commands.command(name="meaning", description="Get the meaning of internet slang", usage="[word]")
     async def meaning(self, ctx, arg):
-        terms = {"rn":"right now", "brb":"be right back", "wdym":"what do you mean", "idc":"I don't care", "idk":"I don't know", "ttyl":"talk to you later", "btw":"by the way", "gtg": "got to go", "iirc":"if I recall", "imo":"in my opinion", "lol":"laugh out loud", "ik":"I know", "ig":"I guess"}
+        terms = {"rn":"right now", "brb":"be right back", "wdym":"what do you mean", "idc":"I don't care", "idk":"I don't know", "ttyl":"talk to you later", "btw":"by the way", "gtg": "got to go", "iirc":"if I recall correctly", "imo":"in my opinion", "lol":"laugh out loud", "ik":"I know", "ig":"I guess", "og":"original"}
         if arg in terms:
             await ctx.send(terms[arg])
         else:
