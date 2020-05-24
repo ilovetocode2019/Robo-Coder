@@ -31,8 +31,9 @@ def has_manage_guild():
     return commands.check(predicate)
 
 class CogHelp(menus.ListPageSource):
-    def __init__(self, data):
+    def __init__(self, data, bot):
         self.cog = data
+        self.bot = bot
         super().__init__(data.get_commands(), per_page=10)
 
     async def format_page(self, menu, entries):
@@ -62,6 +63,8 @@ class CogHelp(menus.ListPageSource):
                     aliases = "("+', '.join(command.aliases)+")"
 
                 em.description += f"\n{command.name} {usage} - {description} {aliases}"
+        
+        em.set_footer(text = f"{self.bot.user.name}", icon_url=self.bot.user.avatar_url)
         return em
 
 
@@ -72,20 +75,23 @@ class MyHelpCommand(commands.HelpCommand):
         emojis = {"Conversation":"😃", "Mail":"📧", "Meta":"⚙️", "Moderation":"🚓", "Music":"🎵", "Tools":"🧰", "Fun":"🎡", "Games":"🎮", "Notes":"📓", "Reminders":"🗒️"}
         ctx = self.context
         bot = ctx.bot
-        em = discord.Embed(title="Robo Coder Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category (first letter upercase)] for more specific help. \n[arg]: Required argument \n(arg): Optional argument", color=0x00ff00)
+        em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category (first letter upercase)] for more specific help. \n[arg]: Required argument \n(arg): Optional argument", color=0x00ff00)
         for name, cog in bot.cogs.items():
             if not cog.description:
                 cog.description = ""
             if name not in ["Status", "Jishaku"]:
                 em.add_field(name=emojis[name]+name, value=cog.description, inline=False)
-        return await ctx.send(embed=em)
+        
+
+        em.set_footer(text = f"{bot.user.name}", icon_url=bot.user.avatar_url)
+        await ctx.send(embed=em)
 
     async def send_cog_help(self, cog):
         if cog.qualified_name in ["Jishaku", "Status"]:
             return
         ctx = self.context
         bot = ctx.bot
-        pages = menus.MenuPages(source=CogHelp(cog), clear_reactions_after=True)
+        pages = menus.MenuPages(source=CogHelp(cog, bot), clear_reactions_after=True)
         await pages.start(ctx)
 
     async def send_command_help(self, command):
@@ -110,13 +116,18 @@ class MyHelpCommand(commands.HelpCommand):
             return
         ctx = self.context
         bot = ctx.bot
-        embed = discord.Embed(title=str(group.name), description="Command Group", color=0x00ff00)
+        em = discord.Embed(title=str(group.name), description="Command Group", color=0x00ff00)
         for command in group.commands:
-            if command.description == None:
-                commands.description = ""
-            embed.add_field(name=command.name, value=command.description, inline=False)
+            if not command.description:
+                description = ""
+            else:
+                description = command.description
 
-        await ctx.send(embed=embed)
+            em.add_field(name=command.name, value=description, inline=False)
+
+
+        em.set_footer(text = f"{bot.user.name}", icon_url=bot.user.avatar_url)
+        await ctx.send(embed=em)
 
 
 

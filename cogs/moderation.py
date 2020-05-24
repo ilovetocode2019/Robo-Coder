@@ -44,8 +44,7 @@ class Moderation(commands.Cog):
         title = "Deletion"
         em = discord.Embed(title=title, description=msg, color=0X00ff00)
         em.set_author(name = str(message.author.display_name), icon_url = message.author.avatar_url)
-        em.set_footer(text = "Robo Coder")
-        #await message.channel.send(embed=em)
+        em.set_footer(text=self.bot.user.name)
         my_msg = await channel.send(embed = em)
 
     @commands.Cog.listener("on_message_edit")
@@ -59,8 +58,7 @@ class Moderation(commands.Cog):
         title = "Edit"
         em = discord.Embed(title = title, description = msg, color=0X00ff00)
         em.set_author(name = str(before.author.display_name), icon_url = before.author.avatar_url)
-        em.set_footer(text = "Robo Coder")
-        #await message.channel.send(embed=em)
+        em.set_footer(text=self.bot.user.name)
         my_msg = await channel.send(embed = em)
 
     @commands.command(name="setlog", description="Set a channel for logging")
