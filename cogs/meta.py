@@ -81,6 +81,8 @@ class MyHelpCommand(commands.HelpCommand):
         return await ctx.send(embed=em)
 
     async def send_cog_help(self, cog):
+        if cog.qualified_name in ["Jishaku", "Status"]:
+            return
         ctx = self.context
         bot = ctx.bot
         pages = menus.MenuPages(source=CogHelp(cog), clear_reactions_after=True)
@@ -90,7 +92,7 @@ class MyHelpCommand(commands.HelpCommand):
         ctx = self.context
         bot = ctx.bot
         if command.hidden == True:
-            return await ctx.send("🔒")
+            return
         if not command.usage:
             usage = ""
         else:
@@ -104,6 +106,8 @@ class MyHelpCommand(commands.HelpCommand):
         await ctx.send(embed=embed)
 
     async def send_group_help(self, group):
+        if group.name == "jishaku":
+            return
         ctx = self.context
         bot = ctx.bot
         embed = discord.Embed(title=str(group.name), description="Command Group", color=0x00ff00)
