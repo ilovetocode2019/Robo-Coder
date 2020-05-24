@@ -19,24 +19,10 @@ class Tools(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="embed", description="Create a a cool embed and get the code to create in python", usage="'[title]' '[description]' 'r, g, b'")
-    async def embed(self, ctx, title, description, color="0, 0, 225"):
-        code = "```python"
-        colorlist = color.split(", ")
-        em = discord.Embed(title=title, description=description, color=discord.Colour.from_rgb(int(colorlist[0]), int(colorlist[1]), int(colorlist[2])))
-        code += f"\nem = discord.Embed(title='{title}', description='{description}', color={str(color)})"
-        code += "```"
-        await ctx.send(embed=em, content=code)
-
     @commands.command(name="source", description="Get source code for my bot", usage="[command]")
     async def source(self, ctx, *, command: str = None):
-        """Displays my full source code or for a specific command.
-        To display the source code of a subcommand you can separate it by
-        periods, e.g. tag.create for the create subcommand of the tag command
-        or by spaces.
-        """
         source_url = "https://github.com/ilovetocode2019/Robo-Coder"
-        branch = "master"
+        branch = "stable"
         if command is None:
             return await ctx.send(source_url)
 
