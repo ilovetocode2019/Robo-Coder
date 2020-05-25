@@ -220,7 +220,7 @@ class Meta(commands.Cog):
         server_prefixes = self.bot.guild_prefixes[str(ctx.guild.id)]
         await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))        
         
-    @commands.command(name="reload", description="Reload an extension", aliases=['load'], usage="[cog]", hidden=True)
+    @commands.command(name="reload", description="Reload an extension", usage="[cog]", hidden=True)
     @commands.is_owner()
     async def _reload(self, ctx, cog="all"):
         if cog == "all":
@@ -246,8 +246,34 @@ class Meta(commands.Cog):
             print(f"Extension '{cog.lower()}' successfully reloaded.")
         except Exception as e:
             traceback_data = ''.join(traceback.format_exception(type(e), e, e.__traceback__, 1))
+            await ctx.send(f"**:warning: Extension `{cog.lower()}` not reloaded.**\n```py\n{traceback_data}```")
+            print(f"Extension 'cogs.{cog.lower()}' not reloaded.\n{traceback_data}")
+
+    @commands.command(name="load", description="Load an extension", usage="[cog]", hidden=True)
+    @commands.is_owner()
+    async def _load(self, ctx, cog):
+        try:
+            self.bot.load_extension(cog.lower())
+            await ctx.send(f"**:white_check_mark: Loaded** `{cog.lower()}`")
+            print(f"Extension '{cog.lower()}' successfully loaded.")
+        except Exception as e:
+            traceback_data = ''.join(traceback.format_exception(type(e), e, e.__traceback__, 1))
             await ctx.send(f"**:warning: Extension `{cog.lower()}` not loaded.**\n```py\n{traceback_data}```")
             print(f"Extension 'cogs.{cog.lower()}' not loaded.\n{traceback_data}")
+
+    @commands.command(name="unload", description="Unload an extension", usage="[cog]", hidden=True)
+    @commands.is_owner()
+    async def _unload_cog(self, ctx, cog):
+        try:
+            self.bot.unload_extension(cog)
+            await ctx.send(f"**:x: Unloaded extension ** `{cog}`")
+            print(f"Extension '{cog}' successfully unloaded.")
+        except Exception as e:
+            traceback_data = ''.join(traceback.format_exception(type(e), e, e.__traceback__, 1))
+            await ctx.send(f"**:warning: Extension `{cog.lower()}` not unloaded.**\n```py\n{traceback_data}```")
+            print(f"Extension 'cogs.{cog}' not unloaded.\n{traceback_data}")
+
+        
 
     @commands.command(name="log", description="Get the log for the bot", hidden=True)
     @commands.is_owner()
