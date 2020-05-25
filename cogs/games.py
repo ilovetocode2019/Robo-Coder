@@ -314,7 +314,7 @@ class Games(commands.Cog):
             return await ctx.send("Not enough people have joined the game.")
         #Starts the game
         await ctx.send("This game has started. When the current game is complete, you can start a new one.")
-        await self.games[ctx.guild.id].begin()
+        await self.unogames[ctx.guild.id].begin()
         #Game loop where players can do moves
         try:
             counter = 0
@@ -346,17 +346,15 @@ class Games(commands.Cog):
             return await ctx.send("Your already cleared.")
         await self.unogames[ctx.guild.id].general.delete()
         await self.unogames[ctx.guild.id].voice.delete()
-        for channel in self.games[ctx.guild.id].channels:
+        for channel in self.unogames[ctx.guild.id].channels:
             await channel.delete()
         await self.unogames[ctx.guild.id].category.delete()
-        self.games.pop(ctx.guild.id)
+        self.unogames.pop(ctx.guild.id)
         await ctx.send("The game on this server is over. You can start a new one whenever you want")
 
-
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.command(name="tictactoe", description="A tic tac toe game", aliases=["ttt"], usage="[opponent]")
     async def ttt(self, ctx, *, opponent: discord.Member):
-        if ctx.guild.id in self.tttgames:
-            return await ctx.send("Someone is already trying to play on this server.")
         msg = await ctx.send("Setting up the game....")
         await msg.add_reaction("1\N{combining enclosing keycap}")
         await msg.add_reaction("2\N{combining enclosing keycap}")
@@ -382,7 +380,6 @@ class Games(commands.Cog):
                     await self.tttgames[ctx.guild.id].update("The game was a tie")
                     game = False
                     break
-        self.tttgames.pop(ctx.guild.id)
                 
 
     @commands.Cog.listener("on_reaction_add")
