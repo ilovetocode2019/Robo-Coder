@@ -167,10 +167,13 @@ class Uno:
                         self.hands[user].remove(correctcard)
                         #If it's a wild ask what color the wild is
                         if correctcard.kind == "wild":
-                            await self.msgs[user].edit(content="What color does your wild repersent?")
-                            color = await self.bot.wait_for("message", check=check)
-                            self.color = color.content
-                            await color.delete()
+                            while True:
+                                await self.msgs[user].edit(content="What color does your wild repersent?")
+                                color = await self.bot.wait_for("message", check=check)
+                                self.color = color.content
+                                await color.delete()
+                                if self.color in ["red", "yellow", "green", "blue"]:
+                                    break
                         #If it's a skip set the skip var to True. That way it will skip the next users turn
                         if correctcard.specific == "skip" or correctcard.specific == "add2" or correctcard.specific == "add4":
                             self.skip = True
