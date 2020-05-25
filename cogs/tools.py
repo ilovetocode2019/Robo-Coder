@@ -83,10 +83,10 @@ class Tools(commands.Cog):
 
         em.add_field(name="Members", value=len(guild.members))
         
-        statuses = {"online":0, "idle":0, "dnd":0, "offline":0}
+        status = {"online":0, "idle":0, "dnd":0, "offline":0}
         for member in guild.members:
-            statuses[str(member.status)] += 1
-        em.add_field(name="Statues", value=f"Online {statuses['online']}\nIdle {statuses['idle']}\nDnd {statuses['dnd']}\nOffline {statuses['offline']}")
+            status[str(member.status)] += 1
+        em.add_field(name="Status List", value=f"Online {status['online']}\nIdle {status['idle']}\nDnd {status['dnd']}\nOffline {status['offline']}")
 
         await ctx.send(embed=em)
     @commands.command(name="userinfo", description="Get info on a user", usage="[member]")
