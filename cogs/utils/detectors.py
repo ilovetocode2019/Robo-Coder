@@ -7,8 +7,6 @@ mode = [2, "normal"]
 fellings = bad_fellings + okay_fellings + good_fellings + relaxed_fellings  + mad_fellings
 def modeDetector(message, pos):
     global mode
-    print(mode)
-    print("emotion detecting")
     if pos == 0:
         if message[pos] in good_fellings:
             return "good", 2
@@ -51,7 +49,6 @@ def modeDetector(message, pos):
             break
     if opposite or mode == [2, "not"]:
         mode = [2, "not"]
-        print("IS oppossite")
         if message[pos] in bad_fellings:
             return "okay", 2
         if message[pos] in good_fellings:
@@ -75,7 +72,6 @@ def modeDetector(message, pos):
 def detectFelling(message):
     #mode = [2, "normal"]
     message = message.split()
-    #print(message)
     pos = 0
     fellingFromMessage = []
     for word in message:
@@ -86,18 +82,14 @@ def detectFelling(message):
                 message[pos] = x
                 break
         if add == True:
-            #print(modeDetector(message, pos))
             fellingFromMessage.append(modeDetector(message, pos))
-            #print(pos)
         pos += 1
-    #print(fellingFromMessage)
     return fellingFromMessage
 def format(data, message):
     OneFellings = []
     TwoFellings = []
     okayFellings = []
     for item in data:
-        #print(item)
         if item[0] == "okay":
             okayFellings.append("okay")
         elif item[1] == 2:
@@ -120,7 +112,6 @@ def format(data, message):
 def emotion_finder(text):
     data = detectFelling(text)
     return format(data, text)
-#print(emotion(input("How are you?")))
 def howAreYou_detecting(msg):
     if "you?" in msg:
         return True
