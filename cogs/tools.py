@@ -70,11 +70,7 @@ class Tools(commands.Cog):
         guild = ctx.guild
 
         em = discord.Embed(title=guild.name, description="", color=0x00ff00)
-        if not guild.large:
-            em.description += "\nℹ️ This server is small"
-        else:
-            em.description += "\nℹ️ This server is big"
-
+        
         em.set_thumbnail(url=guild.icon_url)
 
         em.add_field(name="Owner", value=guild.owner.mention)
