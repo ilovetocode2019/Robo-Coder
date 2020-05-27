@@ -17,6 +17,15 @@ def snowstamp(snowflake):
 
     return d.utcfromtimestamp(timestamp).strftime('%b %d, %Y at %#I:%M %p')
 
+def readable(seconds): 
+    seconds = seconds % (24 * 3600) 
+    hour = seconds // 3600
+    seconds %= 3600
+    minutes = seconds // 60
+    seconds %= 60
+      
+    return "%d hours, %02d minutes, and %02d seconds" % (hour, minutes, seconds)
+
 def has_manage_guild():
     async def predicate(ctx):
         try:
@@ -288,7 +297,13 @@ class Meta(commands.Cog):
         msg = await ctx.send("Pinging")
 
         ping = (datetime.timestamp(datetime.now()) - start) * 1000
-        await msg.edit(content=f"Pong!\nOne message round-trip took {ping}ms.")        
+        await msg.edit(content=f"Pong!\nOne message round-trip took {ping}ms.")
+
+    @commands.command(name="uptime", description="Get the uptime of the bot")
+    async def uptime(self, ctx):
+        uptime = datetime.now()-self.bot.startup_time
+        await ctx.send(f"I have been up for {uptime.days} days, {readable(uptime.seconds)} ago")      
+    
 
 
     @commands.command(name="logout", description="Logout command", hidden=True)
@@ -299,7 +314,7 @@ class Meta(commands.Cog):
         except:
             pass
         print("Logging out of Discord.")
-        await ctx.send(":wave: Restarting. Please wait 15 seconds.")
+        await ctx.send(":wave: Logging out.")
         await self.bot.logout()
 
     @commands.command(name="restart", description="Restart command", hidden=True)

@@ -6,27 +6,15 @@ import pathlib
 from datetime import datetime, date, time, timedelta, timezone
 import datetime as dt
 
-def readable_time(time):
-    readable = []
-    if time.strftime("%Y") != 0:
-        readable.append(time.strftime("%Y")+" years")
+def readable(seconds): 
+    seconds = seconds % (24 * 3600) 
+    hour = seconds // 3600
+    seconds %= 3600
+    minutes = seconds // 60
+    seconds %= 60
+      
+    return "%d hours, %02d minutes, and %02d seconds" % (hour, minutes, seconds)
 
-    if time.strftime("%m") != 0:
-        readable.append(time.strftime("%m")+" months")
-
-    if time.strftime("%d") != 0:
-        readable.append(time.strftime("%d")+" days")
-
-    if time.strftime("%H") != 0:
-        readable.append(time.strftime("%H")+" hours")
-
-    if time.strftime("%M") != 0:
-        readable.append(time.strftime("%M")+" minutes")
-
-    if time.strftime("%S") != 0:
-        readable.append(time.strftime("%S")+" seconds")
-
-    return ", ".join(readable)
 class Reminders(commands.Cog):
     """Reminders from the bot."""
     def __init__(self, bot):
@@ -43,7 +31,7 @@ class Reminders(commands.Cog):
         em = discord.Embed(title="Reminders", color=0X00ff00)
         for row in rows:
             time = datetime.fromtimestamp(row[0])-datetime.now()
-            em.add_field(name=f"in {str(time)}", value=row[1], inline=False)
+            em.add_field(name=f"in {time.days} days, {readable(time.seconds)}", value=row[1], inline=False)
         await ctx.send(embed=em)
         await cursor.close()
 
@@ -56,7 +44,8 @@ class Reminders(commands.Cog):
         else:
             await self.bot.db.execute(f"INSERT INTO Reminders('Userid', 'Guildid', 'Channid', 'Msgid', 'Time', 'Content') VALUES ('{str(ctx.author.id)}', '{ctx.guild.id}', '{ctx.channel.id}', '{ctx.message.id}', '{int(timestamp)}', '{content}');")
         await self.bot.db.commit()
-        await ctx.send(f"✅ I will remind you at {str(sometime)} UTC")
+        remindtime = sometime-datetime.utcnow()
+        await ctx.send(f"✅ I will remind you in {remindtime.days} days, {readable(remindtime.seconds)}")
 
     @commands.command(name="unremind", description="Remove a reminder", usage="'[reminder]'")
     async def remindremove(self, ctx, content):

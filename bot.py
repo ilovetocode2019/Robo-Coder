@@ -53,7 +53,8 @@ class RoboCoder(commands.Bot):
         self.cogs_to_add = ["cogs.meta", "cogs.conversation", "cogs.mail", "cogs.status", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders"]
 
         self.loop.create_task(self.load_cogs_to_add())
-
+        self.startup_time = datetime.now()
+        
     async def load_cogs_to_add(self):
         try:
             self.load_extension("jishaku")
@@ -71,7 +72,6 @@ class RoboCoder(commands.Bot):
 
     async def on_ready(self):
         logging.info(f"Logged in as {self.user.name} - {self.user.id}")
-        self.startup_time = datetime.now()
         path = pathlib.Path("data.db")
         self.db = await aiosqlite.connect(path)
         await self.db.execute("CREATE TABLE IF NOT EXISTS Notes('ID', 'Title', 'Content')")
