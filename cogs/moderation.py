@@ -78,36 +78,7 @@ class Moderation(commands.Cog):
         with open("logcha.json", "w") as f:
             json.dump(self.bot.logging, f)
         await ctx.send("Log disabled for this channel")
-    
-    @commands.has_permissions(manage_guild=True)
-    @commands.command(name="open", description="Open a temorary text channel", usage="(channel name)")
-    async def open(self, ctx, channel_name="temporary-channel"):
-        guild = ctx.guild
-        existing_channel = discord.utils.get(guild.channels, name=channel_name)
-        if not existing_channel:
-            new_channel = await guild.create_text_channel(channel_name)
-            await ctx.send(f"Opened a chat: {channel_name}")
-            self.open_channels.append(new_channel.id)
-            with open("channels.json", "w") as f:
-                json.dump(self.open_channels, f)
 
-    @commands.has_permissions(manage_guild=True)
-    @commands.command(name="close", description="Close a temorary text channel", usage="(channel name)")
-    async def close(self, ctx, channel_name="temporary-channel"):
-        search_channel = discord.utils.get(ctx.guild.text_channels, name = channel_name)
-        if search_channel != None and search_channel.id in self.open_channels:
-            await search_channel.delete()
-            await ctx.send(f"Closed chat: {channel_name}")
-            self.open_channels.remove(search_channel.id)
-            with open("channels.json", "w") as f:
-                json.dump(self.open_channels, f)
-
-    @commands.command(name="openrn", description="Get a list of open chats")
-    async def openchanns(self, ctx):
-        channels = []
-        for channel in self.open_channels:
-            channels.append(self.bot.get_channel(channel).name)
-        await ctx.send("\n".join(channels))
         
 def setup(bot):
     bot.add_cog(Moderation(bot))
