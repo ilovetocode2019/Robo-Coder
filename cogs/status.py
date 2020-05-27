@@ -6,7 +6,7 @@ import random
 import asyncio
 
 class Status(commands.Cog):
-    """No commands to see here. Just the code that changes the bots status."""
+    """The cog for the status."""
     def __init__(self, bot):
         self.bot = bot
         self.status.start()
