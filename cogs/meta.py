@@ -302,7 +302,7 @@ class Meta(commands.Cog):
     @commands.command(name="uptime", description="Get the uptime of the bot")
     async def uptime(self, ctx):
         uptime = datetime.now()-self.bot.startup_time
-        await ctx.send(f"I have been up for {uptime.days} days, {readable(uptime.seconds)} ago")      
+        await ctx.send(f"I have been up for {uptime.days} days, {readable(uptime.seconds)}")      
     
 
 
