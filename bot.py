@@ -24,18 +24,25 @@ logging.basicConfig(
 )
 
 def get_prefix(client, message):
-
     prefixes = []
+    try:
+        if client.get_cog("Meta"):
 
-    if not isinstance(message.channel, discord.DMChannel):
-        if str(message.guild.id) in client.guild_prefixes.keys():
-            prefixes += client.guild_prefixes[str(message.guild.id)]
+            if not isinstance(message.channel, discord.DMChannel):
+                if str(message.guild.id) in client.guild_prefixes.keys():
+                    prefixes += client.guild_prefixes[str(message.guild.id)]
+                else:
+                    client.guild_prefixes[str(message.guild.id)] = ["r!"]
+                    prefixes += client.guild_prefixes[str(message.guild.id)]
+            else:
+                prefixes = ["r!"]
+
         else:
-            client.guild_prefixes[str(message.guild.id)] = ["r!"]
-            prefixes += client.guild_prefixes[str(message.guild.id)]
-    else:
-        prefixes = ["r!"]
-        
+
+            prefixes = ["r!"]
+    except Exception as e:
+        print(e)
+            
 
     return commands.when_mentioned_or(*prefixes)(client, message)
 

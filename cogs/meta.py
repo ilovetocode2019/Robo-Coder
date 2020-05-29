@@ -189,6 +189,10 @@ class Meta(commands.Cog):
         em.description = description
         await ctx.send(embed=em)
     
+    @commands.Cog.listener("on_message")
+    async def detect_mention(self, msg):
+        if msg.content == f"<@!{self.bot.user.id}>":
+            await msg.channel.send(f"Hi. For help use {self.get_guild_prefix(msg.guild)}help.")
 
     def get_guild_prefix(self, guild):
         if not guild:
