@@ -307,7 +307,7 @@ class Meta(commands.Cog):
         ping = (datetime.timestamp(datetime.now()) - start) * 1000
         await msg.edit(content=f"Pong!\nOne message round-trip took {ping}ms.")
 
-    @commands.command(name="uptime", description="Get the uptime of the bot")
+    @commands.command(name="uptime", description="Get the uptime")
     async def uptime(self, ctx):
         uptime = datetime.now()-self.bot.startup_time
         await ctx.send(f"I have been up for {uptime.days} days, {readable(uptime.seconds)}")      
@@ -317,7 +317,7 @@ class Meta(commands.Cog):
         invite = discord.utils.oauth_url(self.bot.user.id, permissions=None, guild=None, redirect_uri=None)
         await ctx.send(f"<{invite}>")
 
-    @commands.command(name="github", description="Get a source code link for a specified command", usage="[command]")
+    @commands.command(name="github", description="Look at my repository", usage="[command]")
     async def source(self, ctx, *, command: str = None):
         source_url = "https://github.com/ilovetocode2019/Robo-Coder"
         branch = "stable"
