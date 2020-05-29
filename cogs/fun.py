@@ -9,11 +9,6 @@ class Fun(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name="emoji", description="Find an emoji from any server the bot is on", usage="[emoji name]")
-    async def detectemoji(self, ctx, *, emojitxt):
-        emoji = discord.utils.get(self.bot.emojis, name=emojitxt)
-        if emoji != None:
-            await ctx.send(str(emoji))
     
     @commands.command(name="flipcoin", description="Flip a coin")
     async def flipcoin(self, ctx):
