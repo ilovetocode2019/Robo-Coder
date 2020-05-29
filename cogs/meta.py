@@ -1,10 +1,12 @@
 from discord.ext import commands
+from discord.ext import tasks
 import discord
 
 from datetime import datetime
 import traceback
 import os
 from datetime import datetime as d
+import random
 import pickle
 import json
 import sys
@@ -96,7 +98,7 @@ class MyHelpCommand(commands.HelpCommand):
         await ctx.send(embed=em)
 
     async def send_cog_help(self, cog):
-        if cog.qualified_name in ["Jishaku", "Status"]:
+        if cog.qualified_name in ["Jishaku"]:
             return
         ctx = self.context
         bot = ctx.bot
@@ -145,9 +147,10 @@ class Meta(commands.Cog):
     """Everything about the bot itself"""
     def __init__(self, bot):
         self.bot = bot 
-        self._original_help_command = bot.help_command # Save the OG help command
-        bot.help_command = MyHelpCommand() # Set the bot's help command to the custom one
-        bot.help_command.cog = self # Set the cog for the helpcommand to this one
+        self.activity.start()
+        self._original_help_command = bot.help_command
+        bot.help_command = MyHelpCommand()
+        bot.help_command.cog = self
 
         if os.path.exists("prefixes.json"):
             with open("prefixes.json", "r") as f:
@@ -159,6 +162,7 @@ class Meta(commands.Cog):
             self.bot.guild_prefixes = {}
 
     def cog_unload(self):
+        self.activity.cancel()
         self.bot.help_command = self._original_help_command
 
     @commands.Cog.listener("on_command_error")
@@ -304,7 +308,16 @@ class Meta(commands.Cog):
         uptime = datetime.now()-self.bot.startup_time
         await ctx.send(f"I have been up for {uptime.days} days, {readable(uptime.seconds)}")      
     
+    @commands.command(name="invite", description="Get a invite to add me to your server")
+    async def invite(self, ctx):
+        invite = discord.utils.oauth_url(self.bot.user.id, permissions=None, guild=None, redirect_uri=None)
+        await ctx.send(f"<{invite}>")
 
+    @commands.command(name="github", description="Get a source code link for a specified command", usage="[command]")
+    async def source(self, ctx, *, command: str = None):
+        source_url = "https://github.com/ilovetocode2019/Robo-Coder"
+        branch = "stable"
+        await ctx.send(f"{source_url}/tree/{branch}")
 
     @commands.command(name="logout", description="Logout command", hidden=True)
     @commands.is_owner()
@@ -328,6 +341,11 @@ class Meta(commands.Cog):
         await ctx.send("Restarting...")
         os.startfile("bot.py")
         await self.bot.logout()
+
+    @tasks.loop(minutes=30)
+    async def activity(self):
+        await self.bot.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.playing, name=random.choice(["Minecraft", "Rocket League", "Visual Studio Code", "Celeste", "INSIDE", "Portal", "Portal 2", None])))
+
 
 
 def setup(bot):

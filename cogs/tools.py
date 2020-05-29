@@ -5,6 +5,7 @@ from datetime import datetime as d
 import inspect
 import os
 import asyncio
+import aiohttp
 
 def snowstamp(snowflake):
     timestamp = (int(snowflake) >> 22) + 1420070400000
@@ -12,50 +13,31 @@ def snowstamp(snowflake):
 
     return d.utcfromtimestamp(timestamp).strftime('%b %d, %Y at %#I:%M %p')    
     
-    
 
 class Tools(commands.Cog):
     """A bunch of tools you can use on your server."""
     def __init__(self, bot):
         self.bot = bot
+    
+    @commands.cooldown(1, 10)
+    @commands.command(name="source", descriptin="Get source code for a specified command", usage="[command]")
+    async def sourcecode(self, ctx, *, command_name: str):
+        command = self.bot.get_command(command_name)
+        if not command:
+            return await ctx.send(f"Couldn't find command `{command_name}`.")
 
-    @commands.command(name="source", description="Get source code for my bot", usage="[command]")
-    async def source(self, ctx, *, command: str = None):
-        source_url = "https://github.com/ilovetocode2019/Robo-Coder"
-        branch = "stable"
-        if command is None:
-            return await ctx.send(source_url)
+        try:
+            source_lines, _ = inspect.getsourcelines(command.callback)
+        except (TypeError, OSError):
+            return await ctx.send(f"Was unable to retrieve the source for `{command}` for some reason.")
 
+        source_lines = ''.join(source_lines)
+        async with aiohttp.ClientSession() as session:
+            async with session.post('https://hastebin.com/documents', data=str(source_lines).encode("utf-8")) as post:
+                post_json = (await post.json())
 
-        if command == 'help':
-            src = type(self.bot.help_command)
-            module = src.__module__
-            filename = inspect.getsourcefile(src)
-        else:
-            obj = self.bot.get_command(command.replace(".", " "))
-            if obj is None:
-                return await ctx.send("Could not find command.")
+        await ctx.send(f"https://hastebin.com/{post_json['key']}")
 
-
-            # since we found the command we're looking for, presumably anyway, let's
-            # try to access the code itself
-            src = obj.callback.__code__
-            module = obj.callback.__module__
-            filename = src.co_filename
-
-
-        lines, firstlineno = inspect.getsourcelines(src)
-        if not module.startswith('discord'):
-            # not a built-in command
-            location = os.path.relpath(filename).replace("\\", "/")
-        else:
-            location = module.replace(".", "/") + ".py"
-            source_url = "https://github.com/Rapptz/discord.py"
-            branch = "master"
-
-
-        final_url = f"<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>"
-        await ctx.send(final_url)
 
     @commands.command(name="purge", description="Delete a mass amount of meesages", usage="[amount]", hidden=True)
     @commands.is_owner()

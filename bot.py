@@ -7,6 +7,7 @@ from discord.ext import commands
 import os
 import pathlib
 import aiosqlite
+
 logger = logging.getLogger("discord")
 logger.setLevel(logging.INFO)
 handler = logging.FileHandler(filename="coder.log", encoding="utf-8", mode="w")
@@ -50,11 +51,11 @@ class RoboCoder(commands.Bot):
         )
 
 
-        self.cogs_to_add = ["cogs.meta", "cogs.conversation", "cogs.mail", "cogs.status", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders"]
+        self.cogs_to_add = ["cogs.meta", "cogs.conversation", "cogs.mail", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders"]
 
         self.loop.create_task(self.load_cogs_to_add())
         self.startup_time = datetime.now()
-        
+
     async def load_cogs_to_add(self):
         try:
             self.load_extension("jishaku")
