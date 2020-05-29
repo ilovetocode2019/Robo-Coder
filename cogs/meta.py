@@ -90,7 +90,7 @@ class MyHelpCommand(commands.HelpCommand):
         for name, cog in bot.cogs.items():
             if not cog.description:
                 cog.description = ""
-            if name not in ["Status", "Jishaku"]:
+            if name not in ["Music", "Jishaku"]:
                 em.add_field(name=emojis[name]+name, value=cog.description, inline=False)
         
 
