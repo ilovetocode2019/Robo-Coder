@@ -19,24 +19,39 @@ class Tools(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
     
-    @commands.cooldown(1, 10)
     @commands.command(name="source", descriptin="Get source code for a specified command", usage="[command]")
-    async def sourcecode(self, ctx, *, command_name: str):
-        command = self.bot.get_command(command_name)
-        if not command:
-            return await ctx.send(f"Couldn't find command `{command_name}`.")
+    async def sourcecode(self, ctx, *, command):
+        source_url = "https://github.com/ilovetocode2019/Robo-Coder"
+        branch = "master"
 
-        try:
-            source_lines, _ = inspect.getsourcelines(command.callback)
-        except (TypeError, OSError):
-            return await ctx.send(f"Was unable to retrieve the source for `{command}` for some reason.")
+        if command is None:
+            return await ctx.send(source_url)
+        if command == 'help':
+            src = type(self.bot.help_command)
+            module = src.__module__
+            filename = inspect.getsourcefile(src)
+        else:
+            obj = self.bot.get_command(command.replace('.', ' '))
+            if obj is None:
+                return await ctx.send('Could not find command.')
 
-        source_lines = ''.join(source_lines)
-        async with aiohttp.ClientSession() as session:
-            async with session.post('https://hastebin.com/documents', data=str(source_lines).encode("utf-8")) as post:
-                post_json = (await post.json())
+            # since we found the command we're looking for, presumably anyway, let's
+            # try to access the code itself
+            src = obj.callback.__code__
+            module = obj.callback.__module__
+            filename = src.co_filename
 
-        await ctx.send(f"https://hastebin.com/{post_json['key']}")
+        lines, firstlineno = inspect.getsourcelines(src)
+        if not module.startswith('discord'):
+            # not a built-in command
+            location = os.path.relpath(filename).replace('\\', '/')
+        else:
+            location = module.replace('.', '/') + '.py'
+            source_url = 'https://github.com/Rapptz/discord.py'
+            branch = 'master'
+
+        final_url = f'<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>'
+        await ctx.send(final_url)
 
 
     @commands.command(name="purge", description="Delete a mass amount of meesages", usage="[amount]", hidden=True)

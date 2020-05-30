@@ -318,7 +318,7 @@ class Meta(commands.Cog):
         await ctx.send(f"<{invite}>")
 
     @commands.command(name="github", description="Look at my repository", usage="[command]")
-    async def source(self, ctx, *, command: str = None):
+    async def github(self, ctx, *, command: str = None):
         source_url = "https://github.com/ilovetocode2019/Robo-Coder"
         branch = "stable"
         await ctx.send(f"{source_url}/tree/{branch}")
