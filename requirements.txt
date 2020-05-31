@@ -4,3 +4,4 @@ async_timeout
 jishaku
 aiosqlite
 git+https://github.com/Rapptz/discord-ext-menus
+youtube_dl
