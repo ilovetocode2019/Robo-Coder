@@ -185,13 +185,13 @@ class Player:
         while True:
             # This clears the event var, which will pause the while loop while the song is playing
             self.event.clear()
-            self.now = await self.queue.get()
-            """try:
+            
+            try:
                 async with timeout(180):  # 3 minutes
                     self.now = await self.queue.get()
             except asyncio.TimeoutError:
                 self.bot.loop.create_task(self.stop())
-                return"""
+                return
                 
             if self.now.source is None:
                 if self.now.song+".mp3" in os.listdir(os.getcwd()+"/music/"):
@@ -242,6 +242,8 @@ class Player:
         self.queue._queue.clear()
         if self.voice:
             await self.voice.disconnect()
+
+        del self.bot.get_cog("Music").players[self.ctx.guild.id]
 
 
 class Music(commands.Cog):
@@ -312,7 +314,7 @@ class Music(commands.Cog):
 
     
     def cog_check(self, ctx):
-        if ctx.guild.id in self.bot.config["homeservers"]:
+        if ctx.guild.id in self.bot.config["homeservers"] or ctx.author.id in self.bot.owner_ids:
             return True
         return False
 
@@ -488,7 +490,6 @@ class Music(commands.Cog):
         
         await ctx.player.stop()
         await ctx.send("Leaving")
-        del self.players[ctx.guild.id]
 
     @commands.guild_only()
     @commands.command(name="summon", description="Summon the bot to a new text channel")
