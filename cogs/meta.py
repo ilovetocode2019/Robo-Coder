@@ -83,7 +83,7 @@ class MyHelpCommand(commands.HelpCommand):
     def get_command_signature(self, command):
         return '{0.clean_prefix}{1.qualified_name}{1.signature}'.format(self, command)
     async def send_bot_help(self, mapping):
-        emojis = {"Conversation":"😃", "Mail":"📧", "Meta":"⚙️", "Moderation":"🚓", "Music":"🎵", "Tools":"🧰", "Fun":"🎡", "Games":"🎮", "Notes":"📓", "Reminders":"🗒️"}
+        emojis = {"Conversation":"😃", "Meta":"⚙️", "Moderation":"🚓", "Music":"🎵", "Tools":"🧰", "Fun":"🎡", "Games":"🎮", "Notes":"📓", "Reminders":"🗒️"}
         ctx = self.context
         bot = ctx.bot
         em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category (first letter upercase)] for more specific help. \n[arg]: Required argument \n(arg): Optional argument", color=0x00ff00)
@@ -91,7 +91,7 @@ class MyHelpCommand(commands.HelpCommand):
             if not cog.description:
                 cog.description = ""
             if name not in ["Music", "Jishaku"]:
-                em.add_field(name=emojis[name]+name, value=cog.description, inline=False)
+                em.add_field(name=f"{emojis[name]} {name}", value=cog.description, inline=False)
         
 
         em.set_footer(text = f"{bot.user.name}", icon_url=bot.user.avatar_url)
