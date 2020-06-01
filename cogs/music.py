@@ -667,7 +667,7 @@ class Music(commands.Cog):
         song = Song(info.title, filename, None, "in queue")
         
         if ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
-            await ctx.send("📄 Enqueued " + source.title)
+            await ctx.send("📄 Enqueued " + info.title)
 
         #ctx.player.temporary.append(url)
 
