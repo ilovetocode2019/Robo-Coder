@@ -1,6 +1,9 @@
 from discord.ext import commands
 from discord.ext import tasks
+from discord.ext import menus
 import discord
+
+import asyncio
 
 from datetime import datetime
 import traceback
@@ -11,7 +14,6 @@ import pickle
 import json
 import sys
 import importlib
-from discord.ext import menus
 
 def snowstamp(snowflake):
     timestamp = (int(snowflake) >> 22) + 1420070400000
@@ -146,7 +148,8 @@ class MyHelpCommand(commands.HelpCommand):
 class Meta(commands.Cog):
     """Everything about the bot itself"""
     def __init__(self, bot):
-        self.bot = bot 
+        self.bot = bot
+
         self.activity.start()
         self._original_help_command = bot.help_command
         bot.help_command = MyHelpCommand()
@@ -170,6 +173,7 @@ class Meta(commands.Cog):
         error = "".join(traceback.format_exception(type(e), e, e.__traceback__, 1))
         print("Ignoring exception in command {}:".format(ctx.command), file=sys.stderr)
         traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
+
         if isinstance(e, discord.ext.commands.errors.CheckFailure):
             return
         elif isinstance(e, discord.ext.commands.errors.MissingPermissions):
@@ -180,15 +184,24 @@ class Meta(commands.Cog):
             return await ctx.send(":x: You are giving a bad argument")
         elif isinstance(e, discord.ext.commands.errors.CommandNotFound):
             return
-        self.bot.previous_error = e
+
         em = discord.Embed(title=":warning:",
                            color=0xff0000,
                            timestamp=d.utcnow())
-        description = ("Oops! An error has occured:"
-                       f"```py\n{str(e)}```\n")
-        em.description = description
-        await ctx.send(embed=em)
-    
+        em.description = f"```py\n{str(e)}```\n"
+        msg = await ctx.send(embed=em)
+
+        if ctx.author.id in self.bot.owner_ids:
+            checkmark = await msg.add_reaction("👀")
+            def check(reaction, user):
+                return user == ctx.author and str(reaction.emoji) == "👀"
+            try:
+                reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=check)
+                if str(reaction.emoji) == "👀":
+                    await user.send(f"```python\n{''.join(traceback.format_exception(type(e), e, e.__traceback__, 1))}```")              
+            except asyncio.TimeoutError:
+                await msg.remove_reaction("👀", self.bot.user)
+
     @commands.Cog.listener("on_message")
     async def detect_mention(self, msg):
         if msg.content == f"<@!{self.bot.user.id}>":
