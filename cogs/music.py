@@ -523,7 +523,7 @@ class Music(commands.Cog):
         for filename in os.listdir(os.getcwd()+"/music/"):
             if keyword in filename:
                 counter += 1
-                song = Song(os.path.splitext(filename)[0], None, "in queue")
+                song = Song(os.path.splitext(filename)[0], "music/"+filename, None, "in queue")
                 await ctx.player.queue.put(song)
 
 
