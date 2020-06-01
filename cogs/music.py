@@ -44,17 +44,17 @@ class MusicList(menus.ListPageSource):
             
 
 class Song():
-    def __init__(self, song, source, status):
+    def __init__(self, song, location, source, status):
         self.song = song
+        self.location = location
         self.source = source
         self.status = status
-        self.duration = "Unknown"
 
     def __str__(self):
         return self.song
 
 if youtube_dl_imported:
-    class YTDLSource(discord.PCMVolumeTransformer):
+    class YTDLSource:
         YTDL_OPTIONS = {
             'format': 'bestaudio/best',
             'extractaudio': True,
@@ -78,8 +78,7 @@ if youtube_dl_imported:
 
         ytdl = youtube_dl.YoutubeDL(YTDL_OPTIONS)
 
-        def __init__(self, ctx: commands.Context, source: discord.FFmpegPCMAudio, *, data: dict, volume: float = 0.5):
-            super().__init__(source, volume)
+        def __init__(self, ctx: commands.Context, *, data: dict, volume: float = 0.5):
 
             self.data = data
 
@@ -123,9 +122,11 @@ if youtube_dl_imported:
 
                 if process_info is None:
                     raise YTDLError('Couldn\'t find anything that matches `{}`'.format(search))
+            
 
             webpage_url = process_info['webpage_url']
-            partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=False)
+
+            partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=True)
             processed_info = await loop.run_in_executor(None, partial)
 
             if processed_info is None:
@@ -141,7 +142,7 @@ if youtube_dl_imported:
                     except IndexError:
                         raise YTDLError('Couldn\'t retrieve any matches for `{}`'.format(webpage_url))
 
-            return cls(ctx, discord.FFmpegPCMAudio(info['url'], **cls.FFMPEG_OPTIONS), data=info)
+            return cls.ytdl.prepare_filename(info), cls(ctx, data=info)
 
         @staticmethod
         def parse_duration(duration: int):
@@ -302,10 +303,7 @@ class Player:
                     return
                 
             if self.now.source is None:
-                if self.now.song+".mp3" in os.listdir(os.getcwd()+"/music/"):
-                    self.now.source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio("music/"+self.now.song+".mp3"))
-                else:
-                    self.now.source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.now.song+".mvk"))
+                self.now.source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.now.location))
                 self.voice.play(self.now.source, after=self.after_song)
 
             else:
@@ -355,6 +353,9 @@ class Player:
         self.queue._queue.clear()
         if self.voice:
             await self.voice.disconnect()
+
+        for song in self.temporary:
+            os.remove(song)
 
         del self.bot.get_cog("Music").players[self.ctx.guild.id]
 
@@ -633,7 +634,7 @@ class Music(commands.Cog):
         if query+".mp3" not in os.listdir(os.getcwd()+"/music/"):
             return await ctx.send("Song not avalible")
         filename = "music/"+query+".mp3"
-        song = Song(query, None, "in queue")
+        song = Song(query, filename, None, "in queue")
         song.type = "file"
 
         if ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
@@ -660,9 +661,10 @@ class Music(commands.Cog):
         else:
             lookup = query
 
-        source = await YTDLSource.create_source(ctx, lookup, loop=self.bot.loop)
-
-        song = Song(source.title, source, "in queue")
+        filename, info = await YTDLSource.create_source(ctx, lookup, loop=self.bot.loop)
+        ctx.player.temporary.append(filename)
+           
+        song = Song(info.title, filename, None, "in queue")
         
         if ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
             await ctx.send("📄 Enqueued " + source.title)
