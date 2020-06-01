@@ -98,6 +98,7 @@ if youtube_dl_imported:
             self.dislikes = data.get('dislike_count')
             self.stream_url = data.get('url')
 
+
         def __str__(self):
             return '**{0.title}** by **{0.uploader}**'.format(self)
 
@@ -273,6 +274,7 @@ class Player:
         self.msg = msg
         self.temporary = []
         self.now = None
+        self.looping = False
         self.queue = asyncio.Queue()
 
         self.voice = None
@@ -291,12 +293,13 @@ class Player:
             # This clears the event var, which will pause the while loop while the song is playing
             self.event.clear()
             
-            try:
-                async with timeout(180):  # 3 minutes
-                    self.now = await self.queue.get()
-            except asyncio.TimeoutError:
-                self.bot.loop.create_task(self.stop())
-                return
+            if self.now == None:
+                try:
+                    async with timeout(180):  # 3 minutes
+                        self.now = await self.queue.get()
+                except asyncio.TimeoutError:
+                    self.bot.loop.create_task(self.stop())
+                    return
                 
             if self.now.source is None:
                 if self.now.song+".mp3" in os.listdir(os.getcwd()+"/music/"):
@@ -317,8 +320,13 @@ class Player:
             # This next line basically "pauses" the while loop until the after_song
             # function is run
             await self.event.wait()
-            self.now = None
-            await self.msg.edit(embed=self.player_update())
+            
+            self.now.source = None
+
+            if not self.looping:
+                self.now = None
+                await self.msg.edit(embed=self.player_update())
+            
 
     def player_update(self):
         em = discord.Embed(title="Player", color=0X00ff00)
@@ -371,6 +379,7 @@ class Music(commands.Cog):
                 await msg.add_reaction("⏭️")
                 await msg.add_reaction("🔀")
                 await msg.add_reaction("🆕")
+                await msg.add_reaction("🔂")
                 await msg.add_reaction("❌")
                 player = Player(ctx, msg)
             except:
@@ -441,8 +450,9 @@ class Music(commands.Cog):
                 else:
                     pass
             elif str(reaction.emoji) == "⏹️":
-                player.queue._queue.clear()
+                player.now = None
                 player.voice.stop()
+                player.queue._queue.clear()
 
             elif str(reaction.emoji) == "⏭️":
                 player.voice.stop()
@@ -717,6 +727,21 @@ class Music(commands.Cog):
             await ctx.send("Not playing")
 
     @commands.guild_only()
+    @commands.command(name="loop", description="Loop/unloop music")
+    async def loop(self, ctx):
+        try:
+            ctx.player = self.players[ctx.guild.id]
+        except:
+            return await ctx.send("Not playing")
+        
+        if not ctx.player.looping:
+            ctx.player.looping = True
+            await ctx.send("Now looping")
+        else:
+            ctx.player.looping = False
+            await ctx.send("Now not looping")
+
+    @commands.guild_only()
     @commands.command(name="stop", description = "Stop the playing song")
     async def stop(self, ctx):
         try:
@@ -729,8 +754,9 @@ class Music(commands.Cog):
             return await ctx.send("Not in a call")
         if ctx.author not in ctx.player.voice.channel.members:
             return await ctx.send("You can't stop without being in the call")
-        ctx.player.queue._queue.clear()
+        ctx.player.now = None
         ctx.player.voice.stop()
+        ctx.player.queue._queue.clear()
         await ctx.send("Stopping ⏹️")
         
     @commands.guild_only()
@@ -830,6 +856,7 @@ class Music(commands.Cog):
         await ctx.player.msg.add_reaction("⏭️")
         await ctx.player.msg.add_reaction("🔀")
         await ctx.player.msg.add_reaction("🆕")
+        await ctx.player.msg.add_reaction("🔂")
         await ctx.player.msg.add_reaction("❌")
 
     @commands.command(name="players", description="Get all the running players", hidden=True)
