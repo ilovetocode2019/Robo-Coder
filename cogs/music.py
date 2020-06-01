@@ -104,8 +104,11 @@ if youtube_dl_imported:
         @classmethod
         async def create_source(cls, ctx: commands.Context, search: str, *, loop: asyncio.BaseEventLoop = None):
             loop = loop or asyncio.get_event_loop()
-
-            await ctx.send(f"🔎 Searching <{search}>")
+            
+            if search.startswith("https:"):
+                await ctx.send(f"🔎 Searching <{search}>")
+            else:
+                await ctx.send(f"🔎 Searching {search}")
 
             partial = functools.partial(cls.ytdl.extract_info, search, download=False, process=False)
             data = await loop.run_in_executor(None, partial)
@@ -357,7 +360,10 @@ class Player:
             await self.voice.disconnect()
 
         for song in self.temporary:
-            os.remove(song)
+            if os.path.exists(song):
+                os.remove(song)
+            else:
+                pass
 
         del self.bot.get_cog("Music").players[self.ctx.guild.id]
 
