@@ -83,6 +83,7 @@ class RoboCoder(commands.Bot):
         path = pathlib.Path("data.db")
         self.db = await aiosqlite.connect(path)
         await self.db.execute("CREATE TABLE IF NOT EXISTS Notes('ID', 'Title', 'Content')")
+        await self.db.execute("CREATE TABLE IF NOT EXISTS Todo('Userid', 'Content', 'Status')")
         await self.db.execute("CREATE TABLE IF NOT EXISTS Reminders('Userid', 'Guildid', 'Channid', 'Msgid', 'Time' int, 'Content')")
 
 bot = RoboCoder()
