@@ -35,10 +35,10 @@ class Reminders(commands.Cog):
         await ctx.send(embed=em)
         await cursor.close()
 
-    @commands.command(name="remind", description="Ask for a reminder", usage="[days] [hours] [minutes] [seconds] '[content]'")
-    async def add(self, ctx, days, hours, minutes, seconds, content):
+    @commands.command(name="remind", description="Create a reminder", usage="[days] [hours] [minutes] [seconds] [content]'")
+    async def add(self, ctx, days, hours, minutes, seconds, *, content):
         sometime = datetime.utcnow() + timedelta(days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(seconds))
-        timestamp = sometime.replace(tzinfo=timezone.utc).timestamp() 
+        timestamp = sometime.replace(tzinfo=timezone.utc).timestamp()
         if isinstance(ctx.channel, discord.channel.DMChannel):
             await self.bot.db.execute(f"INSERT INTO Reminders('Userid', 'Guildid', 'Channid', 'Msgid', 'Time', 'Content') VALUES ('{str(ctx.author.id)}', '@me', '{ctx.author.dm_channel.id}', '{ctx.message.id}', '{int(timestamp)}', '{content}');")            
         else:

@@ -25,7 +25,7 @@ class Notes(commands.Cog):
         await ctx.send(embed=em)
         await cursor.close()
 
-    @note.command(name="add", description="Add a note", usage="'[title]' '[content]'")
+    @note.command(name="add", description="Add a note", usage="[title] [content]")
     async def noteadd(self, ctx, title, *, content):
         await self.bot.db.execute(f"INSERT INTO Notes('ID', 'Title', 'Content') VALUES ('{str(ctx.author.id)}', '{title}', '{content}');")
         await self.bot.db.commit()
