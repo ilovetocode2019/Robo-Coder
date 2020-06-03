@@ -76,6 +76,25 @@ class CogHelp(menus.ListPageSource):
                     aliases = "("+', '.join(command.aliases)+")"
 
                 em.description += f"\n{command.name} {usage} - {description} {aliases}"
+
+                if isinstance(command, commands.Group):
+                    for subcommand in command.commands:
+                        if not subcommand.usage:
+                            usage = ""
+                        else:
+                            usage = f"{subcommand.usage}"
+
+                        if not subcommand.description:
+                            description = "No desciption"
+                        else:
+                            description = subcommand.description
+
+                        if not subcommand.aliases:
+                            aliases = ""
+                        else:
+                            aliases = "("+', '.join(subcommand.aliases)+")"
+
+                        em.description += f"\n{command.name} {subcommand.name} {usage} - {description} {aliases}"
         
         em.set_footer(text = f"{self.bot.user.name}", icon_url=self.bot.user.avatar_url)
         return em
@@ -123,26 +142,6 @@ class MyHelpCommand(commands.HelpCommand):
         if command.aliases != []:
             embed.add_field(name="Aliases:", value=", ".join(command.aliases), inline=False)
         await ctx.send(embed=embed)
-
-    async def send_group_help(self, group):
-        if group.name == "jishaku":
-            return
-        ctx = self.context
-        bot = ctx.bot
-        em = discord.Embed(title=str(group.name), description="Command Group", color=0x00ff00)
-        for command in group.commands:
-            if not command.description:
-                description = ""
-            else:
-                description = command.description
-
-            em.add_field(name=command.name, value=description, inline=False)
-
-
-        em.set_footer(text = f"{bot.user.name}", icon_url=bot.user.avatar_url)
-        await ctx.send(embed=em)
-
-
 
 
 class Meta(commands.Cog):

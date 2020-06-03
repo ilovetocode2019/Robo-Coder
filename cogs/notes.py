@@ -31,7 +31,7 @@ class Notes(commands.Cog):
         await self.bot.db.commit()
         await ctx.send("Note created")
 
-    @note.command(name="remove", description="Remove a note", usage="'[title]'")
+    @note.command(name="remove", description="Remove a note", usage="[title]")
     async def noteremove(self, ctx, title):
         cursor = await self.bot.db.execute(f"SELECT * FROM Notes WHERE Notes.ID='{str(ctx.author.id)}' and Notes.title='{title}';")
         if len(await cursor.fetchall()) == 0:
@@ -48,25 +48,5 @@ class Notes(commands.Cog):
         await ctx.send(str(row))
         await cursor.close()
 
-    """@commands.command(name="getlink", description="Get a to a message")
-    async def getlink(self, ctx):
-        msg = await ctx.send("Linked message")
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            link = f"https://discordapp.com/channels/@me/{ctx.author.dm_channel.id}/{msg.id}"
-        else:
-            link = f"https://discord.com/channels/{ctx.guild.id}/{ctx.channel.id}/{msg.id}"
-        await ctx.send(link)
-
-    @commands.command(name="time")
-    async def time(self, ctx):
-        now = datetime.now()
-        year = now.strftime("%Y")
-        month = now.strftime("%M")
-        day = now.strftime("%d")
-        time = now.strftime("%H:")
-        minute = now.strftime("%M:")
-
-        timestamp = now.replace(tzinfo=timezone.utc).timestamp()
-        await ctx.send(str(timestamp))"""
 def setup(bot):
     bot.add_cog(Notes(bot))
