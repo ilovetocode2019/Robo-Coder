@@ -19,20 +19,23 @@ class Notes(commands.Cog):
     async def todolist(self, ctx):
         cursor = await self.bot.db.execute(f"SELECT Title, Content FROM Notes WHERE Notes.ID='{str(ctx.author.id)}'")
         rows = await cursor.fetchall()
-        em = discord.Embed(title="Stick Notes", color=0X00ff00)
+        em = discord.Embed(title="Sticky Notes", color=0X00ff00)
         for row in rows:
             em.add_field(name=row[0], value=row[1], inline=False)
         await ctx.send(embed=em)
         await cursor.close()
 
     @note.command(name="add", description="Add a note", usage="'[title]' '[content]'")
-    async def noteadd(self, ctx, title, content):
+    async def noteadd(self, ctx, title, *, content):
         await self.bot.db.execute(f"INSERT INTO Notes('ID', 'Title', 'Content') VALUES ('{str(ctx.author.id)}', '{title}', '{content}');")
         await self.bot.db.commit()
         await ctx.send("Note created")
 
     @note.command(name="remove", description="Remove a note", usage="'[title]'")
     async def noteremove(self, ctx, title):
+        cursor = await self.bot.db.execute(f"SELECT * FROM Notes WHERE Notes.ID='{str(ctx.author.id)}' and Notes.title='{title}';")
+        if len(await cursor.fetchall()) == 0:
+            return await ctx.send("That note doesn't exist")
         await self.bot.db.execute(f"DELETE FROM Notes WHERE Notes.ID='{str(ctx.author.id)}' and Notes.Title='{title}';")
         await self.bot.db.commit()
         await ctx.send("Note deleted")
