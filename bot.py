@@ -61,6 +61,7 @@ class RoboCoder(commands.Bot):
         self.cogs_to_add = ["cogs.meta", "cogs.conversation", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders"]
 
         self.loop.create_task(self.load_cogs_to_add())
+        self.loop.create_task(self.on_start())
         self.startup_time = datetime.now()
 
     async def load_cogs_to_add(self):
@@ -80,6 +81,8 @@ class RoboCoder(commands.Bot):
 
     async def on_ready(self):
         logging.info(f"Logged in as {self.user.name} - {self.user.id}")
+
+    async def on_start(self):
         path = pathlib.Path("data.db")
         self.db = await aiosqlite.connect(path)
         await self.db.execute("CREATE TABLE IF NOT EXISTS Notes('ID', 'Title', 'Content')")

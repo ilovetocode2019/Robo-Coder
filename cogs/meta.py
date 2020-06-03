@@ -319,11 +319,35 @@ class Meta(commands.Cog):
         ping = (datetime.timestamp(datetime.now()) - start) * 1000
         await msg.edit(content=f"Pong!\nOne message round-trip took {ping}ms.")
 
-    @commands.command(name="uptime", description="Get the uptime")
+    @commands.group(name="uptime", description="Get the uptime", invoke_without_command=True)
     async def uptime(self, ctx):
         uptime = datetime.now()-self.bot.startup_time
         await ctx.send(f"I have been up for {uptime.days} days, {readable(uptime.seconds)}")      
-    
+
+    @uptime.command(name="overall", description="Get the overall bot uptime")
+    async def overalluptime(self, ctx):
+        cursor = await self.bot.db.execute("SELECT * FROM Events")
+        rows = await cursor.fetchall()
+        rows = list(rows)
+        record_start = rows[0][1]
+        total_uptime = 0
+        counter = 0
+        now = datetime.now()
+        now = datetime.timestamp(now)
+
+        for row in rows:
+            if row[0] == "Online":
+                if len(rows) > counter+1:
+                    next_time = rows[counter+1][1]
+                else:
+                    next_time = now
+                total_uptime += next_time-row[1]
+            counter += 1
+
+        full_time = now-record_start
+        await cursor.close()
+        await ctx.send(f"I am up {(total_uptime/full_time)*100}\% of the time")
+
     @commands.command(name="invite", description="Get a invite to add me to your server")
     async def invite(self, ctx):
         invite = discord.utils.oauth_url(self.bot.user.id, permissions=None, guild=None, redirect_uri=None)
@@ -334,6 +358,7 @@ class Meta(commands.Cog):
         source_url = "https://github.com/ilovetocode2019/Robo-Coder"
         branch = "stable"
         await ctx.send(f"{source_url}/tree/{branch}")
+
 
     @commands.command(name="logout", description="Logout command", hidden=True)
     @commands.is_owner()
