@@ -63,6 +63,7 @@ class Notes(commands.Cog):
         if len(await cursor.fetchall()) == 0:
             return await ctx.send("That is not on your todo list")
         await self.bot.db.execute(f"UPDATE Todo SET Status='Started' WHERE Todo.Userid='{ctx.author.id}' and Todo.content='{content}';")
+        await self.bot.db.commit()
         await ctx.send(f"`{content}` started")
 
     @todo.command(name="complete", description="Complete something in your todo list", usage="[todo]")
@@ -71,6 +72,7 @@ class Notes(commands.Cog):
         if len(await cursor.fetchall()) == 0:
             return await ctx.send("That is not on your todo list")
         await self.bot.db.execute(f"UPDATE Todo SET Status='Complete' WHERE Todo.Userid='{ctx.author.id}' and Todo.content='{content}';")
+        await self.bot.db.commit()
         await ctx.send(f"`{content}` Complete")
 
     @todo.command(name="remove", description="Remove something from your todo list")

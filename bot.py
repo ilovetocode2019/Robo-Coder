@@ -85,6 +85,12 @@ class RoboCoder(commands.Bot):
         await self.db.execute("CREATE TABLE IF NOT EXISTS Notes('ID', 'Title', 'Content')")
         await self.db.execute("CREATE TABLE IF NOT EXISTS Todo('Userid', 'Content', 'Status')")
         await self.db.execute("CREATE TABLE IF NOT EXISTS Reminders('Userid', 'Guildid', 'Channid', 'Msgid', 'Time' int, 'Content')")
+        await self.db.execute("CREATE TABLE IF NOT EXISTS Events('Event', 'Time' int)")
+
+        now = datetime.now()
+        timestamp = datetime.timestamp(now)
+        await self.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Online', '{timestamp}');")
+        await self.db.commit()
 
 bot = RoboCoder()
 bot.run(bot.config["token"])

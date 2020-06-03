@@ -338,6 +338,11 @@ class Meta(commands.Cog):
     @commands.command(name="logout", description="Logout command", hidden=True)
     @commands.is_owner()
     async def logout(self, ctx):
+        now = datetime.now()
+        timestamp = datetime.timestamp(now)
+        await self.bot.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Offline', '{timestamp}');")
+        await self.bot.db.commit()
+
         try:
             await self.bot.db.close()
         except:
@@ -349,6 +354,11 @@ class Meta(commands.Cog):
     @commands.command(name="restart", description="Restart command", hidden=True)
     @commands.is_owner()
     async def restart(self, ctx):
+        now = datetime.now()
+        timestamp = datetime.timestamp(now)
+        await self.bot.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Offline', '{timestamp}');")
+        await self.bot.db.commit()
+
         try:
             await self.bot.db.close()
         except:
