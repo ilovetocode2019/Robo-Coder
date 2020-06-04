@@ -112,7 +112,7 @@ class RoboCoder(commands.Bot):
         await self.db.commit()
 
     async def on_disconnect(self):
-        print("Disocnnecting")
+        print("Disconnecting")
         cursor = await self.db.execute("SELECT * FROM Events")
         rows = await cursor.fetchall()
         rows = list(rows)
