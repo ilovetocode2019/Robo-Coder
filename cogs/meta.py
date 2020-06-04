@@ -47,7 +47,7 @@ class CogHelp(menus.ListPageSource):
     def __init__(self, data, bot):
         self.cog = data
         self.bot = bot
-        super().__init__(data.get_commands(), per_page=10)
+        super().__init__(data.get_commands(), per_page=20)
 
     async def format_page(self, menu, entries):
         offset = menu.current_page * self.per_page
