@@ -35,7 +35,7 @@ class Reminders(commands.Cog):
         await ctx.send(embed=em)
         await cursor.close()
 
-    @commands.command(name="remind", description="Create a reminder", usage="[days] [hours] [minutes] [seconds] [content]'")
+    @commands.command(name="remind", description="Create a reminder", usage="[days] [hours] [minutes] [seconds] [content]")
     async def add(self, ctx, days, hours, minutes, seconds, *, content):
         sometime = datetime.utcnow() + timedelta(days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(seconds))
         timestamp = sometime.replace(tzinfo=timezone.utc).timestamp()
