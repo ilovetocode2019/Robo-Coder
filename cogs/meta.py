@@ -346,7 +346,7 @@ class Meta(commands.Cog):
 
         full_time = now-record_start
         await cursor.close()
-        await ctx.send(f"I am up {(total_uptime/full_time)*100}\% of the time")
+        await ctx.send(f"I am up {(total_uptime/full_time)*100}% of the time")
 
     @commands.command(name="invite", description="Get a invite to add me to your server")
     async def invite(self, ctx):

@@ -89,6 +89,19 @@ class RoboCoder(commands.Bot):
         await self.db.execute("CREATE TABLE IF NOT EXISTS Todo('Userid', 'Content', 'Status')")
         await self.db.execute("CREATE TABLE IF NOT EXISTS Reminders('Userid', 'Guildid', 'Channid', 'Msgid', 'Time' int, 'Content')")
         await self.db.execute("CREATE TABLE IF NOT EXISTS Events('Event', 'Time' int)")
+        
+        cursor = await self.db.execute("SELECT * FROM Events")
+        rows = await cursor.fetchall()
+        rows = list(rows)
+        await cursor.close()
+
+        if len(rows) != 0:
+            if rows[-1][0] == "Online":
+                now = datetime.now()
+                timestamp = datetime.timestamp(now)
+                await self.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Offline', '{timestamp}');")
+                await self.db.commit()                 
+
 
         now = datetime.now()
         timestamp = datetime.timestamp(now)
