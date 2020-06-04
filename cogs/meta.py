@@ -211,7 +211,13 @@ class Meta(commands.Cog):
             return "r!"
         return self.bot.guild_prefixes[str(guild.id)][0]
 
-    @commands.command(name="add", description="add a prefix", usage="[prefix]")
+    @commands.group(invoke_without_command=True)
+    async def prefix(self, ctx):
+        server_prefixes = self.bot.guild_prefixes[str(ctx.guild.id)]
+        await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))        
+
+
+    @prefix.command(name="add", description="add a prefix", usage="[prefix]")
     @commands.guild_only()
     @has_manage_guild()
     async def add(self, ctx, *, arg):
@@ -224,7 +230,7 @@ class Meta(commands.Cog):
             json.dump(self.bot.guild_prefixes, f)
         await ctx.send("Added prefix: " + arg)
     
-    @commands.command(name="remove", description="remove prefix", usage="[prefix]")
+    @prefix.command(name="remove", description="remove prefix", usage="[prefix]")
     @commands.guild_only()
     @has_manage_guild()
     async def remove(self, ctx, *, arg):
@@ -242,7 +248,7 @@ class Meta(commands.Cog):
         else:
             await ctx.send("No custom prefies")
 
-    @commands.command(name="prefixes", description="veiw a list of prefixes")
+    @prefix.command(name="prefixes", description="veiw a list of prefixes")
     @commands.guild_only()
     async def prefixes(self, ctx):
         #if str(ctx.guild.id) in self.bot.guild_prefixes.keys():
