@@ -98,14 +98,6 @@ class RoboCoder(commands.Bot):
         rows = list(rows)
         await cursor.close()
 
-        if len(rows) != 0:
-            if rows[-1][0] == "Online":
-                now = datetime.now()
-                timestamp = datetime.timestamp(now)
-                await self.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Offline', '{timestamp}');")
-                await self.db.commit()                 
-
-
         now = datetime.now()
         timestamp = datetime.timestamp(now)
         await self.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Online', '{timestamp}');")
