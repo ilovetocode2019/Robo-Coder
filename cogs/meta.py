@@ -347,6 +347,39 @@ class Meta(commands.Cog):
         full_time = now-record_start
         await cursor.close()
         await ctx.send(f"I am up {(total_uptime/full_time)*100}% of the time")
+    
+    @commands.Cog.listener("on_disconnect")
+    async def on_disconnect(self):
+        cursor = await self.bot.db.execute("SELECT * FROM Events")
+        rows = await cursor.fetchall()
+        rows = list(rows)
+        await cursor.close()
+        if rows[-1][0] == "Online":
+            now = datetime.now()
+            timestamp = datetime.timestamp(now)
+            await self.bot.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Offline', '{timestamp}');")
+            await self.bot.db.commit()
+
+    @commands.Cog.listener("on_connect")
+    async def on_connect(self):
+        cursor = await self.bot.db.execute("SELECT * FROM Events")
+        rows = await cursor.fetchall()
+        rows = list(rows)
+        await cursor.close()
+
+        if len(rows) != 0:
+            if rows[-1][0] == "Online":
+                now = datetime.now()
+                timestamp = datetime.timestamp(now)
+                await self.bot.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Offline', '{timestamp}');")
+                await self.bot.db.commit()                 
+
+
+        now = datetime.now()
+        timestamp = datetime.timestamp(now)
+        await self.bot.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Online', '{timestamp}');")
+        await self.bot.db.commit()
+
 
     @commands.command(name="invite", description="Get a invite to add me to your server")
     async def invite(self, ctx):
