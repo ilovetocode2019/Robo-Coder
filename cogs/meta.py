@@ -359,13 +359,6 @@ class Meta(commands.Cog):
         invite = discord.utils.oauth_url(self.bot.user.id, permissions=None, guild=None, redirect_uri=None)
         await ctx.send(f"<{invite}>")
 
-    @commands.command(name="github", description="Look at my repository", usage="[command]")
-    async def github(self, ctx, *, command: str = None):
-        source_url = "https://github.com/ilovetocode2019/Robo-Coder"
-        branch = "stable"
-        await ctx.send(f"{source_url}/tree/{branch}")
-
-
     @commands.command(name="logout", description="Logout command", hidden=True)
     @commands.is_owner()
     async def logout(self, ctx):

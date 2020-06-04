@@ -13,6 +13,10 @@ def snowstamp(snowflake):
 
     return d.utcfromtimestamp(timestamp).strftime('%b %d, %Y at %#I:%M %p')    
     
+class Repository:
+    def __init__(self, data):
+        name = data.get("name")
+        owner = owner.get("owner").get("login")
 
 class Tools(commands.Cog):
     """A bunch of tools you can use on your server."""
@@ -52,6 +56,35 @@ class Tools(commands.Cog):
 
         final_url = f'<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>'
         await ctx.send(final_url)
+
+    @commands.command(name="github", description="Get infromation about a GitHub repository", usage="[username/repositpry]")
+    async def github(self, ctx, repo):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://api.github.com/repos/{repo}") as response:
+                data = await response.json()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://api.github.com/repos/{repo}/releases") as response:
+                releases_data = await response.json()
+
+
+        em = discord.Embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=0x00ff00)
+        em.add_field(name="Language", value=data.get("language"))
+        em.add_field(name="Branch", value=data.get("default_branch"))
+        em.add_field(name="Stars", value=data.get("stargazers_count"))
+        em.add_field(name="Watching", value=data.get("watchers_count"))
+        em.add_field(name="Forks", value=data.get("forks"))
+
+        releases = ""
+        for release in releases_data:
+            releases += f"\n[{release.get('tag_name')}]({release.get('html_url')})"
+        
+        if releases != "":
+            em.add_field(name="Releases", value=releases)
+
+        em.set_thumbnail(url=data.get("owner").get("avatar_url"))
+        await ctx.send(embed=em)
+
 
 
     @commands.command(name="purge", description="Delete a mass amount of meesages", usage="[amount]", hidden=True)
