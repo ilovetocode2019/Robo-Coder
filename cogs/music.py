@@ -629,31 +629,7 @@ class Music(commands.Cog):
         await ctx.send("The music has now been summoned to this channel.")
 
     @commands.guild_only()
-    @commands.command(name="play", description="Play a song", usage="[song name]", aliases=["p"])
-    async def play(self, ctx, *, query):
-        if not ctx.author.voice:
-            return await ctx.send("Join a call")
-        ctx.player = await self.get_player(ctx)
-        if not ctx.player.voice:
-            # This next line basically runs the join function like it was a command
-            await ctx.invoke(self.join)
-        if ctx.author not in ctx.player.voice.channel.members:
-            return await ctx.send("You can't play without being in the call")
-        if query+".mp3" not in os.listdir(os.getcwd()+"/music/"):
-            return await ctx.send("Song not avalible")
-        filename = "music/"+query+".mp3"
-        song = Song(query, filename, None, "in queue")
-        song.type = "file"
-
-        if ctx.voice_client.is_playing() or ctx.voice_client.is_paused():
-            await ctx.send("📄 Enqueued " + query)
-
-        await ctx.player.queue.put(song)
-
-        await ctx.player.msg.edit(embed=ctx.player.player_update())
-    
-    @commands.guild_only()
-    @commands.command(name="playyoutube", descrcription="Play a song from youtube", usage="[name or url]")
+    @commands.command(name="play", descrcription="Play a song from youtube", usage="[name or url]")
     async def playurl(self, ctx, *, query):
         if not ctx.author.voice:
             return await ctx.send("Join a call")
