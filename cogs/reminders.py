@@ -78,22 +78,6 @@ class Reminders(commands.Cog):
         await self.bot.db.commit()
         await ctx.send("Reminder deleted")
 
-    @commands.command("allreminders", description="Veiw all the reminders in the database", hidden=True)
-    @commands.is_owner()
-    async def allreminders(self, ctx):
-        cursor = await self.bot.db.execute('SELECT * FROM Reminders')
-        row = await cursor.fetchall()
-        await ctx.send(str(row))
-        await cursor.close()
-
-    @commands.command(name="getlink", description="Get a to a message")
-    async def getlink(self, ctx):
-        msg = await ctx.send("Linked message")
-        if isinstance(ctx.channel, discord.channel.DMChannel):
-            link = f"https://discordapp.com/channels/@me/{ctx.author.dm_channel.id}/{msg.id}"
-        else:
-            link = f"https://discord.com/channels/{ctx.guild.id}/{ctx.channel.id}/{msg.id}"
-        await ctx.send(link)
 
     async def timesend(self, seconds, channel, text):
         await asyncio.sleep(seconds)
