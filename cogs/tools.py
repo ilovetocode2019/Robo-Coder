@@ -13,10 +13,6 @@ def snowstamp(snowflake):
 
     return d.utcfromtimestamp(timestamp).strftime('%b %d, %Y at %#I:%M %p')    
     
-class Repository:
-    def __init__(self, data):
-        name = data.get("name")
-        owner = owner.get("owner").get("login")
 
 class Tools(commands.Cog):
     """A bunch of tools you can use on your server."""
