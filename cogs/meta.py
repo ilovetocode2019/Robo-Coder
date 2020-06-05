@@ -330,29 +330,6 @@ class Meta(commands.Cog):
         uptime = datetime.now()-self.bot.startup_time
         await ctx.send(f"I have been up for {uptime.days} days, {readable(uptime.seconds)}")      
 
-    @uptime.command(name="overall", description="Get the overall bot uptime")
-    async def overalluptime(self, ctx):
-        cursor = await self.bot.db.execute("SELECT * FROM Events")
-        rows = await cursor.fetchall()
-        rows = list(rows)
-        record_start = rows[0][1]
-        total_uptime = 0
-        counter = 0
-        now = datetime.now()
-        now = datetime.timestamp(now)
-
-        for row in rows:
-            if row[0] == "Online":
-                if len(rows) > counter+1:
-                    next_time = rows[counter+1][1]
-                else:
-                    next_time = now
-                total_uptime += next_time-row[1]
-            counter += 1
-
-        full_time = now-record_start
-        await cursor.close()
-        await ctx.send(f"I am up {(total_uptime/full_time)*100}% of the time")
     
     @commands.command(name="invite", description="Get a invite to add me to your server")
     async def invite(self, ctx):
@@ -362,11 +339,6 @@ class Meta(commands.Cog):
     @commands.command(name="logout", description="Logout command", hidden=True)
     @commands.is_owner()
     async def logout(self, ctx):
-        now = datetime.now()
-        timestamp = datetime.timestamp(now)
-        await self.bot.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Offline', '{timestamp}');")
-        await self.bot.db.commit()
-
         try:
             await self.bot.db.close()
         except:
@@ -378,11 +350,6 @@ class Meta(commands.Cog):
     @commands.command(name="restart", description="Restart command", hidden=True)
     @commands.is_owner()
     async def restart(self, ctx):
-        now = datetime.now()
-        timestamp = datetime.timestamp(now)
-        await self.bot.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Offline', '{timestamp}');")
-        await self.bot.db.commit()
-
         try:
             await self.bot.db.close()
         except:

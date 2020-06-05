@@ -88,32 +88,7 @@ class RoboCoder(commands.Bot):
         await self.db.execute("CREATE TABLE IF NOT EXISTS Notes('ID', 'Title', 'Content')")
         await self.db.execute("CREATE TABLE IF NOT EXISTS Todo('Userid', 'Content', 'Status')")
         await self.db.execute("CREATE TABLE IF NOT EXISTS Reminders('Userid', 'Guildid', 'Channid', 'Msgid', 'Time' int, 'Content')")
-        await self.db.execute("CREATE TABLE IF NOT EXISTS Events('Event', 'Time' int)")
         
-
-    async def on_connect(self):
-        print("Connecting")
-        cursor = await self.db.execute("SELECT * FROM Events")
-        rows = await cursor.fetchall()
-        rows = list(rows)
-        await cursor.close()
-
-        now = datetime.now()
-        timestamp = datetime.timestamp(now)
-        await self.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Online', '{timestamp}');")
-        await self.db.commit()
-
-    async def on_disconnect(self):
-        print("Disconnecting")
-        cursor = await self.db.execute("SELECT * FROM Events")
-        rows = await cursor.fetchall()
-        rows = list(rows)
-        await cursor.close()
-        if rows[-1][0] == "Online":
-            now = datetime.now()
-            timestamp = datetime.timestamp(now)
-            await self.db.execute(f"INSERT INTO Events('Event', 'Time') VALUES ('Offline', '{timestamp}');")
-            await self.db.commit()
 
 
 
