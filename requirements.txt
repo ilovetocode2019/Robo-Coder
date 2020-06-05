@@ -2,6 +2,6 @@ discord.py
 discord.py[voice]
 async_timeout
 jishaku
-aiosqlite
+asyncpg
 git+https://github.com/Rapptz/discord-ext-menus
 youtube_dl

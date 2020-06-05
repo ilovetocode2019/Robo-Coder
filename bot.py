@@ -6,7 +6,7 @@ import discord
 from discord.ext import commands
 import os
 import pathlib
-import aiosqlite
+import asyncpg
 
 logger = logging.getLogger("discord")
 logger.setLevel(logging.INFO)
@@ -83,13 +83,34 @@ class RoboCoder(commands.Bot):
         logging.info(f"Logged in as {self.user.name} - {self.user.id}")
 
     async def on_start(self):
-        path = pathlib.Path("data.db")
-        self.db = await aiosqlite.connect(path)
-        await self.db.execute("CREATE TABLE IF NOT EXISTS Notes('ID', 'Title', 'Content')")
-        await self.db.execute("CREATE TABLE IF NOT EXISTS Todo('Userid', 'Content', 'Status')")
-        await self.db.execute("CREATE TABLE IF NOT EXISTS Reminders('Userid', 'Guildid', 'Channid', 'Msgid', 'Time' int, 'Content')")
-        
+        #self.db = await asyncpg.connect(user=self.config["sqlname"], password=self.config["sqlpass"], database=self.config["dbname"], host='localhost')
+        self.db = await asyncpg.connect(self.config["sqllogin"])
+        await self.db.execute('''
+            CREATE TABLE IF NOT EXISTS Notes(
+                ID text,
+                Title text,
+                Content text
+            )
+        ''')
 
+        await self.db.execute('''
+            CREATE TABLE IF NOT EXISTS Todo(
+                Userid text,
+                Content text,
+                Status text
+            )
+        ''')
+
+        await self.db.execute('''
+            CREATE TABLE IF NOT EXISTS Reminders(
+                Userid text,
+                Guildid text,
+                Channid text,
+                Msgid text,
+                Time int,
+                Content text
+            )
+        ''')
 
 
 bot = RoboCoder()

@@ -1,7 +1,6 @@
 from discord.ext import commands, tasks
 import discord
 import asyncio
-import aiosqlite
 import pathlib
 from datetime import datetime, date, time, timedelta, timezone
 import datetime as dt
@@ -27,14 +26,12 @@ class Reminders(commands.Cog):
 
     @commands.command(name="remindlist", description="Get a list of your reminders")
     async def remindlist(self, ctx):
-        cursor = await self.bot.db.execute(f"SELECT Time, Content FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}'")
-        rows = await cursor.fetchall()
-        em = discord.Embed(title="Reminders", color=0X00ff00)
+        rows = await self.bot.db.fetch(f"SELECT Time, Content FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}'")
+        em = discord.Embed(title="Reminders", description="", color=0X00ff00)
         for row in rows:
             time = datetime.fromtimestamp(row[0])-datetime.now()
             em.add_field(name=f"in {time.days} days, {readable(time.seconds)}", value=row[1], inline=False)
         await ctx.send(embed=em)
-        await cursor.close()
 
     @commands.command(name="remind", description="Create a reminder \nExample: r!remind 1day, Do something", usage="[time], [reminer]")
     async def add(self, ctx, *, reminder_data):
@@ -63,8 +60,7 @@ class Reminders(commands.Cog):
         if isinstance(ctx.channel, discord.channel.DMChannel):
             await self.bot.db.execute(f"INSERT INTO Reminders('Userid', 'Guildid', 'Channid', 'Msgid', 'Time', 'Content') VALUES ('{str(ctx.author.id)}', '@me', '{ctx.author.dm_channel.id}', '{ctx.message.id}', '{int(timestamp)}', '{content}');")            
         else:
-            await self.bot.db.execute(f"INSERT INTO Reminders('Userid', 'Guildid', 'Channid', 'Msgid', 'Time', 'Content') VALUES ('{str(ctx.author.id)}', '{ctx.guild.id}', '{ctx.channel.id}', '{ctx.message.id}', '{int(timestamp)}', '{content}');")
-        await self.bot.db.commit()
+            await self.bot.db.execute(f'''INSERT INTO Reminders(Userid, Guildid, Channid, Msgid, Time, Content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), str(ctx.guild.id), str(ctx.channel.id), str(ctx.message.id), int(timestamp), content)
         remindtime = sometime-datetime.utcnow()
         await ctx.send(f"✅ I will remind you in {remindtime.days} days, {readable(remindtime.seconds)}")
 
@@ -85,9 +81,7 @@ class Reminders(commands.Cog):
 
     @tasks.loop(seconds=5.0)
     async def timer(self):
-        cursor = await self.bot.db.execute('SELECT * FROM Reminders')
-        rows = await cursor.fetchall()
-        await cursor.close()
+        rows = await self.bot.db.fetch('SELECT * FROM Reminders')
         tolaunch = []
         for row in rows:
             if int(row[4])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()) < 5:
@@ -95,7 +89,6 @@ class Reminders(commands.Cog):
                 user = self.bot.get_user(row[0])
                 tolaunch.append(self.timesend(int(row[4])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()), channel, row[5]+"\n<@"+str(row[0])+">"))
                 await self.bot.db.execute(f"DELETE FROM Reminders WHERE Reminders.Userid='{row[0]}' and Reminders.Content='{row[5]}';")
-                await self.bot.db.commit()
         asyncio.gather(*tolaunch)
 
     @timer.before_loop
