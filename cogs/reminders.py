@@ -68,8 +68,8 @@ class Reminders(commands.Cog):
         remindtime = sometime-datetime.utcnow()
         await ctx.send(f"✅ I will remind you in {remindtime.days} days, {readable(remindtime.seconds)}")
 
-    @commands.command(name="unremind", description="Remove a reminder", usage="'[reminder]'")
-    async def remindremove(self, ctx, content):
+    @commands.command(name="unremind", description="Remove a reminder", usage="[reminder]")
+    async def remindremove(self, ctx, *, content):
         cursor = await self.bot.db.execute(f"SELECT * FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}' and Reminders.Content='{content}';")
         if len(await cursor.fetchall()) == 0:
             return await ctx.send("That reminder doesn't exist")
