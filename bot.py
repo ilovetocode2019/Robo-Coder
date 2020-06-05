@@ -84,7 +84,7 @@ class RoboCoder(commands.Bot):
 
     async def on_start(self):
         #self.db = await asyncpg.connect(user=self.config["sqlname"], password=self.config["sqlpass"], database=self.config["dbname"], host='localhost')
-        self.db = await asyncpg.connect(self.config["sqllogin"])
+        self.db = await asyncpg.create_pool(self.config["sqllogin"])
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS Notes(
                 ID text,
