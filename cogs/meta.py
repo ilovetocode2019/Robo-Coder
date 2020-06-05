@@ -47,7 +47,7 @@ class CogHelp(menus.ListPageSource):
     def __init__(self, data, bot):
         self.cog = data
         self.bot = bot
-        super().__init__(data.get_commands(), per_page=20)
+        super().__init__(data.get_commands(), per_page=12)
 
     async def format_page(self, menu, entries):
         offset = menu.current_page * self.per_page
@@ -75,7 +75,7 @@ class CogHelp(menus.ListPageSource):
                 else:
                     aliases = "("+', '.join(command.aliases)+")"
 
-                em.description += f"\n{command.name} {usage} - {description} {aliases}"
+                em.description += f"\n\n{command.name} {usage} - {description} {aliases}"
 
                 if isinstance(command, commands.Group):
                     for subcommand in command.commands:
@@ -94,7 +94,7 @@ class CogHelp(menus.ListPageSource):
                         else:
                             aliases = "("+', '.join(subcommand.aliases)+")"
 
-                        em.description += f"\n{command.name} {subcommand.name} {usage} - {description} {aliases}"
+                        em.description += f"\n\n{command.name} {subcommand.name} {usage} - {description} {aliases}"
         
         em.set_footer(text = f"{self.bot.user.name}", icon_url=self.bot.user.avatar_url)
         return em
