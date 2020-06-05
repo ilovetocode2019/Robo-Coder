@@ -58,6 +58,8 @@ class Tools(commands.Cog):
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://api.github.com/repos/{repo}") as response:
                 data = await response.json()
+        if data.get("message") == "Not Found":
+            return await ctx.send("Repository not found")
 
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://api.github.com/repos/{repo}/releases") as response:
@@ -86,6 +88,10 @@ class Tools(commands.Cog):
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://api.github.com/users/{user}") as response:
                 data = await response.json()
+
+        if data.get("message") == "Not Found":
+            return await ctx.send("User not found")
+        
         em = discord.Embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=0x00ff00)
 
         em.add_field(name="Repositories", value=data.get("public_repos"))

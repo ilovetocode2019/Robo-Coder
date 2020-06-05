@@ -58,7 +58,7 @@ class Reminders(commands.Cog):
         sometime = datetime.utcnow() + timedelta(days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(seconds))
         timestamp = sometime.replace(tzinfo=timezone.utc).timestamp()
         if isinstance(ctx.channel, discord.channel.DMChannel):
-            await self.bot.db.execute(f"INSERT INTO Reminders('Userid', 'Guildid', 'Channid', 'Msgid', 'Time', 'Content') VALUES ('{str(ctx.author.id)}', '@me', '{ctx.author.dm_channel.id}', '{ctx.message.id}', '{int(timestamp)}', '{content}');")            
+            await self.bot.db.execute(f'''INSERT INTO Reminders(Userid, Guildid, Channid, Msgid, Time, Content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), "@me", str(ctx.author.dm_channel.id), str(ctx.message.id), int(timestamp), content)
         else:
             await self.bot.db.execute(f'''INSERT INTO Reminders(Userid, Guildid, Channid, Msgid, Time, Content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), str(ctx.guild.id), str(ctx.channel.id), str(ctx.message.id), int(timestamp), content)
         remindtime = sometime-datetime.utcnow()
@@ -82,11 +82,11 @@ class Reminders(commands.Cog):
         rows = await self.bot.db.fetch('SELECT * FROM Reminders')
         tolaunch = []
         for row in rows:
-            if int(row[4])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()) < 5:
-                channel = self.bot.get_channel(int(row[2]))
-                user = self.bot.get_user(row[0])
-                tolaunch.append(self.timesend(int(row[4])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()), channel, row[5]+"\n<@"+str(row[0])+">"))
-                await self.bot.db.execute(f"DELETE FROM Reminders WHERE Reminders.Userid='{row[0]}' and Reminders.Content='{row[5]}';")
+            if int(row[5])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()) < 5:
+                channel = self.bot.get_channel(int(row[3]))
+                user = self.bot.get_user(row[1])
+                tolaunch.append(self.timesend(int(row[5])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()), channel, row[6]+"\n<@"+str(row[1])+">"))
+                await self.bot.db.execute(f"DELETE FROM Reminders WHERE Reminders.Userid='{row[1]}' and Reminders.Content='{row[6]}';")
         asyncio.gather(*tolaunch)
 
     @timer.before_loop

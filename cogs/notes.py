@@ -16,7 +16,7 @@ class Notes(commands.Cog):
 
     @note.command(name="list", description="Check your sticky notes")
     async def notelist(self, ctx):
-        rows = await self.bot.db.fetch(f"SELECT Title, Content FROM Notes WHERE Notes.ID='{str(ctx.author.id)}'")
+        rows = await self.bot.db.fetch(f"SELECT Title, Content FROM Notes WHERE Notes.Userid='{str(ctx.author.id)}'")
         em = discord.Embed(title="Sticky Notes", color=0X00ff00)
         for row in rows:
             em.add_field(name=row[0], value=row[1], inline=False)
@@ -24,20 +24,20 @@ class Notes(commands.Cog):
 
     @note.command(name="add", description="Add a note", usage="[title] [content]")
     async def noteadd(self, ctx, title, *, content):
-        await self.bot.db.execute(f'''INSERT INTO Notes(ID, Title, Content) VALUES ($1, $2, $3)''', str(ctx.author.id), str(title), str(content))
+        await self.bot.db.execute(f'''INSERT INTO Notes(Userid, Title, Content) VALUES ($1, $2, $3)''', str(ctx.author.id), str(title), str(content))
         await ctx.send("Note created")
 
     @note.command(name="remove", description="Remove a note", usage="[title]")
     async def noteremove(self, ctx, title):
-        rows = await self.bot.db.fetch(f"SELECT * FROM Notes WHERE Notes.ID='{str(ctx.author.id)}' and Notes.title='{title}';")
+        rows = await self.bot.db.fetch(f"SELECT * FROM Notes WHERE Notes.Userid='{str(ctx.author.id)}' and Notes.title='{title}';")
         if len(rows) == 0:
             return await ctx.send("That note doesn't exist")
-        await self.bot.db.execute(f"DELETE FROM Notes WHERE Notes.ID='{str(ctx.author.id)}' and Notes.Title='{title}';")
+        await self.bot.db.execute(f"DELETE FROM Notes WHERE Notes.Userid='{str(ctx.author.id)}' and Notes.Title='{title}';")
         await ctx.send("Note deleted")
      
     @commands.group(invoke_without_command=True, description="See your todo list")
     async def todo(self, ctx):
-        rows = await self.bot.db.fetch(f"SELECT Content, Status FROM Todo WHERE Todo.UseriD='{ctx.author.id}'")
+        rows = await self.bot.db.fetch(f"SELECT Content, Status FROM Todo WHERE Todo.Userid='{ctx.author.id}'")
         em = discord.Embed(title="Todo", description="", color=0X00ff00)
         for row in rows:
             em.description += f"\n{row[1]}: {row[0]}"
