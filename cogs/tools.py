@@ -57,7 +57,7 @@ class Tools(commands.Cog):
         final_url = f'<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>'
         await ctx.send(final_url)
 
-    @commands.command(name="github", description="Get infromation about a GitHub repository", usage="[username/repositpry]")
+    @commands.group(name="github", description="Get infromation about a GitHub repository", usage="[username/repositpry]", invoke_without_command=True)
     async def github(self, ctx, repo):
         async with aiohttp.ClientSession() as session:
             async with session.get(f"https://api.github.com/repos/{repo}") as response:
@@ -84,6 +84,24 @@ class Tools(commands.Cog):
 
         em.set_thumbnail(url=data.get("owner").get("avatar_url"))
         await ctx.send(embed=em)
+
+    @github.command(name="user", description="Get a GitHub user", usage="[user]")
+    async def github_user(self, ctx, user):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"https://api.github.com/users/{user}") as response:
+                data = await response.json()
+        em = discord.Embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=0x00ff00)
+
+        em.add_field(name="Repositories", value=data.get("public_repos"))
+        em.add_field(name="Gists", value=data.get("public_gists"))
+        em.add_field(name="Followers", value=data.get("followers"))
+        em.add_field(name="Following", value=data.get("following"))
+        
+        if data.get("blog") != "":
+            em.add_field(name="Blog", value=data.get("blog"))
+        em.set_thumbnail(url=data.get("avatar_url"))
+        await ctx.send(embed=em)
+
 
 
 
