@@ -30,7 +30,7 @@ class Notes(commands.Cog):
         await self.bot.db.execute(f'''INSERT INTO Notes(ID, Userid, Title, Content) VALUES ($1, $2, $3, $4)''', rows[-1][0]+1, str(ctx.author.id), str(title), str(content))
         await ctx.send("Note created")
 
-    @note.command(name="remove", description="Remove a note", usage="[id]")
+    @note.command(name="delete", description="Remove a note", usage="[id]", aliases=["remove"])
     async def noteremove(self, ctx, content):
         rows = await self.bot.db.fetch(f"SELECT * FROM Notes WHERE Notes.Userid='{str(ctx.author.id)}' and Notes.ID={content};")
         if len(rows) == 0:
@@ -73,7 +73,7 @@ class Notes(commands.Cog):
         await self.bot.db.execute(f"UPDATE Todo SET Status='Complete' WHERE Todo.Userid='{ctx.author.id}' and Todo.ID='{content}';")
         await ctx.send(f"`{content}` Complete")
 
-    @todo.command(name="remove", description="Remove something from your todo list", usage="[id]")
+    @todo.command(name="delete", description="Remove something from your todo list", usage="[id]", aliases=["remove"])
     async def todoremove(self, ctx, *, content: int):
         rows = await self.bot.db.fetch(f"SELECT * FROM Todo WHERE Todo.Userid='{ctx.author.id}' and Todo.ID='{content}';")
         if len(rows) == 0:
