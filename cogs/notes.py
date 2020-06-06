@@ -12,7 +12,7 @@ class Notes(commands.Cog):
 
     @commands.group(invoke_without_command=True)
     async def note(self, ctx):
-        await ctx.send("Use 'r!help note' to get help on sticky notes")
+        await ctx.send_help(self)
 
     @note.command(name="list", description="Check your sticky notes")
     async def notelist(self, ctx):
