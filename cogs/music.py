@@ -387,8 +387,6 @@ class Music(commands.Cog):
                 await msg.add_reaction("⏹️")
                 await msg.add_reaction("⏭️")
                 await msg.add_reaction("🔀")
-                await msg.add_reaction("🆕")
-                await msg.add_reaction("🔂")
                 await msg.add_reaction("❌")
                 player = Player(ctx, msg)
             except:
@@ -469,29 +467,6 @@ class Music(commands.Cog):
             elif str(reaction.emoji) == "🔀":
                 random.shuffle(player.queue._queue)
                 await player.msg.edit(embed=player.player_update())
-
-                #await reaction.message.channel.send("Skipped song ⏭️")
-            elif str(reaction.emoji) == "🆕":
-                ask_msg = await reaction.message.channel.send("What is your song name?")
-                def check(msg):
-                    return msg.author == user and msg.channel == reaction.message.channel
-                msg = await self.bot.wait_for("message", check=check)
-                query = msg.content
-                if query+".mp3" not in os.listdir(os.getcwd()+"/music/"):
-                    return await reaction.message.channel.send("Song not avalible")
-                filename = "music/"+query+".mp3"
-                #source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(filename))
-                song = Song(query, None, "in queue")
-                if player.voice.is_playing() or player.voice.is_paused():
-                    queue_msg = await reaction.message.channel.send("📄 Enqueued " + query)
-                    if reaction.message.guild.me.guild_permissions.manage_messages:
-                        await queue_msg.delete()
-                
-                if reaction.message.guild.me.guild_permissions.manage_messages:
-                    await msg.delete()
-                    await ask_msg.delete()
-
-                await player.queue.put(song)
 
             elif str(reaction.emoji) == "❌":
                 ask_msg = await reaction.message.channel.send("What is your song index?")
@@ -589,7 +564,7 @@ class Music(commands.Cog):
     @commands.command(name="join", description = "Join a voice channel")
     async def join(self, ctx):
         if not ctx.author.voice:
-            return await ctx.send("Please join a voice channel so I know where to go")
+            return await ctx.send("You are not in a voice channel.")
         ctx.player = await self.get_player(ctx)
         channel = ctx.author.voice.channel
         if ctx.player.voice:
@@ -597,7 +572,7 @@ class Music(commands.Cog):
         else:
             ctx.player.voice = await channel.connect()
             
-        await ctx.send("Joining your call")
+        await ctx.send("Connected")
 
 
     @commands.guild_only()
@@ -841,8 +816,6 @@ class Music(commands.Cog):
         await ctx.player.msg.add_reaction("⏹️")
         await ctx.player.msg.add_reaction("⏭️")
         await ctx.player.msg.add_reaction("🔀")
-        await ctx.player.msg.add_reaction("🆕")
-        await ctx.player.msg.add_reaction("🔂")
         await ctx.player.msg.add_reaction("❌")
 
     @commands.command(name="players", description="Get all the running players", hidden=True)
