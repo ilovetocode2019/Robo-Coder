@@ -369,7 +369,7 @@ class Player:
 
 
 class Music(commands.Cog):
-    """This cog is private and not for public use. You can still view the code here: https://github.com/ilovetocode2019/Robo-Coder/blob/master/cogs/music.py."""
+    """Music to listen to"""
     def __init__(self, bot):
         self.bot = bot
 
