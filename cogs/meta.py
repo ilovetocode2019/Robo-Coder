@@ -325,7 +325,7 @@ class Meta(commands.Cog):
         msg = await ctx.send("Pinging")
 
         ping = (datetime.timestamp(datetime.now()) - start) * 1000
-        await msg.edit(content=f"Pong!\nOne message round-trip took {ping}ms, my latency is {int(self.bot.latency)}ms")
+        await msg.edit(content=f"Pong!\nOne message round-trip took {ping}ms, my latency is {int(self.bot.latency*1000)}ms")
 
     @commands.group(name="uptime", description="Get the uptime", invoke_without_command=True)
     async def uptime(self, ctx):
