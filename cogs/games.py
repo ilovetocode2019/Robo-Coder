@@ -29,18 +29,23 @@ class TicTacToe:
                                 asyncio.ensure_future(self.bot.wait_for('reaction_add', check=check)),
                                 asyncio.ensure_future(self.bot.wait_for('reaction_remove', check=check))
                 ]
-        #Wait for a reaction
-        done, pending = await asyncio.wait(tasks, timeout=180, return_when=asyncio.FIRST_COMPLETED)
-        for task in pending:
-            task.cancel()
+        try:
+            #Wait for a reaction
+            done, pending = await asyncio.wait(tasks, timeout=180, return_when=asyncio.FIRST_COMPLETED)
+            for task in pending:
+                task.cancel()
 
-            if len(done) == 0:
-                raise asyncio.TimeoutError()
+                if len(done) == 0:
+                    raise asyncio.TimeoutError()
 
-        #Get the awnser
-        reaction, reaction_user = done.pop().result()
-        self.board[reactionconvert[str(reaction.emoji)]] = self.playericos[user]
-        await self.update("It's " + str(user) + "'s turn")
+            #Get the awnser
+            reaction, reaction_user = done.pop().result()
+            self.board[reactionconvert[str(reaction.emoji)]] = self.playericos[user]
+            await self.update("It's " + str(user) + "'s turn")
+        except asyncio.TimeoutError:
+            #This is what happens if the program times out
+            raise Exception("The tic tac toe game has timed out")
+
     async def checkwin(self, user):
         win_commbinations = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]
         count = 0
