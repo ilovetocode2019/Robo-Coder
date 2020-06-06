@@ -167,5 +167,45 @@ class Tools(commands.Cog):
 
         await ctx.send(embed=em)
 
+    @commands.Cog.listener("on_member_update")
+    async def on_member_update(self, before, after):
+        if before.status != after.status:
+            print(str(after.status))
+            timestamp = d.now().timestamp()
+            await self.bot.db.execute(f'''INSERT INTO Status_Updates(Userid, Status, Time) VALUES ($1, $2, $3)''', str(before.id), str(after.status), int(timestamp))
+
+    @commands.command(name="status", description="Get an overall status of a user", usage="[user]")
+    async def status(self, ctx, user: discord.Member=None):
+        if not user:
+            user = ctx.author
+
+        rows = await self.bot.db.fetch(f"SELECT Status, Time FROM Status_Updates WHERE Status_Updates.Userid='{user.id}';")
+        if len(rows) == 0:
+            rows = [[str(user.status), int(d.now().timestamp())]]
+
+        counter = 0
+        status = {"online":0, "idle":0, "dnd":0, "offline":0}
+        for row in rows:
+            if len(rows)-1 > counter:
+                status[row[0]] += rows[counter+1][1]-row[1]
+            else:
+                status[row[0]] += d.now().timestamp()-row[1]
+
+            counter += 1
+        
+        total = status["online"] + status["idle"] + status["dnd"] + status["offline"]
+
+        em = discord.Embed(title=user.name, color=0x00FF00)
+        em.add_field(name="Online", value=status["online"]/total*100)
+        em.add_field(name="Idle", value=status["idle"]/total*100)
+        em.add_field(name="Do Not Disturb", value=status["dnd"]/total*100)
+        em.add_field(name="Offline", value=status["offline"]/total*100)
+        em.set_thumbnail(url=user.avatar_url)
+
+        await ctx.send(embed=em)
+                
+
+
+
 def setup(bot):
     bot.add_cog(Tools(bot))

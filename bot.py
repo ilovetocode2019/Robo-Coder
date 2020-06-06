@@ -115,6 +115,14 @@ class RoboCoder(commands.Bot):
             )
         ''')
 
+        await self.db.execute('''
+            CREATE TABLE IF NOT EXISTS Status_Updates(
+                Userid text,
+                Status text,
+                Time int
+            )
+        ''')
+
 
 bot = RoboCoder()
 bot.run(bot.config["token"])
