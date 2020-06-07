@@ -55,7 +55,7 @@ class TicTacToe:
                     return True
 
     async def checktie(self):
-        placed = [":x:", ":o:"]
+        placed = ["\N{CROSS MARK}", "\N{HEAVY LARGE CIRCLE}"]
         if self.board[0] in placed and self.board[1] in placed and self.board[2] in placed and self.board[3] in placed and self.board[4] in placed and self.board[5] in placed and self.board[6] in placed and self.board[7] in placed and self.board[8] in placed:
             return True
 
