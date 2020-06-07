@@ -14,5 +14,5 @@ def readable(seconds):
       
     return "%d hours, %02d minutes, and %02d seconds" % (hour, minutes, seconds)
 
-def from_human(seconds):
+def from_human(human_string):
     pass
