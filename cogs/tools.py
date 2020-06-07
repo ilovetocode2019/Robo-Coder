@@ -182,7 +182,7 @@ class Tools(commands.Cog):
         rows = await self.bot.db.fetch(f"SELECT Status, Time FROM Status_Updates WHERE Status_Updates.Userid='{user.id}';")
         if len(rows) == 0:
             rows = [[str(user.status), int(d.now().timestamp())]]
-
+            await self.bot.db.execute(f'''INSERT INTO Status_Updates(Userid, Status, Time) VALUES ($1, $2, $3)''', str(user.id), str(user.status), int(d.now().timestamp()))
         counter = 0
         status = {"online":0, "idle":0, "dnd":0, "offline":0}
         for row in rows:
