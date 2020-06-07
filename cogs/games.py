@@ -11,12 +11,13 @@ class TicTacToe:
         self.msg = msg
         self.board = [":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:"]
         self.players = players
-        self.playericos = {self.players[0]:":x:", self.players[1]:":o:"}
+        self.playericos = {self.players[0]:"\N{CROSS MARK}", self.players[1]:"\N{HEAVY LARGE CIRCLE}"}
     
     async def update(self, bottom):
         board = f"{self.board[0]}{self.board[1]}{self.board[2]}\n{self.board[3]}{self.board[4]}{self.board[5]}\n{self.board[6]}{self.board[7]}{self.board[8]}\n{bottom}"
         em = discord.Embed(title="Tic Tac Toe", description="Tic Tac Toe game", color=0x008080)
         em.add_field(name="Board", value=str(board), inline=False)
+        em.set_footer(text=" vs ".join([f'{str(x)} ({self.playericos[x]})' for x in self.players]))
         await self.msg.edit(content=None, embed=em)
 
     async def turn(self, user):
@@ -78,7 +79,9 @@ class Games(commands.Cog):
         await msg.add_reaction("7\N{combining enclosing keycap}")
         await msg.add_reaction("8\N{combining enclosing keycap}")
         await msg.add_reaction("9\N{combining enclosing keycap}")
-        self.tttgames[ctx.guild.id] = TicTacToe(ctx, self.bot, msg, [ctx.author, opponent])
+        players = [ctx.author, opponent]
+        random.shuffle(players)
+        self.tttgames[ctx.guild.id] = TicTacToe(ctx, self.bot, msg, players)
         await self.tttgames[ctx.guild.id].update(ctx.author)
         game = True
         while game:
