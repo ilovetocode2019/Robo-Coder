@@ -14,21 +14,7 @@ import pickle
 import json
 import sys
 import importlib
-
-def snowstamp(snowflake):
-    timestamp = (int(snowflake) >> 22) + 1420070400000
-    timestamp /= 1000
-
-    return d.utcfromtimestamp(timestamp).strftime('%b %d, %Y at %#I:%M %p')
-
-def readable(seconds): 
-    seconds = seconds % (24 * 3600) 
-    hour = seconds // 3600
-    seconds %= 3600
-    minutes = seconds // 60
-    seconds %= 60
-      
-    return "%d hours, %02d minutes, and %02d seconds" % (hour, minutes, seconds)
+from .utils import time
 
 def has_manage_guild():
     async def predicate(ctx):
@@ -330,7 +316,7 @@ class Meta(commands.Cog):
     @commands.group(name="uptime", description="Get the uptime", invoke_without_command=True)
     async def uptime(self, ctx):
         uptime = datetime.now()-self.bot.startup_time
-        await ctx.send(f"I have been up for {uptime.days} days, {readable(uptime.seconds)}")      
+        await ctx.send(f"I have been up for {uptime.days} days, {time.readable(uptime.seconds)}")      
 
     
     @commands.command(name="invite", description="Get a invite to add me to your server")

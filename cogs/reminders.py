@@ -4,16 +4,8 @@ import asyncio
 import pathlib
 from datetime import datetime, date, time, timedelta, timezone
 import datetime as dt
+from .utils import time as utils_time
 import re
-
-def readable(seconds): 
-    seconds = seconds % (24 * 3600) 
-    hour = seconds // 3600
-    seconds %= 3600
-    minutes = seconds // 60
-    seconds %= 60
-      
-    return "%d hours, %02d minutes, and %02d seconds" % (hour, minutes, seconds)
 
 class Reminders(commands.Cog):
     """Reminders from the bot."""
@@ -65,7 +57,7 @@ class Reminders(commands.Cog):
         else:
             await self.bot.db.execute(f'''INSERT INTO Reminders(ID, Userid, Guildid, Channid, Msgid, Time, Content) VALUES ($1, $2, $3, $4, $5, $6, $7)''', rows[-1][0]+1, str(ctx.author.id), str(ctx.guild.id), str(ctx.channel.id), str(ctx.message.id), int(timestamp), content)
         remindtime = sometime-datetime.utcnow()
-        await ctx.send(f"✅ I will remind you in {remindtime.days} days, {readable(remindtime.seconds)}")
+        await ctx.send(f"✅ I will remind you in {remindtime.days} days, {utils_time.readable(remindtime.seconds)}")
 
     @commands.command(name="unremind", description="Remove a reminder", usage="[id]")
     async def remindremove(self, ctx, *, content: int):
