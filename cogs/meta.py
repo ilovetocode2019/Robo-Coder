@@ -97,7 +97,7 @@ class MyHelpCommand(commands.HelpCommand):
         for name, cog in bot.cogs.items():
             if not cog.description:
                 cog.description = ""
-            if cog.cog_check(ctx) and not name in ["Jishaku"]:
+            if not name in ["Jishaku", "Music"]:
                 if name in emojis:
                     em.add_field(name=f"{emojis[name]} {name}", value=cog.description, inline=False)
                 else:
@@ -109,7 +109,7 @@ class MyHelpCommand(commands.HelpCommand):
     async def send_cog_help(self, cog):
         ctx = self.context
         bot = ctx.bot
-        if cog.cog_check(ctx) and not cog.qualified_name in ["Jishaku"]:
+        if not cog.qualified_name in ["Jishaku", "Music"]:
             if cog.cog_check(ctx):
                 pages = menus.MenuPages(source=CogHelp(cog, bot), clear_reactions_after=True)
                 await pages.start(ctx)
