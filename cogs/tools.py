@@ -141,7 +141,7 @@ class Tools(commands.Cog):
         await ctx.send(embed=em)
     @commands.command(name="userinfo", description="Get info on a user", usage="[member]")
     @commands.guild_only()
-    async def userinfo(self, ctx, user:discord.Member=None):
+    async def userinfo(self, ctx, *, user:discord.Member=None):
         if not user:
             user = ctx.author
 
@@ -175,7 +175,7 @@ class Tools(commands.Cog):
             await self.bot.db.execute(f'''INSERT INTO Status_Updates(Userid, Status, Time) VALUES ($1, $2, $3)''', str(before.id), str(after.status), int(timestamp))
 
     @commands.command(name="status", description="Get an overall status of a user", usage="[user]")
-    async def status(self, ctx, user: discord.Member=None):
+    async def status(self, ctx, *, user: discord.Member=None):
         if not user:
             user = ctx.author
 
