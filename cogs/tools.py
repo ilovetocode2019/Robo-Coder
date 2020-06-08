@@ -180,6 +180,10 @@ class Tools(commands.Cog):
     @commands.Cog.listener("on_member_update")
     async def on_member_update(self, before, after):
         if before.status != after.status:
+            rows = await self.bot.db.fetch(f"SELECT Status, Time FROM Status_Updates WHERE Status_Updates.Userid='{before.id}';")
+            if len(rows) > 0:
+                if rows[-1][0] == str(after.status):
+                    return
             timestamp = d.now().timestamp()
             await self.bot.db.execute(f'''INSERT INTO Status_Updates(Userid, Status, Time) VALUES ($1, $2, $3)''', str(before.id), str(after.status), int(timestamp))
 
