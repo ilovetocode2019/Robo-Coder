@@ -6,7 +6,7 @@ from datetime import datetime
 from datetime import timezone
 
 class Notes(commands.Cog):
-    """Keep sticky notes and read them at any time."""
+    """Sticky notes and todo lists."""
     def __init__(self, bot):
         self.bot = bot
 

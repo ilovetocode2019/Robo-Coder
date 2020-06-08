@@ -5,7 +5,7 @@ from discord.ext import commands
 import random
 
 class Fun(commands.Cog):
-    """Fun things for your server"""
+    """Lots of fun."""
     def __init__(self, bot):
         self.bot = bot
 

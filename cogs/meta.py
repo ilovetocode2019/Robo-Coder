@@ -96,12 +96,15 @@ class MyHelpCommand(commands.HelpCommand):
         em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument", color=0x00ff00)
         for name, cog in bot.cogs.items():
             if not cog.description:
-                cog.description = ""
+                description = "No description"
+            else:
+                description = cog.description
+
             if not name in ["Jishaku", "Music"]:
                 if name in emojis:
-                    em.add_field(name=f"{emojis[name]} {name}", value=cog.description, inline=False)
+                    em.add_field(name=f"{emojis[name]} {name}", value=description, inline=False)
                 else:
-                    em.add_field(name=name, value=cog.description, inline=False)
+                    em.add_field(name=name, value=description, inline=False)
 
         em.set_footer(text = f"{bot.user.name}", icon_url=bot.user.avatar_url)
         await ctx.send(embed=em)
@@ -133,7 +136,7 @@ class MyHelpCommand(commands.HelpCommand):
 
 
 class Meta(commands.Cog):
-    """Everything about the bot itself"""
+    """Everything about the bot itself."""
     def __init__(self, bot):
         self.bot = bot
 

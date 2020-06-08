@@ -363,7 +363,7 @@ class Player:
 
 
 class Music(commands.Cog):
-    """Music to listen to"""
+    """Music to listen to."""
     def __init__(self, bot):
         self.bot = bot
 

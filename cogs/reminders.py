@@ -8,7 +8,6 @@ from .utils import time as utils_time
 import re
 
 class Reminders(commands.Cog):
-    """Reminders from the bot."""
     def __init__(self, bot):
         self.bot = bot
         self.timer.start()

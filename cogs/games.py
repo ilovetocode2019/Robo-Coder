@@ -61,7 +61,7 @@ class TicTacToe:
 
 
 class Games(commands.Cog):
-    """Some fun games"""
+    """Fun games."""
     def __init__(self, bot):
         self.bot = bot
         self.tttgames = {}
