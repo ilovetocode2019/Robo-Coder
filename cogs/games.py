@@ -15,7 +15,7 @@ class TicTacToe:
     
     async def update(self, bottom):
         board = f"{self.board[0]}{self.board[1]}{self.board[2]}\n{self.board[3]}{self.board[4]}{self.board[5]}\n{self.board[6]}{self.board[7]}{self.board[8]}\n{bottom}"
-        em = discord.Embed(title="Tic Tac Toe", description="Tic Tac Toe game", color=0x008080)
+        em = discord.Embed(title="Tic Tac Toe", description="Tic Tac Toe game", color=0x00ff00)
         em.add_field(name="Board", value=str(board), inline=False)
         em.set_footer(text=" vs ".join([f'{str(x)} ({self.playericos[x]})' for x in self.players]))
         await self.msg.edit(content=None, embed=em)
