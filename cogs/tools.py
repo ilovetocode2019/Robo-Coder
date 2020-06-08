@@ -131,7 +131,7 @@ class Tools(commands.Cog):
 
 
 
-    @commands.command(name="purge", description="Delete a mass amount of meesages", usage="[amount]", hidden=True)
+    @commands.command(name="purge", description="Delete a mass amount of messages", usage="[amount]", hidden=True)
     @commands.has_permissions(manage_messages=True)
     async def purge(self, ctx, *, arg):
         await ctx.send("Deleting " + str(arg) + " messages......")
