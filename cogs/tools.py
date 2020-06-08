@@ -39,7 +39,7 @@ def draw_pie(status):
 
 
 class Tools(commands.Cog):
-    """Tools discord servers."""
+    """Tools for discord servers."""
     def __init__(self, bot):
         self.bot = bot
     
