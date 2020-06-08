@@ -205,10 +205,10 @@ class Tools(commands.Cog):
         total = status["online"] + status["idle"] + status["dnd"] + status["offline"]
 
         em = discord.Embed(title=user.name, color=0x00FF00)
-        em.add_field(name="Online", value=status["online"]/total*100)
-        em.add_field(name="Idle", value=status["idle"]/total*100)
-        em.add_field(name="Do Not Disturb", value=status["dnd"]/total*100)
-        em.add_field(name="Offline", value=status["offline"]/total*100)
+        em.add_field(name="Online", value=f"{round(status['online']/total*100, 2)}%")
+        em.add_field(name="Idle", value=f"{round(status['idle']/total*100, 2)}%")
+        em.add_field(name="Do Not Disturb", value=f"{round(status['dnd']/total*100, 2)}%")
+        em.add_field(name="Offline", value=f"{round(status['offline']/total*100, 2)}%")
         em.set_thumbnail(url=user.avatar_url)
 
         await ctx.send(embed=em)
