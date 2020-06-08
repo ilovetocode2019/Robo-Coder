@@ -5,3 +5,4 @@ jishaku
 asyncpg
 git+https://github.com/Rapptz/discord-ext-menus
 youtube_dl
+matplotlib
