@@ -96,6 +96,91 @@ class Games(commands.Cog):
                     await self.tttgames[ctx.guild.id].update("The game was a tie")
                     game = False
                     break
+
+    @commands.max_concurrency(1, commands.BucketType.guild)
+    @commands.command(name="hangman", description="A hangman game")
+    async def hangman(self, ctx):
+        await ctx.send("Please configure a word in your DMs")
+        await ctx.author.send("What is your word?")
+        def check(msg):
+            return msg.author == ctx.author and msg.channel.id == ctx.author.dm_channel.id
+        message = await self.bot.wait_for("message", check=check)
+        word = message.content
+        lives = 10
+        guessed = ""
+        for counter in range(len(word)):
+            if word[counter] == " ":
+                guessed += " "
+            else:
+                guessed += "\N{WHITE LARGE SQUARE}"
+        em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
+        em.add_field(name="Trys remaining", value=str(lives))
+        em.add_field(name="Guessing", value=guessed)
+        em.add_field(name="Status", value="Playing")
+        game_msg = await ctx.send(embed=em)
+        await game_msg.add_reaction("✋")
+        while True:
+            def check(reaction, user):
+                return reaction.message.id == game_msg.id and user.id != self.bot.user.id
+            tasks = [
+                                    asyncio.ensure_future(self.bot.wait_for('reaction_add', check=check)),
+                                    asyncio.ensure_future(self.bot.wait_for('reaction_remove', check=check))
+                    ]
+            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            for task in pending:
+                task.cancel()
+
+                if len(done) == 0:
+                    raise asyncio.TimeoutError()
+
+            #Get the awnser
+            reaction, reaction_user = done.pop().result()
+            ask = await ctx.send("What is your guess?")
+            def check(msg):
+                return msg.author.id == reaction_user.id and msg.channel == reaction.message.channel
+            reply = await self.bot.wait_for("message", check=check)
+            if len(reply.content) != 1:
+                await ctx.send("That not a letter", delete_after=5)
+            elif reply.content in word:
+                await ctx.send("Your guess was right", delete_after=5)
+                counter = 0
+                for letter in word:
+                    if letter == reply.content:
+                        guessed = guessed[:counter] + reply.content + guessed[counter+len(reply.content):]
+                    counter += 1
+
+                em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
+                em.add_field(name="Trys remaining", value=str(lives))
+                em.add_field(name="Guessing", value=guessed)
+                em.add_field(name="Status", value="Playing")
+                await game_msg.edit(embed=em)
+
+            else:
+                lives -= 1
+                incorrect = await ctx.send("Your guess was incorrect", delete_after=5)
+
+            if ctx.guild.me.guild_permissions.manage_messages:
+                await asyncio.sleep(5)
+                await reply.delete()
+                await ask.delete()
+
+            if word == guessed:
+                em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
+                em.add_field(name="Trys remaining", value=str(lives))
+                em.add_field(name="Guessing", value=guessed)
+                em.add_field(name="Status", value="Won 🎉!")
+                await game_msg.edit(embed=em)
+                return await ctx.send("You won hangman!")
+
+            if lives == 0:
+                em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
+                em.add_field(name="Trys remaining", value=str(lives))
+                em.add_field(name="Guessing", value=guessed)
+                em.add_field(name="Status", value="Lost")
+                await game_msg.edit(embed=em)
+                return await ctx.send("You lost hangman")
+
+
                 
 
 def setup(bot):
