@@ -139,6 +139,7 @@ class Tools(commands.Cog):
         em.add_field(name="Status List", value=f"Online {status['online']}\nIdle {status['idle']}\nDnd {status['dnd']}\nOffline {status['offline']}")
 
         await ctx.send(embed=em)
+
     @commands.command(name="userinfo", description="Get info on a user", usage="[member]")
     @commands.guild_only()
     async def userinfo(self, ctx, *, user:discord.Member=None):
@@ -165,6 +166,15 @@ class Tools(commands.Cog):
 
         em.add_field(name="Roles", value=" ".join([role.mention for role in user.roles]))
 
+        await ctx.send(embed=em)
+
+    @commands.command(name="avatar", description="Get a users avatar")
+    async def avatar(self, ctx, *, user:discord.Member=None):
+        if user == None:
+            user = ctx.author
+
+        em = discord.Embed(color=0x00ff00)
+        em.set_image(url=user.avatar_url)
         await ctx.send(embed=em)
 
     @commands.Cog.listener("on_member_update")
