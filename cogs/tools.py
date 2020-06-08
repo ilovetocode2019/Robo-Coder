@@ -8,6 +8,7 @@ import asyncio
 import functools
 import aiohttp
 
+from PIL import Image, ImageGrab
 import matplotlib.pyplot as plt
 from io import BytesIO
 
@@ -37,6 +38,22 @@ def draw_pie(status):
     plt.close()
     return f
 
+async def average_image_color(avatar_url, loop):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(str(avatar_url)) as resp:
+            data = await resp.read()
+            image = BytesIO(data)
+
+    partial = functools.partial(Image.open, image)
+    img = await loop.run_in_executor(None, partial)
+
+    partial = functools.partial(img.resize, (1, 1))
+    img2 = await loop.run_in_executor(None, partial)
+
+    partial = functools.partial(img2.getpixel, (0, 0))
+    color = await loop.run_in_executor(None, partial)
+
+    return(discord.Color(int("0x{:02x}{:02x}{:02x}".format(*color), 16)))
 
 class Tools(commands.Cog):
     """Tools for discord servers."""
@@ -143,7 +160,7 @@ class Tools(commands.Cog):
     async def serverinfo(self, ctx):
         guild = ctx.guild
 
-        em = discord.Embed(title=guild.name, description="", color=0x00ff00)
+        em = discord.Embed(title=guild.name, description="", color=await average_image_color(guild.icon_url, self.bot.loop))
         
         em.set_thumbnail(url=guild.icon_url)
 
@@ -174,7 +191,9 @@ class Tools(commands.Cog):
             nick = ""
         else:
             nick = user.nick
-        em = discord.Embed(title=user.name, description=nick, color=0x00ff00)
+
+            
+        em = discord.Embed(title=user.name, description=nick, color=await average_image_color(user.avatar_url, self.bot.loop))
         
         em.set_thumbnail(url=user.avatar_url)
 
