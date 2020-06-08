@@ -86,7 +86,7 @@ class CogHelp(menus.ListPageSource):
         return em
 
 
-class MyHelpCommand(commands.HelpCommand):
+class RoboCoderHelpCommand(commands.HelpCommand):
     def get_command_signature(self, command):
         return '{0.clean_prefix}{1.qualified_name}{1.signature}'.format(self, command)
     async def send_bot_help(self, mapping):
@@ -142,7 +142,7 @@ class Meta(commands.Cog):
 
         self.activity.start()
         self._original_help_command = bot.help_command
-        bot.help_command = MyHelpCommand()
+        bot.help_command = RoboCoderHelpCommand()
         bot.help_command.cog = self
 
         if os.path.exists("prefixes.json"):
