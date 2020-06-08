@@ -27,9 +27,9 @@ def draw_pie(status):
             labels.append(x)
             sizes.append(status[x]/total*100)
             colors.append({"online":"green", "idle":"yellow", "dnd":"red", "offline":"gray"}[x])
-
-    plt.pie(sizes, labels=labels, colors=colors, startangle=140)
-    plt.legend([round(size, 2) for size in sizes], loc="best")
+    
+    plt.pie(sizes, labels=[f"{round(size, 2)}%" for size in sizes], colors=colors, startangle=140)
+    plt.legend(labels, loc="best")
     plt.axis('equal')
     f = BytesIO()
     plt.savefig(f, format="png")
