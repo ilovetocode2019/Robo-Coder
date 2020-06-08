@@ -5,7 +5,11 @@ from datetime import datetime as d
 import inspect
 import os
 import asyncio
+import functools
 import aiohttp
+
+import matplotlib.pyplot as plt
+from io import BytesIO
 
 def snowstamp(snowflake):
     timestamp = (int(snowflake) >> 22) + 1420070400000
@@ -13,6 +17,26 @@ def snowstamp(snowflake):
 
     return d.utcfromtimestamp(timestamp).strftime('%b %d, %Y at %#I:%M %p')    
     
+def draw_pie(status):
+    total = status["online"] + status["idle"] + status["dnd"] + status["offline"]
+    labels = []
+    sizes = []
+    colors = []
+    for x in status:
+        if status[x]/total*100 > 0:
+            labels.append(x)
+            sizes.append(status[x]/total*100)
+            colors.append({"online":"green", "idle":"yellow", "dnd":"red", "offline":"gray"}[x])
+
+    plt.pie(sizes, labels=labels, colors=colors, startangle=140)
+    plt.legend([round(size, 2) for size in sizes], loc="best")
+    plt.axis('equal')
+    f = BytesIO()
+    plt.savefig(f, format="png")
+    f.seek(0)
+    plt.close()
+    return f
+
 
 class Tools(commands.Cog):
     """A bunch of tools you can use on your server."""
@@ -206,17 +230,11 @@ class Tools(commands.Cog):
 
             counter += 1
         
-        total = status["online"] + status["idle"] + status["dnd"] + status["offline"]
+        loop = asyncio.get_event_loop()
+        partial = functools.partial(draw_pie, status)
+        data = await loop.run_in_executor(None, partial)
 
-        em = discord.Embed(title=user.name, color=0x00FF00)
-        em.add_field(name="Online", value=f"{round(status['online']/total*100, 2)}%")
-        em.add_field(name="Idle", value=f"{round(status['idle']/total*100, 2)}%")
-        em.add_field(name="Do Not Disturb", value=f"{round(status['dnd']/total*100, 2)}%")
-        em.add_field(name="Offline", value=f"{round(status['offline']/total*100, 2)}%")
-        em.set_thumbnail(url=user.avatar_url)
-
-        await ctx.send(embed=em)
-                
+        await ctx.send(file=discord.File(fp=data, filename="test.png"))
 
 
 
