@@ -230,7 +230,7 @@ class Tools(commands.Cog):
 
             counter += 1
         
-        loop = asyncio.get_event_loop()
+        loop = self.bot.loop
         partial = functools.partial(draw_pie, status)
         data = await loop.run_in_executor(None, partial)
 
