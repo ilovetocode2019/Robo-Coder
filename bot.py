@@ -77,10 +77,17 @@ class RoboCoder(commands.Bot):
 
     def run(self, token):
         super().run(token)
-    
+
 
     async def on_ready(self):
         logging.info(f"Logged in as {self.user.name} - {self.user.id}")
+        for user in bot.get_all_members():
+            rows = rows = await self.db.fetch(f"SELECT Status, Time FROM Status_Updates WHERE Status_Updates.Userid='{user.id}';")
+            if len(rows) != 0:
+                if rows[-1][0] != str(user.status):
+                    timestamp = datetime.now().timestamp()
+                    await self.db.execute(f'''INSERT INTO Status_Updates(Userid, Status, Time) VALUES ($1, $2, $3)''', str(user.id), str(user.status), int(timestamp))
+
 
     async def on_start(self):
         #self.db = await asyncpg.connect(user=self.config["sqlname"], password=self.config["sqlpass"], database=self.config["dbname"], host='localhost')

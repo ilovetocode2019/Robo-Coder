@@ -198,7 +198,7 @@ class Tools(commands.Cog):
             if len(rows)-1 > counter:
                 status[row[0]] += rows[counter+1][1]-row[1]
             else:
-                status[row[0]] += d.now().timestamp()-row[1]
+                status[str(user.status)] += d.now().timestamp()-row[1]
 
             counter += 1
         
