@@ -6,7 +6,7 @@ import asyncio
 import pickle
 
 class Moderation(commands.Cog):
-    """Moderation commands to use on your server."""
+    """Moderation commands."""
     def __init__(self, bot):
         self.bot = bot
         self.open_channels = []
