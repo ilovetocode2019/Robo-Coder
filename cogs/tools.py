@@ -230,6 +230,15 @@ class Tools(commands.Cog):
             timestamp = d.now().timestamp()
             await self.bot.db.execute(f'''INSERT INTO Status_Updates(Userid, Status, Time) VALUES ($1, $2, $3)''', str(before.id), str(after.status), int(timestamp))
 
+    @commands.Cog.listener("on_connect")
+    async def on_connect(self):
+        for user in self.bot.get_all_members():
+            rows = rows = await self.bot.db.fetch(f"SELECT Status, Time FROM Status_Updates WHERE Status_Updates.Userid='{user.id}';")
+            if len(rows) != 0:
+                if rows[-1][0] != str(user.status):
+                    timestamp = datetime.now().timestamp()
+                    await self.bot.db.execute(f'''INSERT INTO Status_Updates(Userid, Status, Time) VALUES ($1, $2, $3)''', str(user.id), str(user.status), int(timestamp))
+
     @commands.command(name="status", description="Get an overall status of a user", usage="[user]")
     async def status(self, ctx, *, user: discord.Member=None):
         if not user:
