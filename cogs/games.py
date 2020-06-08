@@ -158,6 +158,11 @@ class Games(commands.Cog):
             else:
                 lives -= 1
                 incorrect = await ctx.send("Your guess was incorrect", delete_after=5)
+                em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
+                em.add_field(name="Trys remaining", value=str(lives))
+                em.add_field(name="Guessing", value=guessed)
+                em.add_field(name="Status", value="Playing")
+                await game_msg.edit(embed=em)
 
             if ctx.guild.me.guild_permissions.manage_messages:
                 await asyncio.sleep(5)
