@@ -9,7 +9,6 @@ import functools
 import aiohttp
 
 from PIL import Image, ImageGrab
-import matplotlib.pyplot as plt
 from io import BytesIO
 
 def snowstamp(snowflake):
@@ -18,31 +17,6 @@ def snowstamp(snowflake):
 
     return d.utcfromtimestamp(timestamp).strftime('%b %d, %Y at %#I:%M %p')    
     
-def draw_pie(status):
-    total = status["online"] + status["idle"] + status["dnd"] + status["offline"]
-    labels = []
-    sizes = []
-    colors = []
-    for x in status:
-        if status[x]/total*100 > 0:
-            labels.append(x)
-            sizes.append(status[x]/total*100)
-            colors.append({"online":"green", "idle":"yellow", "dnd":"red", "offline":"gray"}[x])
-    
-    plt.pie(sizes, labels=[f"{round(size, 2)}%" for size in sizes], colors=colors, startangle=140)
-
-    legend = []
-    counter = 0
-    for x in range(len(colors)):
-        legend.append(f"{labels[x]} ({round(sizes[x], 2)}%)")
-    plt.legend(legend, loc="best")
-    plt.axis('equal')
-    f = BytesIO()
-    plt.savefig(f, format="png")
-    f.seek(0)
-    plt.close()
-    return f
-
 async def average_image_color(avatar_url, loop):
     async with aiohttp.ClientSession() as session:
         async with session.get(str(avatar_url)) as resp:
