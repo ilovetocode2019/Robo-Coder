@@ -58,7 +58,7 @@ class RoboCoder(commands.Bot):
         )
 
 
-        self.cogs_to_add = ["cogs.meta", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders"]
+        self.cogs_to_add = ["cogs.meta", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders", "cogs.status"]
 
         self.loop.create_task(self.load_cogs_to_add())
         self.loop.create_task(self.on_start())
