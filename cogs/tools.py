@@ -199,10 +199,15 @@ class Tools(commands.Cog):
 
     @commands.command(name="avatar", description="Get a users avatar")
     async def avatar(self, ctx, *, user:discord.Member=None):
+
         if user == None:
             user = ctx.author
 
-        em = discord.Embed(color=0x00ff00)
+        try:
+            color = await average_image_color(user.avatar_url, self.bot.loop)
+        except:
+            color = discord.Embed.Empty
+        em = discord.Embed(color=color)
         em.set_image(url=user.avatar_url)
         await ctx.send(embed=em)
 
