@@ -124,7 +124,7 @@ class Games(commands.Cog):
         await game_msg.add_reaction("✋")
         while True:
             def check(reaction, user):
-                return reaction.message.id == game_msg.id and user.id != self.bot.user.id
+                return reaction.message.id == game_msg.id and user.id != self.bot.user.id and str(reaction.emoji) == "✋"
             tasks = [
                                     asyncio.ensure_future(self.bot.wait_for('reaction_add', check=check)),
                                     asyncio.ensure_future(self.bot.wait_for('reaction_remove', check=check))
