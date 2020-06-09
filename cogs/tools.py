@@ -34,7 +34,7 @@ def draw_pie(status):
     legend = []
     counter = 0
     for x in range(len(colors)):
-        legend.append(f"{colors[x]} ({round(sizes[x], 2)}%)")
+        legend.append(f"{labels[x]} ({round(sizes[x], 2)}%)")
     plt.legend(legend, loc="best")
     plt.axis('equal')
     f = BytesIO()
