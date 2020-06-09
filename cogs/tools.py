@@ -159,8 +159,12 @@ class Tools(commands.Cog):
     @commands.guild_only()
     async def serverinfo(self, ctx):
         guild = ctx.guild
-
-        em = discord.Embed(title=guild.name, description="", color=await average_image_color(guild.icon_url, self.bot.loop))
+        
+        try:
+            color = await average_image_color(guild.icon_url, self.bot.loop)
+        except:
+            color = None
+        em = discord.Embed(title=guild.name, description="", color=color)
         
         em.set_thumbnail(url=guild.icon_url)
 
@@ -192,8 +196,11 @@ class Tools(commands.Cog):
         else:
             nick = user.nick
 
-            
-        em = discord.Embed(title=user.name, description=nick, color=await average_image_color(user.avatar_url, self.bot.loop))
+        try:
+            color = await average_image_color(user.avatar_url, self.bot.loop)
+        except:
+            color = None
+        em = discord.Embed(title=user.name, description=nick, color=color)
         
         em.set_thumbnail(url=user.avatar_url)
 
