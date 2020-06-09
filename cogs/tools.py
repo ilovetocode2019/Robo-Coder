@@ -163,7 +163,7 @@ class Tools(commands.Cog):
         try:
             color = await average_image_color(guild.icon_url, self.bot.loop)
         except:
-            color = None
+            color = discord.Embed.Empty
         em = discord.Embed(title=guild.name, description="", color=color)
         
         em.set_thumbnail(url=guild.icon_url)
@@ -199,7 +199,7 @@ class Tools(commands.Cog):
         try:
             color = await average_image_color(user.avatar_url, self.bot.loop)
         except:
-            color = None
+            color = discord.Embed.Empty
         em = discord.Embed(title=user.name, description=nick, color=color)
         
         em.set_thumbnail(url=user.avatar_url)
