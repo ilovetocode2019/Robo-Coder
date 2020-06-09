@@ -115,7 +115,7 @@ class Games(commands.Cog):
             else:
                 guessed += "\N{WHITE LARGE SQUARE}"
         em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
-        em.add_field(name="Trys remaining", value=str(lives))
+        em.add_field(name="Tries remaining", value=str(lives))
         if len(incorrect) != 0:
             em.add_field(name="Already Guessed", value=", ".join(incorrect))
         em.add_field(name="Guessing", value=guessed)
@@ -153,7 +153,7 @@ class Games(commands.Cog):
                     counter += 1
 
                 em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
-                em.add_field(name="Trys remaining", value=str(lives))
+                em.add_field(name="Tries remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Already Guessed", value=", ".join(incorrect))
                 em.add_field(name="Guessing", value=guessed)
@@ -165,7 +165,7 @@ class Games(commands.Cog):
                 lives -= 1
                 incorrect_msg = await ctx.send("Your guess was incorrect", delete_after=5)
                 em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
-                em.add_field(name="Trys remaining", value=str(lives))
+                em.add_field(name="Tries remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Already Guessed", value=", ".join(incorrect))
                 em.add_field(name="Guessing", value=guessed)
@@ -179,7 +179,7 @@ class Games(commands.Cog):
 
             if word == guessed:
                 em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
-                em.add_field(name="Trys remaining", value=str(lives))
+                em.add_field(name="Tries remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Already Guessed", value=", ".join(incorrect))
                 em.add_field(name="Guessing", value=guessed)
@@ -189,7 +189,7 @@ class Games(commands.Cog):
 
             if lives == 0:
                 em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
-                em.add_field(name="Trys remaining", value=str(lives))
+                em.add_field(name="Tries remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Already Guessed", value=", ".join(incorrect))
                 em.add_field(name="Guessing", value=guessed)
