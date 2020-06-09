@@ -16,7 +16,6 @@ import youtube_dl
 
 import re
 from datetime import datetime as d
-import requests
 import importlib
 import sys
 import traceback
