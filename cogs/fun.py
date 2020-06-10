@@ -18,7 +18,7 @@ class Fun(commands.Cog):
     async def magic8ball(self, ctx):
         await ctx.send(f"{random.choice(['Yes', 'No', 'Maybe'])}")
     
-    @commands.command(name="embed", description="Create a simple embed")
+    @commands.command(name="embed", description="Create a simple embed", usage="[title] [content]")
     async def embed(self, ctx, title, *, msg):
         em = discord.Embed(title=title, description=msg, color=0x00ff00)
         em.set_author(name=str(ctx.author.display_name), icon_url=ctx.author.avatar_url)
