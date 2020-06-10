@@ -8,7 +8,7 @@ import asyncio
 import functools
 import aiohttp
 
-from PIL import Image, ImageGrab
+from PIL import Image
 from io import BytesIO
 
 def snowstamp(snowflake):
