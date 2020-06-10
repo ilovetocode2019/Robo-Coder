@@ -86,6 +86,10 @@ class RoboCoder(commands.Bot):
                 if rows[-1][0] != str(user.status):
                     timestamp = datetime.now().timestamp()
                     await self.db.execute(f'''INSERT INTO Status_Updates(Userid, Status, Time) VALUES ($1, $2, $3)''', str(user.id), str(user.status), int(timestamp))
+            else:
+                timestamp = datetime.now().timestamp()
+                await self.db.execute(f'''INSERT INTO Status_Updates(Userid, Status, Time) VALUES ($1, $2, $3)''', str(user.id), str(user.status), int(timestamp))
+
 
 
     async def on_start(self):
