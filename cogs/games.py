@@ -177,6 +177,13 @@ class Games(commands.Cog):
                 await reply.delete()
                 await ask.delete()
 
+            async def clearup(reply, ask):
+                if ctx.guild.me.guild_permissions.manage_messages:
+                    await asyncio.sleep(5)
+                    await reply.delete()
+                    await ask.delete()
+            self.bot.loop.create_task(clearup(reply, ask))
+            
             if word == guessed:
                 em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
                 em.add_field(name="Tries remaining", value=str(lives))
@@ -195,7 +202,7 @@ class Games(commands.Cog):
                 em.add_field(name="Guessing", value=guessed)
                 em.add_field(name="Status", value="Lost")
                 await game_msg.edit(embed=em)
-                return await ctx.send("You lost hangman")
+                return await ctx.send(f"You lost hangman. The word was ||{word}||")
 
 
                 
