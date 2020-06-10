@@ -30,9 +30,10 @@ def has_manage_guild():
     return commands.check(predicate)
 
 class CogHelp(menus.ListPageSource):
-    def __init__(self, data, bot):
+    def __init__(self, data, ctx):
         self.cog = data
-        self.bot = bot
+        self.bot = ctx.bot
+        self.ctx = ctx
         super().__init__(data.get_commands(), per_page=12)
 
     async def format_page(self, menu, entries):
@@ -42,7 +43,7 @@ class CogHelp(menus.ListPageSource):
             cogdescription = ""
         else:
             cogdescription = self.cog.description
-        em = discord.Embed(title=self.cog.qualified_name, description=cogdescription+"\n", color=0x00ff00)
+        em = discord.Embed(title=self.cog.qualified_name, description=cogdescription+"\n", color=discord.Colour.from_rgb(*self.bot.customization[str(self.ctx.guild.id)]["color"]))
 
         for i, command in enumerate(entries, start=offset):
             if command.hidden != True:
@@ -93,7 +94,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         emojis = {"Conversation":"😃", "Meta":"⚙️", "Moderation":"🚓", "Music":"🎵", "Tools":"🧰", "Fun":"🎡", "Games":"🎮", "Notes":"📓", "Reminders":"🗒️"}
         ctx = self.context
         bot = ctx.bot
-        em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument", color=0x00ff00)
+        em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument", color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
         for name, cog in bot.cogs.items():
             if not cog.description:
                 description = "No description"
@@ -114,7 +115,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         bot = ctx.bot
         if not cog.qualified_name in ["Jishaku", "Music"]:
             if cog.cog_check(ctx):
-                pages = menus.MenuPages(source=CogHelp(cog, bot), clear_reactions_after=True)
+                pages = menus.MenuPages(source=CogHelp(cog, ctx), clear_reactions_after=True)
                 await pages.start(ctx)
 
     async def send_command_help(self, command):
@@ -127,7 +128,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         else:
             usage = command.usage
 
-        embed = discord.Embed(title=str(command) + " " + usage, description=command.description, color=0x00ff00)
+        embed = discord.Embed(title=str(command) + " " + usage, description=command.description, color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
         if command.help != None:
             embed.add_field(name="Detailed Help:", value=command.help, inline=False)
         if command.aliases != []:
@@ -145,14 +146,15 @@ class Meta(commands.Cog):
         bot.help_command = RoboCoderHelpCommand()
         bot.help_command.cog = self
 
-        if os.path.exists("prefixes.json"):
-            with open("prefixes.json", "r") as f:
-                self.bot.guild_prefixes = json.load(f)
+        if os.path.exists("customization.json"):
+            with open("customization.json", "r") as f:
+                self.bot.customization = json.load(f)
         else:
-            with open("prefixes.json", "w") as f:
+            with open("customization.json", "w") as f:
                 data = {}
                 json.dump(data, f)
-            self.bot.guild_prefixes = {}
+            self.bot.customization = {}
+
 
     def cog_unload(self):
         self.activity.cancel()
@@ -200,52 +202,50 @@ class Meta(commands.Cog):
     def get_guild_prefix(self, guild):
         if not guild:
             return "r!"
-        return self.bot.guild_prefixes[str(guild.id)][0]
+        return self.bot.customization[str(guild.id)]["prefixes"][0]
 
     @commands.group(invoke_without_command=True)
     async def prefix(self, ctx):
-        server_prefixes = self.bot.guild_prefixes[str(ctx.guild.id)]
-        await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))        
+        await ctx.send("prefixes: " + ", ".join(self.bot.customization[str(ctx.guild.id)]["prefixes"]))        
 
 
     @prefix.command(name="add", description="add a prefix", usage="[prefix]")
     @commands.guild_only()
     @has_manage_guild()
     async def add(self, ctx, *, arg):
-        #global self.bot.guild_prefixes
-        if not str(ctx.guild.id) in self.bot.guild_prefixes.keys():
-            self.bot.guild_prefixes[str(ctx.guild.id)] = [arg]
-        else:
-            self.bot.guild_prefixes[str(ctx.guild.id)] = self.bot.guild_prefixes[str(ctx.guild.id)] + [arg]
-        with open("prefixes.json", "w") as f:
-            json.dump(self.bot.guild_prefixes, f)
+        self.bot.customization[str(ctx.guild.id)]["prefixes"].append(arg)
+        with open("customization.json", "w") as f:
+            json.dump(self.bot.customization, f)
         await ctx.send("Added prefix: " + arg)
     
     @prefix.command(name="remove", description="remove prefix", usage="[prefix]")
     @commands.guild_only()
     @has_manage_guild()
     async def remove(self, ctx, *, arg):
-        #global self.bot.guild_prefixes
-        if str(ctx.guild.id) in self.bot.guild_prefixes.keys():
-            if arg in self.bot.guild_prefixes[str(ctx.guild.id)]:
-                self.bot.guild_prefixes[str(ctx.guild.id)].remove(arg)
-                await ctx.send("Removed prefix: " + arg)
-            else:
-                await ctx.send(f"That prefix does not exist. Try '{self.get_guild_prefix(ctx.guild)}prefixes' to get a list of prefixes")
-            if self.bot.guild_prefixes[str(ctx.guild.id)] == []:
-                del self.bot.guild_prefixes[str(ctx.guild.id)]
-            with open("prefixes.json", "w") as f:
-                json.dump(self.bot.guild_prefixes, f)
+        if arg in self.bot.customization[str(ctx.guild.id)]["prefixes"]:
+            self.bot.customization[str(ctx.guild.id)]["prefixes"].remove(arg)
+            await ctx.send("Removed prefix: " + arg)
         else:
-            await ctx.send("No custom prefies")
+            await ctx.send(f"That prefix does not exist. Try '{self.get_guild_prefix(ctx.guild)}prefixes' to get a list of prefixes")
+
+        with open("customization.json", "w") as f:
+            json.dump(self.bot.customization, f)
 
     @prefix.command(name="prefixes", description="veiw a list of prefixes")
     @commands.guild_only()
     async def prefixes(self, ctx):
         #if str(ctx.guild.id) in self.bot.guild_prefixes.keys():
-        server_prefixes = self.bot.guild_prefixes[str(ctx.guild.id)]
-        await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))        
-        
+        server_prefixes = self.bot.customization[str(ctx.guild.id)]["prefixes"]
+        await ctx.send("prefixes: " + ", ".join(server_prefixes))        
+    
+    @commands.command(name="setcolor", description="Set the bot's embed color", usage="[red] [green] [blue]")
+    @has_manage_guild()
+    async def setcolor(self, ctx, red: int, green: int, blue: int):
+        server_prefixes = self.bot.customization[str(ctx.guild.id)]["color"] = (red, green, blue)
+        with open("customization.json", "w") as f:
+            json.dump(self.bot.customization, f)
+        await ctx.send(f"Color set to {(red, green, blue)}")
+
     @commands.command(name="reload", description="Reload an extension", usage="[cog]", hidden=True)
     @commands.is_owner()
     async def _reload(self, ctx, cog="all"):

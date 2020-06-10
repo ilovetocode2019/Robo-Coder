@@ -17,7 +17,7 @@ class Notes(commands.Cog):
     @note.command(name="list", description="Check your sticky notes")
     async def notelist(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT ID, Title, Content FROM Notes WHERE Notes.Userid='{str(ctx.author.id)}'")
-        em = discord.Embed(title="Sticky Notes", color=0X00ff00)
+        em = discord.Embed(title="Sticky Notes", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         for row in rows:
             em.add_field(name=row[1], value=f"{row[2]} `{row[0]}`", inline=False)
         await ctx.send(embed=em)
@@ -42,7 +42,7 @@ class Notes(commands.Cog):
     @commands.group(invoke_without_command=True, description="See your todo list")
     async def todo(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT ID, Content, Status FROM Todo WHERE Todo.Userid='{ctx.author.id}'")
-        em = discord.Embed(title="Todo", description="", color=0X00ff00)
+        em = discord.Embed(title="Todo", description="", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         for row in rows:
             em.description += f"\n{row[2]}: {row[1]} `{row[0]}`"
 

@@ -18,7 +18,7 @@ class Reminders(commands.Cog):
     @commands.command(name="remindlist", description="Get a list of your reminders")
     async def remindlist(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT ID, Time, Content FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}'")
-        em = discord.Embed(title="Reminders", description="", color=0X00ff00)
+        em = discord.Embed(title="Reminders", description="", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         for row in rows:
             time = datetime.fromtimestamp(row[1])-datetime.now()
             em.add_field(name=f"in {time.days} days, {readable(time.seconds)}", value=f"{row[2]} `{row[0]}`", inline=False)

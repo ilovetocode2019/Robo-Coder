@@ -3,7 +3,6 @@ import discord
 import asyncio
 import random
 
-                
 class TicTacToe:
     def __init__(self, ctx, bot, msg, players):
         self.ctx = ctx
@@ -15,7 +14,7 @@ class TicTacToe:
     
     async def update(self, bottom):
         board = f"{self.board[0]}{self.board[1]}{self.board[2]}\n{self.board[3]}{self.board[4]}{self.board[5]}\n{self.board[6]}{self.board[7]}{self.board[8]}\n{bottom}"
-        em = discord.Embed(title="Tic Tac Toe", description="Tic Tac Toe game", color=0x00ff00)
+        em = discord.Embed(title="Tic Tac Toe", description="Tic Tac Toe game", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         em.add_field(name="Board", value=str(board), inline=False)
         em.set_footer(text=" vs ".join([f'{str(x)} ({self.playericos[x]})' for x in self.players]))
         await self.msg.edit(content=None, embed=em)
@@ -59,13 +58,15 @@ class TicTacToe:
         if self.board[0] in placed and self.board[1] in placed and self.board[2] in placed and self.board[3] in placed and self.board[4] in placed and self.board[5] in placed and self.board[6] in placed and self.board[7] in placed and self.board[8] in placed:
             return True
 
+class GameTimedOut(Exception):
+    pass
 
 class Games(commands.Cog):
     """Fun games."""
     def __init__(self, bot):
         self.bot = bot
         self.tttgames = {}
-    
+
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.command(name="tictactoe", description="A tic tac toe game", aliases=["ttt"], usage="[opponent]")
     async def ttt(self, ctx, *, opponent: discord.Member):
@@ -114,7 +115,7 @@ class Games(commands.Cog):
                 guessed += " "
             else:
                 guessed += "\N{WHITE LARGE SQUARE}"
-        em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
+        em = discord.Embed(title="Hangman", description="Hangman game", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         em.add_field(name="Tries remaining", value=str(lives))
         if len(incorrect) != 0:
             em.add_field(name="Already Guessed", value=", ".join(incorrect))
@@ -138,6 +139,7 @@ class Games(commands.Cog):
 
             #Get the awnser
             reaction, reaction_user = done.pop().result()
+
             ask = await ctx.send(f"{str(reaction_user)}: What is your guess?")
             def check(msg):
                 return msg.author.id == reaction_user.id and msg.channel == reaction.message.channel
@@ -152,7 +154,7 @@ class Games(commands.Cog):
                         guessed = guessed[:counter] + reply.content + guessed[counter+len(reply.content):]
                     counter += 1
 
-                em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
+                em = discord.Embed(title="Hangman", description="Hangman game", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
                 em.add_field(name="Tries remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Already Guessed", value=", ".join(incorrect))
@@ -164,7 +166,7 @@ class Games(commands.Cog):
                 incorrect.append(reply.content)
                 lives -= 1
                 incorrect_msg = await ctx.send("Your guess was incorrect", delete_after=5)
-                em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
+                em = discord.Embed(title="Hangman", description="Hangman game", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
                 em.add_field(name="Tries remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Already Guessed", value=", ".join(incorrect))
@@ -172,10 +174,6 @@ class Games(commands.Cog):
                 em.add_field(name="Status", value="Playing")
                 await game_msg.edit(embed=em)
 
-            if ctx.guild.me.guild_permissions.manage_messages:
-                await asyncio.sleep(5)
-                await reply.delete()
-                await ask.delete()
 
             async def clearup(reply, ask):
                 if ctx.guild.me.guild_permissions.manage_messages:
@@ -185,7 +183,7 @@ class Games(commands.Cog):
             self.bot.loop.create_task(clearup(reply, ask))
             
             if word == guessed:
-                em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
+                em = discord.Embed(title="Hangman", description="Hangman game", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
                 em.add_field(name="Tries remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Already Guessed", value=", ".join(incorrect))
@@ -195,7 +193,7 @@ class Games(commands.Cog):
                 return await ctx.send("You won hangman!")
 
             if lives == 0:
-                em = discord.Embed(title="Hangman", description="Hangman game", color=0x00FF00)
+                em = discord.Embed(title="Hangman", description="Hangman game", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
                 em.add_field(name="Tries remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Already Guessed", value=", ".join(incorrect))

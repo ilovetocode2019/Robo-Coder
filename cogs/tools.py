@@ -88,7 +88,7 @@ class Tools(commands.Cog):
                 releases_data = await response.json()
 
 
-        em = discord.Embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=0x00ff00)
+        em = discord.Embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         em.add_field(name="Language", value=data.get("language"))
         em.add_field(name="Branch", value=data.get("default_branch"))
         em.add_field(name="Stars", value=data.get("stargazers_count"))
@@ -116,7 +116,7 @@ class Tools(commands.Cog):
         if data.get("message") == "Not Found":
             return await ctx.send("User not found")
         
-        em = discord.Embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=0x00ff00)
+        em = discord.Embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
 
         em.add_field(name="Repositories", value=data.get("public_repos"))
         em.add_field(name="Gists", value=data.get("public_gists"))

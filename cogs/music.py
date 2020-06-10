@@ -325,7 +325,7 @@ class Player:
             
 
     def player_update(self):
-        em = discord.Embed(title="Player", color=0X00ff00)
+        em = discord.Embed(title="Player", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         if self.now != None:
             em.add_field(name="Playing", value=f"{str(self.now.song)} ({str(self.now.status)})", inline=False)
             
@@ -373,7 +373,7 @@ class Music(commands.Cog):
         player = self.players.get(ctx.guild.id)
         if not player:
             try:
-                em = discord.Embed(title="Player", color=0X00ff00)
+                em = discord.Embed(title="Player", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
                 em.add_field(name="Playing", value="No song is playing", inline=False)
                 msg = await ctx.send(embed=em)
                 await msg.add_reaction("⏸️")
@@ -771,7 +771,7 @@ class Music(commands.Cog):
             trail = "..."
         else:
             trail = ""
-        em = discord.Embed(title=song.title, description=song.description[:500]+trail, color=0X00ff00)
+        em = discord.Embed(title=song.title, description=song.description[:500]+trail, color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
 
         em.add_field(name="Duration", value=str(song.duration))
         em.add_field(name="Uploader", value=str(song.uploader))
