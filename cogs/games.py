@@ -106,7 +106,7 @@ class Games(commands.Cog):
         def check(msg):
             return msg.author == ctx.author and msg.channel.id == ctx.author.dm_channel.id
         message = await self.bot.wait_for("message", check=check)
-        word = message.content
+        word = message.content.lower()
         lives = 10
         guessed = ""
         incorrect = []
