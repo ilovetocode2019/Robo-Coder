@@ -29,11 +29,10 @@ def get_prefix(client, message):
         if client.get_cog("Meta"):
 
             if not isinstance(message.channel, discord.DMChannel):
-                if str(message.guild.id) in client.guild_prefixes.keys():
-                    prefixes += client.guild_prefixes[str(message.guild.id)]
+                if str(message.guild.id) in client.customization.keys():
+                    prefixes += client.customization[str(message.guild.id)]["prefixes"]
                 else:
-                    client.guild_prefixes[str(message.guild.id)] = ["r!"]
-                    prefixes += client.guild_prefixes[str(message.guild.id)]
+                    client.customization[str(message.guild.id)] = {"prefixes":["r!"], "color": (46, 184, 76)}
             else:
                 prefixes = ["r!"]
 
