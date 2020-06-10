@@ -138,7 +138,7 @@ class Games(commands.Cog):
 
             #Get the awnser
             reaction, reaction_user = done.pop().result()
-            ask = await ctx.send("What is your guess?")
+            ask = await ctx.send(f"{str(reaction_user)}: What is your guess?")
             def check(msg):
                 return msg.author.id == reaction_user.id and msg.channel == reaction.message.channel
             reply = await self.bot.wait_for("message", check=check)
