@@ -42,7 +42,7 @@ class Moderation(commands.Cog):
 
         msg = "user: " + str(message.author) + "\nDeleted: " + str(message.content)
         title = "Deletion"
-        em = discord.Embed(title=title, description=msg, color=0X00ff00)
+        em = discord.Embed(title=title, description=msg, color=discord.Colour.from_rgb(*self.bot.customization[str(message.guild.id)]["color"]))
         em.set_author(name = str(message.author.display_name), icon_url = message.author.avatar_url)
         em.set_footer(text=self.bot.user.name)
         my_msg = await channel.send(embed = em)
@@ -56,7 +56,7 @@ class Moderation(commands.Cog):
 
         msg = "user: " + str(before.author) + "\nEdited: " + str(before.content) + "\nTo: " + str(after.content)
         title = "Edit"
-        em = discord.Embed(title = title, description = msg, color=0X00ff00)
+        em = discord.Embed(title = title, description = msg, color=discord.Colour.from_rgb(*self.bot.customization[str(before.guild.id)]["color"]))
         em.set_author(name = str(before.author.display_name), icon_url = before.author.avatar_url)
         em.set_footer(text=self.bot.user.name)
         my_msg = await channel.send(embed = em)
