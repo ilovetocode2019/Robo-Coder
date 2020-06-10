@@ -73,6 +73,8 @@ class Tools(commands.Cog):
         final_url = f'<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>'
         await ctx.send(final_url)
 
+
+    @commands.cooldown(1, 20)
     @commands.group(name="github", description="Get infromation about a GitHub repository", usage="[username/repositpry]", invoke_without_command=True)
     async def github(self, ctx, repo):
         async with aiohttp.ClientSession() as session:
@@ -103,6 +105,8 @@ class Tools(commands.Cog):
         em.set_thumbnail(url=data.get("owner").get("avatar_url"))
         await ctx.send(embed=em)
 
+
+    @commands.cooldown(1, 20)
     @github.command(name="user", description="Get a GitHub user", usage="[user]")
     async def github_user(self, ctx, user):
         async with aiohttp.ClientSession() as session:
