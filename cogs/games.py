@@ -129,7 +129,7 @@ class Games(commands.Cog):
                                     asyncio.ensure_future(self.bot.wait_for('reaction_add', check=check)),
                                     asyncio.ensure_future(self.bot.wait_for('reaction_remove', check=check))
                     ]
-            done, pending = await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
+            done, pending = await asyncio.wait(tasks, timeout=180, return_when=asyncio.FIRST_COMPLETED)
             for task in pending:
                 task.cancel()
 
