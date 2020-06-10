@@ -81,7 +81,7 @@ class RoboCoder(commands.Bot):
     async def on_ready(self):
         logging.info(f"Logged in as {self.user.name} - {self.user.id}")
         for user in self.get_all_members():
-            rows = rows = await self.db.fetch(f"SELECT Status, Time FROM Status_Updates WHERE Status_Updates.Userid='{user.id}';")
+            rows = await self.db.fetch(f"SELECT Status, Time FROM Status_Updates WHERE Status_Updates.Userid='{user.id}';")
             if len(rows) != 0:
                 if rows[-1][0] != str(user.status):
                     timestamp = datetime.now().timestamp()
