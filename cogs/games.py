@@ -14,7 +14,7 @@ class TicTacToe:
     
     async def update(self, bottom):
         board = f"{self.board[0]}{self.board[1]}{self.board[2]}\n{self.board[3]}{self.board[4]}{self.board[5]}\n{self.board[6]}{self.board[7]}{self.board[8]}\n{bottom}"
-        em = discord.Embed(title="Tic Tac Toe", description="Tic Tac Toe game", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+        em = discord.Embed(title="Tic Tac Toe", description="Tic Tac Toe game", color=discord.Colour.from_rgb(*self.bot.customization[str(self.ctx.guild.id)]["color"]))
         em.add_field(name="Board", value=str(board), inline=False)
         em.set_footer(text=" vs ".join([f'{str(x)} ({self.playericos[x]})' for x in self.players]))
         await self.msg.edit(content=None, embed=em)
@@ -65,8 +65,6 @@ class Games(commands.Cog):
     """Fun games."""
     def __init__(self, bot):
         self.bot = bot
-        self.tttgames = {}
-
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.command(name="tictactoe", description="A tic tac toe game", aliases=["ttt"], usage="[opponent]")
     async def ttt(self, ctx, *, opponent: discord.Member):
@@ -82,19 +80,19 @@ class Games(commands.Cog):
         await msg.add_reaction("9\N{combining enclosing keycap}")
         players = [ctx.author, opponent]
         random.shuffle(players)
-        self.tttgames[ctx.guild.id] = TicTacToe(ctx, self.bot, msg, players)
-        await self.tttgames[ctx.guild.id].update(ctx.author)
+        tttgame = TicTacToe(ctx, self.bot, msg, players)
+        await tttgame.update(ctx.author)
         game = True
         while game:
-            for user in self.tttgames[ctx.guild.id].players:
-                await self.tttgames[ctx.guild.id].turn(user)
-                won = await self.tttgames[ctx.guild.id].checkwin(user)
+            for user in tttgame.players:
+                await tttgame.turn(user)
+                won = await tttgame.checkwin(user)
                 if won == True:
-                    await self.tttgames[ctx.guild.id].update(str(user) + " won 🎉!")
+                    await tttgame.update(str(user) + " won 🎉!")
                     game = False
                     break
-                if await self.tttgames[ctx.guild.id].checktie() == True:
-                    await self.tttgames[ctx.guild.id].update("The game was a tie")
+                if await tttgame.checktie() == True:
+                    await tttgame.update("The game was a tie")
                     game = False
                     break
 
