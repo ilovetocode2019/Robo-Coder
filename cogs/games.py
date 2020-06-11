@@ -61,6 +61,7 @@ class Games(commands.Cog):
     """Fun games."""
     def __init__(self, bot):
         self.bot = bot
+    @commands.guild_only()
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.command(name="tictactoe", description="A tic tac toe game", aliases=["ttt"], usage="[opponent]")
     async def ttt(self, ctx, *, opponent: discord.Member):
@@ -94,7 +95,8 @@ class Games(commands.Cog):
                     await tttgame.update("The game was a tie")
                     game = False
                     break
-
+    
+    @commands.guild_only()
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.command(name="hangman", description="A hangman game")
     async def hangman(self, ctx):
