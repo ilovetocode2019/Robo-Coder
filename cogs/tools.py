@@ -325,14 +325,6 @@ class Tools(commands.Cog):
 
 
 
-
-    @commands.command(name="purge", description="Delete a mass amount of messages", usage="[amount]", hidden=True)
-    @commands.has_permissions(manage_messages=True)
-    async def purge(self, ctx, *, arg):
-        await ctx.send("Deleting " + str(arg) + " messages......")
-        await asyncio.sleep(4)
-        await ctx.channel.purge(limit=int(arg)+1)
-
     @commands.command(name="serverinfo", description="Get info on the server", aliases=["guildinfo"])
     @commands.guild_only()
     async def serverinfo(self, ctx):
