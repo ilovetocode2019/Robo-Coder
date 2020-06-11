@@ -14,6 +14,7 @@ import pickle
 import json
 import sys
 import importlib
+import inspect
 from .utils import time
 
 def has_manage_guild():
@@ -28,6 +29,19 @@ def has_manage_guild():
             or permissions
         )
     return commands.check(predicate)
+
+async def run_command_checks(checks, ctx):
+    try:
+        for check in checks:
+            if inspect.iscoroutinefunction(check):
+                if not await check(ctx):
+                    return False
+            else:
+                if not check(ctx):
+                    return False
+        return True
+    except:
+        return False
 
 class CogHelp(menus.ListPageSource):
     def __init__(self, data, ctx):
@@ -47,42 +61,45 @@ class CogHelp(menus.ListPageSource):
 
         for i, command in enumerate(entries, start=offset):
             if command.hidden != True:
-                if not command.usage:
-                    usage = ""
-                else:
-                    usage = f"{command.usage}"
+                if await run_command_checks(command.checks, self.ctx):
+                    if not command.usage:
+                        usage = ""
+                    else:
+                        usage = f"{command.usage}"
 
-                if not command.description:
-                    description = "No desciption"
-                else:
-                    description = command.description
+                    if not command.description:
+                        description = "No desciption"
+                    else:
+                        description = command.description
 
-                if not command.aliases:
-                    aliases = ""
-                else:
-                    aliases = "("+', '.join(command.aliases)+")"
+                    if not command.aliases:
+                        aliases = ""
+                    else:
+                        aliases = "("+', '.join(command.aliases)+")"
 
-                em.description += f"\n\n{command.name} {usage} - {description} {aliases}"
+                    em.description += f"\n\n{command.name} {usage} - {description} {aliases}"
 
-                if isinstance(command, commands.Group):
-                    for subcommand in command.commands:
-                        if not subcommand.usage:
-                            usage = ""
-                        else:
-                            usage = f"{subcommand.usage}"
+                    if isinstance(command, commands.Group):
+                            for subcommand in command.commands:
+                                if await run_command_checks(subcommand.checks, self.ctx):
+                                    if not subcommand.usage:
+                                        usage = ""
+                                    else:
+                                        usage = f"{subcommand.usage}"
 
-                        if not subcommand.description:
-                            description = "No desciption"
-                        else:
-                            description = subcommand.description
+                                    if not subcommand.description:
+                                        description = "No desciption"
+                                    else:
+                                        description = subcommand.description
 
-                        if not subcommand.aliases:
-                            aliases = ""
-                        else:
-                            aliases = "("+', '.join(subcommand.aliases)+")"
+                                    if not subcommand.aliases:
+                                        aliases = ""
+                                    else:
+                                        aliases = "("+', '.join(subcommand.aliases)+")"
 
-                        em.description += f"\n\n{command.name} {subcommand.name} {usage} - {description} {aliases}"
-        
+                                    em.description += f"\n\n{command.name} {subcommand.name} {usage} - {description} {aliases}"
+
+
         em.set_footer(text = f"{self.bot.user.name}", icon_url=self.bot.user.avatar_url)
         return em
 
