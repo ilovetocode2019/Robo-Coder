@@ -29,22 +29,18 @@ class TicTacToe:
                                 asyncio.ensure_future(self.bot.wait_for('reaction_add', check=check)),
                                 asyncio.ensure_future(self.bot.wait_for('reaction_remove', check=check))
                 ]
-        try:
-            #Wait for a reaction
-            done, pending = await asyncio.wait(tasks, timeout=180, return_when=asyncio.FIRST_COMPLETED)
-            for task in pending:
-                task.cancel()
+        #Wait for a reaction
+        done, pending = await asyncio.wait(tasks, timeout=180, return_when=asyncio.FIRST_COMPLETED)
+        for task in pending:
+            task.cancel()
 
-                if len(done) == 0:
-                    raise asyncio.TimeoutError()
+            if len(done) == 0:
+                raise asyncio.TimeoutError()
 
-            #Get the awnser
-            reaction, reaction_user = done.pop().result()
-            self.board[reactionconvert[str(reaction.emoji)]] = self.playericos[user]
-            await self.update("It's " + str(user) + "'s turn")
-        except asyncio.TimeoutError:
-            #This is what happens if the program times out
-            raise Exception("The tic tac toe game has timed out")
+        #Get the awnser
+        reaction, reaction_user = done.pop().result()
+        self.board[reactionconvert[str(reaction.emoji)]] = self.playericos[user]
+        await self.update("It's " + str(user) + "'s turn")
 
     async def checkwin(self, user):
         win_commbinations = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]
@@ -85,7 +81,10 @@ class Games(commands.Cog):
         game = True
         while game:
             for user in tttgame.players:
-                await tttgame.turn(user)
+                try:
+                    await tttgame.turn(user)
+                except asyncio.TimeoutError:
+                    return await ctx.send("Tic Tac Toe has timed out")
                 won = await tttgame.checkwin(user)
                 if won == True:
                     await tttgame.update(str(user) + " won 🎉!")
@@ -129,11 +128,15 @@ class Games(commands.Cog):
                                     asyncio.ensure_future(self.bot.wait_for('reaction_remove', check=check))
                     ]
             done, pending = await asyncio.wait(tasks, timeout=180, return_when=asyncio.FIRST_COMPLETED)
-            for task in pending:
-                task.cancel()
+            try:
+                for task in pending:
+                    task.cancel()
 
-                if len(done) == 0:
-                    raise asyncio.TimeoutError()
+                    if len(done) == 0:
+                        raise asyncio.TimeoutError()
+            except asyncio.TimeoutError:
+                return await ctx.send("Hangman has timed out")
+            
 
             #Get the awnser
             reaction, reaction_user = done.pop().result()
