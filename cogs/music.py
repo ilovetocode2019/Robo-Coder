@@ -325,7 +325,7 @@ class Player:
             
 
     def player_update(self):
-        em = discord.Embed(title="Player", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+        em = discord.Embed(title="Player", color=discord.Colour.from_rgb(*self.bot.customization[str(self.ctx.guild.id)]["color"]))
         if self.now != None:
             em.add_field(name="Playing", value=f"{str(self.now.song)} ({str(self.now.status)})", inline=False)
             
