@@ -174,6 +174,8 @@ class Meta(commands.Cog):
             return await ctx.send(f":x: You are missing some argument(s). The usage for the command is: `{ctx.command.usage}`")
         elif isinstance(e, discord.ext.commands.errors.BadArgument):
             return await ctx.send(":x: You are giving a bad argument")
+        elif isinstance(e, discord.ext.commands.MaxConcurrencyReached):
+            return await ctx.send(":x: sorry, this command has reached the max uses at once for the guild")
         elif isinstance(e, discord.ext.commands.errors.CommandNotFound):
             return
 
