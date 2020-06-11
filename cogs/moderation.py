@@ -31,6 +31,20 @@ class Moderation(commands.Cog):
             return False
         else:
             return True
+    
+    @commands.Cog.listener("on_member_update")
+    async def _on_member_update(self, before, after):
+        if not str(before.guild.id) in self.bot.logging or before.bot or before.nick == after.nick:
+            return False
+            
+        chanid = self.bot.logging[str(before.guild.id)]
+        channel = self.bot.get_channel(int(chanid))
+
+        em = discord.Embed(title="Nickname update", value=str(before.name), color=discord.Colour.from_rgb(*self.bot.customization[str(before.guild.id)]["color"]))
+        em.add_field(name="Before", value=str(before.nick))
+        em.add_field(name="Affter", value=str(after.nick))
+        em.set_footer(text=self.bot.user.name)
+        await channel.send(embed=em)
 
     @commands.Cog.listener("on_message_delete")
     async def _deletion_detector(self, message):
@@ -57,6 +71,7 @@ class Moderation(commands.Cog):
         title = "Edit"
         em = discord.Embed(title = title, description = msg, color=discord.Colour.from_rgb(*self.bot.customization[str(before.guild.id)]["color"]))
         em.set_author(name = str(before.author.display_name), icon_url = before.author.avatar_url)
+        em.add_field(name="Jump!", value=f"https://discord.com/channels/{after.guild.id}/{after.channel.id}/{after.id}")
         em.set_footer(text=self.bot.user.name)
         my_msg = await channel.send(embed = em)
 
