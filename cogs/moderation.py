@@ -6,7 +6,6 @@ import asyncio
 import pickle
 
 class Moderation(commands.Cog):
-    """Moderation commands."""
     def __init__(self, bot):
         self.bot = bot
         self.open_channels = []
@@ -78,6 +77,25 @@ class Moderation(commands.Cog):
         with open("logcha.json", "w") as f:
             json.dump(self.bot.logging, f)
         await ctx.send("Log disabled for this channel")
+
+    @commands.command(name="kick", description="Kick a member from the server", usage="[user]")
+    @commands.has_permissions(kick_members=True)
+    async def kick(self, ctx, *, member:discord.Member):
+        await member.kick()
+        await ctx.send(f"{member.name} kicked")
+
+    @commands.command(name="ban", description="Ban a member from the server", usage="[user]")
+    @commands.has_permissions(ban_members=True)
+    async def ban(self, ctx, *, member:discord.Member):
+        await member.ban()
+        await ctx.send(f"{member.name} banned")
+
+    @commands.command(name="purge", description="Delete a mass amount of messages", usage="[amount]", hidden=True)
+    @commands.has_permissions(manage_messages=True)
+    async def purge(self, ctx, *, arg):
+        await ctx.send("Deleting " + str(arg) + " messages......")
+        await asyncio.sleep(4)
+        await ctx.channel.purge(limit=int(arg)+1)
 
         
 def setup(bot):
