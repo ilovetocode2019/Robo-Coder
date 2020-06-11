@@ -21,7 +21,7 @@ class Reminders(commands.Cog):
         em = discord.Embed(title="Reminders", description="", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         for row in rows:
             time = datetime.fromtimestamp(row[1])-datetime.now()
-            em.add_field(name=f"in {time.days} days, {readable(time.seconds)}", value=f"{row[2]} `{row[0]}`", inline=False)
+            em.add_field(name=f"in {time.days} days, {utils_time.readable(time.seconds)}", value=f"{row[2]} `{row[0]}`", inline=False)
         await ctx.send(embed=em)
 
     @commands.command(name="remind", description="Create a reminder \nExample: r!remind 1day, Do something", usage="[time], [reminer]")
