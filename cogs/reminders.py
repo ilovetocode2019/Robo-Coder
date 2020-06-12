@@ -15,17 +15,8 @@ class Reminders(commands.Cog):
     def cog_unload(self):
         self.timer.cancel()
 
-    @commands.command(name="remindlist", description="Get a list of your reminders")
-    async def remindlist(self, ctx):
-        rows = await self.bot.db.fetch(f"SELECT ID, Time, Content FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}'")
-        em = discord.Embed(title="Reminders", description="", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
-        for row in rows:
-            time = datetime.fromtimestamp(row[1])-datetime.now()
-            em.add_field(name=f"in {time.days} days, {utils_time.readable(time.seconds)}", value=f"{row[2]} `{row[0]}`", inline=False)
-        await ctx.send(embed=em)
-
-    @commands.command(name="remind", description="Create a reminder \nExample: r!remind 1day, Do something", usage="[time], [reminer]")
-    async def add(self, ctx, *, reminder_data):
+    @commands.group(name="remind", description="Create a reminder \nExample: r!remind 1day, Do something", usage="[time], [reminer]", invoke_without_command=True)
+    async def remind(self, ctx, *, reminder_data):
         rows = await self.bot.db.fetch(f"SELECT ID FROM Reminders;")
         if len(rows) == 0:
             rows = [[0]]
@@ -58,13 +49,22 @@ class Reminders(commands.Cog):
         remindtime = sometime-datetime.utcnow()
         await ctx.send(f"✅ I will remind you in {remindtime.days} days, {utils_time.readable(remindtime.seconds)}")
 
-    @commands.command(name="unremind", description="Remove a reminder", usage="[id]")
+    @remind.command(name="delete", description="Remove a reminder", aliases=["remove"], usage="[id]")
     async def remindremove(self, ctx, *, content: int):
         rows = await self.bot.db.fetch(f"SELECT * FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}' and Reminders.ID={content};")
         if len(rows) == 0:
             return await ctx.send("That reminder doesn't exist")
         await self.bot.db.execute(f"DELETE FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}' and Reminders.ID={content};")
         await ctx.send("Reminder deleted")
+
+    @remind.command(name="list", description="Get a list of your reminders")
+    async def remindlist(self, ctx):
+        rows = await self.bot.db.fetch(f"SELECT ID, Time, Content FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}'")
+        em = discord.Embed(title="Reminders", description="", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+        for row in rows:
+            time = datetime.fromtimestamp(row[1])-datetime.now()
+            em.add_field(name=f"in {time.days} days, {utils_time.readable(time.seconds)}", value=f"{row[2]} `{row[0]}`", inline=False)
+        await ctx.send(embed=em)
 
 
     async def timesend(self, seconds, channel, text):
