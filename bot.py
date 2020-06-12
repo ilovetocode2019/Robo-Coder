@@ -57,7 +57,7 @@ class RoboCoder(commands.Bot):
         )
 
 
-        self.cogs_to_add = ["cogs.meta", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders", "cogs.status"]
+        self.cogs_to_add = ["cogs.meta", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders"]
 
         self.loop.create_task(self.load_cogs_to_add())
         self.loop.create_task(self.on_start())
@@ -80,16 +80,6 @@ class RoboCoder(commands.Bot):
 
     async def on_ready(self):
         logging.info(f"Logged in as {self.user.name} - {self.user.id}")
-        for user in self.get_all_members():
-            rows = await self.db.fetch(f"SELECT Status, Time FROM Status_Updates WHERE Status_Updates.Userid='{user.id}';")
-            if len(rows) != 0:
-                if rows[-1][0] != str(user.status):
-                    timestamp = datetime.now().timestamp()
-                    await self.db.execute(f'''INSERT INTO Status_Updates(Userid, Status, Time) VALUES ($1, $2, $3)''', str(user.id), str(user.status), int(timestamp))
-            else:
-                timestamp = datetime.now().timestamp()
-                await self.db.execute(f'''INSERT INTO Status_Updates(Userid, Status, Time) VALUES ($1, $2, $3)''', str(user.id), str(user.status), int(timestamp))
-
 
 
     async def on_start(self):
@@ -124,15 +114,6 @@ class RoboCoder(commands.Bot):
                 Content text
             )
         ''')
-
-        await self.db.execute('''
-            CREATE TABLE IF NOT EXISTS Status_Updates(
-                Userid text,
-                Status text,
-                Time int
-            )
-        ''')
-
 
 bot = RoboCoder()
 bot.run(bot.config["token"])
