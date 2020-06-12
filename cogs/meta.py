@@ -193,6 +193,8 @@ class Meta(commands.Cog):
             return await ctx.send(":x: You are giving a bad argument")
         elif isinstance(e, discord.ext.commands.MaxConcurrencyReached):
             return await ctx.send(f":x: sorry, this command can only be used {e.number} time(s) at once in a guild")
+        elif isinstance(e, discord.ext.commands.errors.CommandOnCooldown):
+            return await ctx.send(f"You are on cooldown. Try again in {e.retry_after} seconds")
         elif isinstance(e, discord.ext.commands.errors.CommandNotFound):
             return
 
