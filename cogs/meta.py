@@ -57,7 +57,10 @@ class CogHelp(menus.ListPageSource):
             cogdescription = ""
         else:
             cogdescription = self.cog.description
-        em = discord.Embed(title=self.cog.qualified_name, description=cogdescription+"\n", color=discord.Colour.from_rgb(*self.bot.customization[str(self.ctx.guild.id)]["color"]))
+        if isinstance(self.ctx.channel, discord.DMChannel):
+            em = discord.Embed(title=self.cog.qualified_name, description=cogdescription+"\n")
+        else:
+            em = discord.Embed(title=self.cog.qualified_name, description=cogdescription+"\n", color=discord.Colour.from_rgb(*self.bot.customization[str(self.ctx.guild.id)]["color"]))
 
         for i, command in enumerate(entries, start=offset):
             if command.hidden != True:
@@ -111,7 +114,10 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         emojis = {"Conversation":"😃", "Meta":"⚙️", "Moderation":"🚓", "Music":"🎵", "Tools":"🧰", "Fun":"🎡", "Games":"🎮", "Notes":"📓", "Reminders":"🗒️"}
         ctx = self.context
         bot = ctx.bot
-        em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument", color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
+        if isinstance(ctx.channel, discord.DMChannel):
+            em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument")
+        else:
+            em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument", color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
         for name, cog in bot.cogs.items():
             if not cog.description:
                 description = "No description"
@@ -144,8 +150,10 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             usage = ""
         else:
             usage = command.usage
-
-        embed = discord.Embed(title=str(command) + " " + usage, description=command.description, color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
+        if isinstance(ctx.channel, discord.DMChannel):
+            embed = discord.Embed(title=str(command) + " " + usage, description=command.description)
+        else:
+            embed = discord.Embed(title=str(command) + " " + usage, description=command.description, color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
         if command.help != None:
             embed.add_field(name="Detailed Help:", value=command.help, inline=False)
         if command.aliases != []:
