@@ -50,15 +50,16 @@ class Stats(commands.Cog):
         rows = await self.bot.db.fetch(f"SELECT * FROM Commands")
         usage = {"other":0}
         for row in rows:
-            if ctx.author.id in [x.id for x in ctx.guild.members]:
-                guild_name = self.bot.get_guild(int(row[1])).name
-                if guild_name in usage:
-                    usage[guild_name] += 1
+            if self.bot.get_guild(int(row[1])) != None:
+                if ctx.author.id in [x.id for x in self.bot.get_guild(int(row[1])).members]:
+                    guild_name = self.bot.get_guild(int(row[1])).name
+                    if guild_name in usage:
+                        usage[guild_name] += 1
+                    else:
+                        usage[guild_name] = 1
+                
                 else:
-                    usage[guild_name] = 1
-            
-            else:
-                usage["other"] += 1
+                    usage["other"] += 1
 
         await ctx.send("\n".join([f"{x} ({usage[x]})" for x in usage]))
 
