@@ -57,7 +57,7 @@ class RoboCoder(commands.Bot):
         )
 
 
-        self.cogs_to_add = ["cogs.meta", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders"]
+        self.cogs_to_add = ["cogs.meta", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders", "cogs.stats"]
 
         self.loop.create_task(self.load_cogs_to_add())
         self.loop.create_task(self.on_start())
@@ -112,6 +112,15 @@ class RoboCoder(commands.Bot):
                 Msgid text,
                 Time int,
                 Content text
+            )
+        ''')
+
+        await self.db.execute('''
+            CREATE TABLE IF NOT EXISTS Commands(
+                Userid text,
+                Guildid text,
+                Command text,
+                Time int
             )
         ''')
 
