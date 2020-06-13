@@ -166,7 +166,6 @@ class Meta(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
 
-        self.activity.start()
         self._original_help_command = bot.help_command
         bot.help_command = RoboCoderHelpCommand()
         bot.help_command.cog = self
@@ -378,10 +377,6 @@ class Meta(commands.Cog):
         await ctx.send("Restarting...")
         os.startfile("bot.py")
         await self.bot.logout()
-
-    @tasks.loop(minutes=30)
-    async def activity(self):
-        await self.bot.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.playing, name=random.choice(["Minecraft", "Rocket League", "Visual Studio Code", "Celeste", "INSIDE", "Portal", "Portal 2", None])))
 
 
 
