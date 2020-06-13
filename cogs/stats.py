@@ -22,6 +22,8 @@ class Stats(commands.Cog):
     @commands.guild_only()
     async def stats(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT * FROM Commands WHERE Commands.Guildid='{ctx.guild.id}';")
+        if not len(rows):
+            return await ctx.send("No commands have been used")
         users = {}
         for row in rows:
             if int(row[0]) not in users:
