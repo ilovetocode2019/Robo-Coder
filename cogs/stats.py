@@ -47,8 +47,20 @@ class Stats(commands.Cog):
     @stats_group.command(name="global")
     @commands.is_owner()
     async def stats_global(self, ctx):
-        rows = await self.bot.db.fetch(f"SELECT * FROM Commands WHERE NOT Commands.Guildid='{ctx.guild.id}'")
-        await ctx.send(f"{len(rows)} commands have been used not on this server")
+        rows = await self.bot.db.fetch(f"SELECT * FROM Commands")
+        usage = {"other":0}
+        for row in rows:
+            if ctx.author.id in [x.id for x in ctx.guild.members]:
+                guild_name = self.bot.get_guild(int(row[1])).name
+                if guild_name in usage:
+                    usage[guild_name] += 1
+                else:
+                    usage[guild_name] = 1
+            
+            else:
+                usage["other"] += 1
+
+        await ctx.send("\n".join([f"{x} ({usage[x]})" for x in usage]))
 
     @tasks.loop(seconds=15)
     async def log_commands(self):
