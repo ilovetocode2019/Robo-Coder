@@ -18,9 +18,9 @@ class Stats(commands.Cog):
     async def on_command(self, ctx):
         self.queries.append(("INSERT INTO Commands(Userid, Guildid, Command, Time) Values($1, $2, $3, $4)", str(ctx.author.id), str(ctx.guild.id), str(ctx.command), int(datetime.timestamp(datetime.now()))))
     
-    @commands.command(name="stats", description="Look at command usage for the current guild")
+    @commands.group(name="stats", description="Look at command usage for the current guild", invoke_without_command=True)
     @commands.guild_only()
-    async def stats(self, ctx):
+    async def stats_group(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT * FROM Commands WHERE Commands.Guildid='{ctx.guild.id}';")
         if not len(rows):
             return await ctx.send("No commands have been used")
@@ -43,6 +43,11 @@ class Stats(commands.Cog):
         em.add_field(name="Top Commands Used", value="\n".join([f"{x} ({commands_used[x]})" for x in reversed(sorted(commands_used, key=commands_used.get))][:5]))
         em.add_field(name="Top Command Users", value="\n".join([f"{str(ctx.guild.get_member(x))} ({users[x]})" for x in reversed(sorted(users, key=users.get))][:5]))
         await ctx.send(embed=em)
+    
+    @stats_group.command(name="global")
+    async def stats_global(self, ctx):
+        rows = await self.bot.db.fetch(f"SELECT * FROM Commands WHERE NOT Commands.Guildid='{ctx.guild.id}'")
+        await ctx.send(f"{len(rows)} commands have been used not on this server")
 
     @tasks.loop(seconds=15)
     async def log_commands(self):
