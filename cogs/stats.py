@@ -22,7 +22,25 @@ class Stats(commands.Cog):
     @commands.guild_only()
     async def stats(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT * FROM Commands WHERE Commands.Guildid='{ctx.guild.id}';")
-        await ctx.send(f"{len(rows)} commands have been used on this server")
+        users = {}
+        for row in rows:
+            if int(row[0]) not in users:
+                users[int(row[0])] = 1
+            else:
+                users[int(row[0])] += 1
+
+        commands_used = {}
+        for row in rows:
+            if row[2] not in commands_used:
+                commands_used[row[2]] = 1
+            else:
+                commands_used[row[2]] += 1
+
+
+        em = discord.Embed(title="Stats", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+        em.add_field(name="Top Commands Used", value="\n".join([f"{x} ({commands_used[x]})" for x in reversed(sorted(commands_used, key=commands_used.get))][:5]))
+        em.add_field(name="Top Command Users", value="\n".join([f"{str(ctx.guild.get_member(x))} ({users[x]})" for x in reversed(sorted(users, key=users.get))][:5]))
+        await ctx.send(embed=em)
 
     @tasks.loop(seconds=15)
     async def log_commands(self):
