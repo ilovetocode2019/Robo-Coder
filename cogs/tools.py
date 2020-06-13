@@ -31,7 +31,7 @@ class DocsPages(menus.ListPageSource):
         else:
             em = discord.Embed(title=f"Results for search '{self.search}'", description="", color=discord.Colour.from_rgb(*self.bot.customization[str(self.ctx.guild.id)]["color"]))
         for i, v in enumerate(entries, start=offset):
-            em.description += "\n["+v[0]+"]("+v[1]+")"
+            em.description += "\n[`"+v[0]+"`]("+v[1]+")"
         em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{int(len(self.data)/10)+1}")
 
         return em
