@@ -45,6 +45,7 @@ class Stats(commands.Cog):
         await ctx.send(embed=em)
     
     @stats_group.command(name="global")
+    @commands.is_owner()
     async def stats_global(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT * FROM Commands WHERE NOT Commands.Guildid='{ctx.guild.id}'")
         await ctx.send(f"{len(rows)} commands have been used not on this server")
