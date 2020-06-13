@@ -111,7 +111,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
     def get_command_signature(self, command):
         return '{0.clean_prefix}{1.qualified_name}{1.signature}'.format(self, command)
     async def send_bot_help(self, mapping):
-        emojis = {"Conversation":"😃", "Meta":"⚙️", "Moderation":"🚓", "Music":"🎵", "Tools":"🧰", "Fun":"🎡", "Games":"🎮", "Notes":"📓", "Reminders":"🗒️"}
+        emojis = {"Conversation":"😃", "Meta":"⚙️", "Moderation":"🚓", "Music":"🎵", "Tools":"🧰", "Fun":"🎡", "Games":"🎮", "Notes":"📓", "Reminders":"🗒️", "Stats":"📈"}
         ctx = self.context
         bot = ctx.bot
         if isinstance(ctx.channel, discord.DMChannel):
@@ -181,7 +181,6 @@ class Meta(commands.Cog):
 
 
     def cog_unload(self):
-        self.activity.cancel()
         self.bot.help_command = self._original_help_command
 
     @commands.Cog.listener("on_command_error")
