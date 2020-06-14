@@ -48,7 +48,7 @@ class Stats(commands.Cog):
     @commands.is_owner()
     async def stats_global(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT * FROM Commands")
-        usage = {"other":0}
+        usage = {"Other":0}
         for row in rows:
             if self.bot.get_guild(int(row[1])) != None:
                 if ctx.author.id in [x.id for x in self.bot.get_guild(int(row[1])).members]:
