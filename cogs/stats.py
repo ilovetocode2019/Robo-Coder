@@ -16,7 +16,7 @@ class Stats(commands.Cog):
     @commands.Cog.listener("on_command_completion")
     @commands.guild_only()
     async def on_command(self, ctx):
-        self.queries.append(("INSERT INTO Commands(Userid, Guildid, Command, Time) Values($1, $2, $3, $4)", str(ctx.author.id), str(ctx.guild.id), str(ctx.command), int(datetime.timestamp(datetime.now()))))
+        self.queries.append(("INSERT INTO Commands(Userid, Guildid, Command, Time) Values($1, $2, $3, $4)", str(ctx.author.id), str(ctx.guild.id), str(ctx.command), int(datetime.timestamp(datetime.utcnow()))))
     
     @commands.group(name="stats", description="Look at command usage for the current guild", invoke_without_command=True)
     @commands.guild_only()
