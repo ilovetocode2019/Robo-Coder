@@ -87,7 +87,7 @@ class RoboCoder(commands.Bot):
         self.db = await asyncpg.create_pool(self.config["sqllogin"])
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS Notes(
-                ID int,
+                Id serial PRIMARY KEY,
                 Userid text,
                 Title text,
                 Content text
@@ -96,7 +96,7 @@ class RoboCoder(commands.Bot):
 
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS Todo(
-                ID int,
+                Id serial PRIMARY KEY,
                 Userid text,
                 Content text,
                 Status text
@@ -105,7 +105,7 @@ class RoboCoder(commands.Bot):
 
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS Reminders(
-                ID int,
+                Id serial PRIMARY KEY,
                 Userid text,
                 Guildid text,
                 Channid text,

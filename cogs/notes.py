@@ -27,10 +27,7 @@ class Notes(commands.Cog):
 
     @note.command(name="add", description="Add a note", usage="[title] [content]")
     async def noteadd(self, ctx, title, *, content):
-        rows = await self.bot.db.fetch(f"SELECT ID FROM Notes;")
-        if len(rows) == 0:
-            rows = [[0]]
-        await self.bot.db.execute(f'''INSERT INTO Notes(ID, Userid, Title, Content) VALUES ($1, $2, $3, $4)''', rows[-1][0]+1, str(ctx.author.id), str(title), str(content))
+        await self.bot.db.execute(f'''INSERT INTO Notes(Userid, Title, Content) VALUES ($1, $2, $3)''', str(ctx.author.id), str(title), str(content))
         await ctx.send("Note created")
 
     @note.command(name="delete", description="Remove a note", usage="[id]", aliases=["remove"])
@@ -56,11 +53,7 @@ class Notes(commands.Cog):
 
     @todo.command(name="add", description="Add something to your todo list", usage="[todo]")
     async def todoadd(self, ctx, *, content):
-        rows = await self.bot.db.fetch(f"SELECT ID FROM Todo;")
-        if len(rows) == 0:
-            rows = [[0]]
-        
-        await self.bot.db.execute(f'''INSERT INTO Todo(ID, Userid, Content, Status) VALUES ($1, $2, $3, $4)''', rows[-1][0]+1, str(ctx.author.id), str(content), "Not started")
+        await self.bot.db.execute(f'''INSERT INTO Todo(Userid, Content, Status) VALUES ($1, $2, $3)''', str(ctx.author.id), str(content), "Not started")
         await ctx.send("Todo list updated")
 
     @todo.command(name="start", description="Start something in your todo list", usage="[id]")

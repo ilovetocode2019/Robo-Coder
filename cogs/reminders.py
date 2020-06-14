@@ -17,9 +17,6 @@ class Reminders(commands.Cog):
 
     @commands.group(name="remind", description="Create a reminder \nExample: r!remind 1day, Do something", usage="[time], [reminer]", invoke_without_command=True)
     async def remind(self, ctx, *, reminder_data):
-        rows = await self.bot.db.fetch(f"SELECT ID FROM Reminders;")
-        if len(rows) == 0:
-            rows = [[0]]
         try:
             time, content = reminder_data.split(", ")
         except ValueError:
@@ -43,9 +40,9 @@ class Reminders(commands.Cog):
         sometime = datetime.utcnow() + timedelta(days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(seconds))
         timestamp = sometime.replace(tzinfo=timezone.utc).timestamp()
         if isinstance(ctx.channel, discord.channel.DMChannel):
-            await self.bot.db.execute(f'''INSERT INTO Reminders(ID, Userid, Guildid, Channid, Msgid, Time, Content) VALUES ($1, $2, $3, $4, $5, $6, $7)''', rows[-1][0]+1, str(ctx.author.id), "@me", str(ctx.author.dm_channel.id), str(ctx.message.id), int(timestamp), content)
+            await self.bot.db.execute(f'''INSERT INTO Reminders(Userid, Guildid, Channid, Msgid, Time, Content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), "@me", str(ctx.author.dm_channel.id), str(ctx.message.id), int(timestamp), content)
         else:
-            await self.bot.db.execute(f'''INSERT INTO Reminders(ID, Userid, Guildid, Channid, Msgid, Time, Content) VALUES ($1, $2, $3, $4, $5, $6, $7)''', rows[-1][0]+1, str(ctx.author.id), str(ctx.guild.id), str(ctx.channel.id), str(ctx.message.id), int(timestamp), content)
+            await self.bot.db.execute(f'''INSERT INTO Reminders(Userid, Guildid, Channid, Msgid, Time, Content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), str(ctx.guild.id), str(ctx.channel.id), str(ctx.message.id), int(timestamp), content)
         remindtime = sometime-datetime.utcnow()
         await ctx.send(f"✅ I will remind you in {remindtime.days} days, {utils_time.readable(remindtime.seconds)}")
 
