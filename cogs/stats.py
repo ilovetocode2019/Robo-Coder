@@ -61,7 +61,7 @@ class Stats(commands.Cog):
                 else:
                     usage["Other"] += 1
 
-        await ctx.send("\n".join([f"{x} ({usage[x]})" for x in usage]))
+        await ctx.send("\n".join([f"{x} ({usage[x]})" for x in reversed(sorted(usage, key=usage.get))]))
 
     @tasks.loop(seconds=15)
     async def log_commands(self):
