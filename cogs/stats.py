@@ -59,7 +59,7 @@ class Stats(commands.Cog):
                         usage[guild_name] = 1
                 
                 else:
-                    usage["other"] += 1
+                    usage["Other"] += 1
 
         await ctx.send("\n".join([f"{x} ({usage[x]})" for x in usage]))
 
