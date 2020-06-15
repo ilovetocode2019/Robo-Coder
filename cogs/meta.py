@@ -188,7 +188,9 @@ class Meta(commands.Cog):
         error = "".join(traceback.format_exception(type(e), e, e.__traceback__, 1))
         print("Ignoring exception in command {}:".format(ctx.command), file=sys.stderr)
         traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
-
+        
+        if isinstance(e, discord.ext.commands.NoPrivateMessage):
+            return await ctx.send("This command can not be used in DMs")
         if isinstance(e, discord.ext.commands.errors.CheckFailure):
             return
         elif isinstance(e, discord.ext.commands.errors.MissingPermissions):
