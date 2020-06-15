@@ -18,8 +18,8 @@ def get_lines_of_code(comments=False):
             subdirs.remove("venv")
         if "env" in subdirs:
             subdirs.remove("env")
-        if "evn" in subdirs:
-            subdirs.remove("env")
+        if "venv-old" in subdirs:
+            subdirs.remove("venv-old")
         for name in files:
             if name.endswith(".py"):
                 file_amount += 1
