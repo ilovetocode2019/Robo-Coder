@@ -24,7 +24,7 @@ class TicTacToe:
         await self.update("It's " + str(user) + "'s turn")
         def check(reaction, author):
             #Check if the user is correct
-            return author == user and reaction.message.channel == self.ctx.channel and self.board[reactionconvert[reaction.emoji]] not in [":x:" or ":o:"]
+            return author == user and reaction.message.channel == self.ctx.channel and reaction.emoji in reactionconvert
         tasks = [
                                 asyncio.ensure_future(self.bot.wait_for('reaction_add', check=check)),
                                 asyncio.ensure_future(self.bot.wait_for('reaction_remove', check=check))
