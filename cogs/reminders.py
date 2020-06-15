@@ -76,11 +76,11 @@ class Reminders(commands.Cog):
         rows = await self.bot.db.fetch('SELECT * FROM Reminders')
         tolaunch = []
         for row in rows:
-            if int(row[5])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()) < 5:
-                channel = self.bot.get_channel(int(row[3]))
-                user = self.bot.get_user(row[1])
-                tolaunch.append(self.timesend(int(row[5])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()), channel, row[6]+"\n<@"+str(row[1])+">"))
-                await self.bot.db.execute(f"DELETE FROM Reminders WHERE Reminders.Userid='{row[1]}' and Reminders.ID='{row[0]}';")
+            if int(row[4])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()) < 5:
+                channel = self.bot.get_channel(int(row[2]))
+                user = self.bot.get_user(row[0])
+                tolaunch.append(self.timesend(int(row[4])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()), channel, row[5]+"\n<@"+str(row[0])+">"))
+                await self.bot.db.execute(f"DELETE FROM Reminders WHERE Reminders.Userid='{row[0]}' and Reminders.ID='{row[6]}';")
         asyncio.gather(*tolaunch)
 
     @timer.before_loop
