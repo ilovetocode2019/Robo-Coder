@@ -14,9 +14,11 @@ class Stats(commands.Cog):
         self.log_commands.cancel()
 
     @commands.Cog.listener("on_command_completion")
-    @commands.guild_only()
     async def on_command(self, ctx):
-        self.queries.append(("INSERT INTO Commands(Userid, Guildid, Command, Time) Values($1, $2, $3, $4)", str(ctx.author.id), str(ctx.guild.id), str(ctx.command), int(datetime.timestamp(datetime.utcnow()))))
+        if not ctx.guild:
+            self.queries.append(("INSERT INTO Commands(Userid, Guildid, Command, Time) Values($1, $2, $3, $4)", str(ctx.author.id), "@me", str(ctx.command), int(datetime.timestamp(datetime.utcnow()))))
+        else:
+            self.queries.append(("INSERT INTO Commands(Userid, Guildid, Command, Time) Values($1, $2, $3, $4)", str(ctx.author.id), str(ctx.guild.id), str(ctx.command), int(datetime.timestamp(datetime.utcnow()))))
     
     @commands.group(name="stats", description="Look at command usage for the current guild", invoke_without_command=True)
     @commands.guild_only()
@@ -48,9 +50,11 @@ class Stats(commands.Cog):
     @commands.is_owner()
     async def stats_global(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT * FROM Commands")
-        usage = {"Other":0}
+        usage = {"Other":0, "DM":0}
         for row in rows:
-            if self.bot.get_guild(int(row[1])) != None:
+            if row[1] == "@me":
+                usage["DM"] += 1
+            elif self.bot.get_guild(int(row[1])) != None:
                 if ctx.author.id in [x.id for x in self.bot.get_guild(int(row[1])).members]:
                     guild_name = self.bot.get_guild(int(row[1])).name
                     if guild_name in usage:
