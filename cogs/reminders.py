@@ -67,9 +67,10 @@ class Reminders(commands.Cog):
         await ctx.send(embed=em)
 
 
-    async def timesend(self, seconds, channel, text):
+    async def timesend(self, seconds, channel, text, query):
         await asyncio.sleep(seconds)
         await channel.send(text)
+        await self.bot.db.execute(query)
 
     @tasks.loop(seconds=5.0)
     async def timer(self):
@@ -79,8 +80,7 @@ class Reminders(commands.Cog):
             if int(row[4])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()) < 5:
                 channel = self.bot.get_channel(int(row[2]))
                 user = self.bot.get_user(row[0])
-                tolaunch.append(self.timesend(int(row[4])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()), channel, row[5]+"\n<@"+str(row[0])+">"))
-                await self.bot.db.execute(f"DELETE FROM Reminders WHERE Reminders.Userid='{row[0]}' and Reminders.ID='{row[6]}';")
+                tolaunch.append(self.timesend(int(row[4])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()), channel, row[5]+"\n<@"+str(row[0])+">", f"DELETE FROM Reminders WHERE Reminders.Userid='{row[0]}' and Reminders.ID='{row[6]}';"))
         asyncio.gather(*tolaunch)
 
     @timer.before_loop
