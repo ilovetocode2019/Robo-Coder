@@ -4,6 +4,30 @@ import discord
 
 from datetime import datetime
 
+from .utils import time
+
+import os
+import codecs
+import pathlib
+
+def get_lines_of_code(comments=False):
+    total_lines = 0
+    file_amount = 0
+    for path, subdirs, files in os.walk("."):
+        if "venv" in subdirs:
+            subdirs.remove("venv")
+        if "env" in subdirs:
+            subdirs.remove("env")
+        if "evn" in subdirs:
+            subdirs.remove("env")
+        for name in files:
+            if name.endswith(".py"):
+                file_amount += 1
+                f = open(str(pathlib.PurePath(path, name)), encoding="utf-8")
+                total_lines += len(f.readlines())
+                f.close()
+    return f"I am made of {total_lines} lines of code spread out over {file_amount} files"
+
 class Stats(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -66,6 +90,19 @@ class Stats(commands.Cog):
                     usage["Other"] += 1
 
         await ctx.send("\n".join([f"{x} ({usage[x]})" for x in reversed(sorted(usage, key=usage.get))]))
+    
+    @commands.command(name="about", description="Info about me", aliases=["info"])
+    async def about(self, ctx):
+        if isinstance(ctx.channel, discord.DMChannel):
+            em = discord.Embed(title="Stats")
+        else:
+            em = discord.Embed(title="Stats", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+        lines = 0
+        em.add_field(name="Code", value=get_lines_of_code())
+        uptime = datetime.now()-self.bot.startup_time
+        em.add_field(name="Uptime", value=f"{uptime.days} days, {time.readable(uptime.seconds)}")
+        em.add_field(name="Latency", value=f"{self.bot.latency}ms")
+        await ctx.send(embed=em)
 
     @tasks.loop(seconds=15)
     async def log_commands(self):
