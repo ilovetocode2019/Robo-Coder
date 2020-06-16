@@ -52,6 +52,8 @@ class CogHelp(menus.ListPageSource):
 
     async def format_page(self, menu, entries):
         offset = menu.current_page * self.per_page
+        
+        guild_prefix = self.bot.get_cog("Meta").get_guild_prefix(self.ctx.guild)
 
         if not self.cog.description:
             cogdescription = ""
@@ -80,7 +82,7 @@ class CogHelp(menus.ListPageSource):
                     else:
                         aliases = "("+', '.join(command.aliases)+")"
 
-                    em.description += f"\n\n{command.name} {usage} - {description} {aliases}"
+                    em.description += f"\n\n{guild_prefix}{command.name} {usage} - {description} {aliases}"
 
                     if isinstance(command, commands.Group):
                             for subcommand in command.commands:
@@ -100,7 +102,7 @@ class CogHelp(menus.ListPageSource):
                                     else:
                                         aliases = "("+', '.join(subcommand.aliases)+")"
 
-                                    em.description += f"\n\n{command.name} {subcommand.name} {usage} - {description} {aliases}"
+                                    em.description += f"\n\n{guild_prefix}{command.name} {subcommand.name} {usage} - {description} {aliases}"
 
 
         em.set_footer(text = f"{self.bot.user.name}", icon_url=self.bot.user.avatar_url)
@@ -114,6 +116,11 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         emojis = {"Conversation":"😃", "Meta":"⚙️", "Moderation":"🚓", "Music":"🎵", "Tools":"🧰", "Fun":"🎡", "Games":"🎮", "Notes":"📓", "Reminders":"🗒️", "Stats":"📈"}
         ctx = self.context
         bot = ctx.bot
+
+        if bot.get_cog("Meta"):
+            guild_prefix = bot.get_cog("Meta").get_guild_prefix(ctx.guild)
+        else:
+            guild_prefix = "r!"
         if isinstance(ctx.channel, discord.DMChannel):
             em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument")
         else:
@@ -126,9 +133,9 @@ class RoboCoderHelpCommand(commands.HelpCommand):
 
             if not name in ["Jishaku", "Music"]:
                 if name in emojis:
-                    em.add_field(name=f"{emojis[name]} {name}", value=description, inline=False)
+                    em.add_field(name=f"{emojis[name]} {name} ({guild_prefix}help {cog.qualified_name})", value=description, inline=False)
                 else:
-                    em.add_field(name=name, value=description, inline=False)
+                    em.add_field(name=f"{name} ({guild_prefix}help {cog.qualified_name})", value=description, inline=False)
 
         em.set_footer(text = f"{bot.user.name}", icon_url=bot.user.avatar_url)
         await ctx.send(embed=em)
@@ -150,14 +157,17 @@ class RoboCoderHelpCommand(commands.HelpCommand):
                 return
         if command.hidden or not await run_command_checks(command.checks, ctx):
             return
+
+        guild_prefix = bot.get_cog("Meta").get_guild_prefix(ctx.guild)
+
         if not command.usage:
             usage = ""
         else:
             usage = command.usage
         if isinstance(ctx.channel, discord.DMChannel):
-            embed = discord.Embed(title=str(command) + " " + usage, description=command.description)
+            embed = discord.Embed(title=guild_prefix+command.name + " " + usage, description=command.description)
         else:
-            embed = discord.Embed(title=str(command) + " " + usage, description=command.description, color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
+            embed = discord.Embed(title=guild_prefix+command.name + " " + usage, description=command.description, color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
         if command.help != None:
             embed.add_field(name="Detailed Help:", value=command.help, inline=False)
         if command.aliases != []:
@@ -169,14 +179,17 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         bot = ctx.bot
         if command.hidden or not await run_command_checks(command.checks, ctx):
             return
+
+        guild_prefix = bot.get_cog("Meta").get_guild_prefix(ctx.guild)
+
         if not command.usage:
             usage = ""
         else:
             usage = command.usage
         if isinstance(ctx.channel, discord.DMChannel):
-            embed = discord.Embed(title=str(command) + " " + usage, description=command.description)
+            embed = discord.Embed(title=guild_prefix+command.name + " " + usage, description=command.description)
         else:
-            embed = discord.Embed(title=str(command) + " " + usage, description=command.description, color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
+            embed = discord.Embed(title=guild+prefix+command.name + " " + usage, description=command.description, color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
         if command.help != None:
             embed.add_field(name="Detailed Help:", value=command.help, inline=False)
         if command.aliases != []:
