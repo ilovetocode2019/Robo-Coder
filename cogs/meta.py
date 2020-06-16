@@ -144,7 +144,11 @@ class RoboCoderHelpCommand(commands.HelpCommand):
     async def send_command_help(self, command):
         ctx = self.context
         bot = ctx.bot
-        if command.hidden == True:
+
+        if command.parent != None:
+            if not await run_command_checks(command.parent.checks, ctx):
+                return
+        if command.hidden or not await run_command_checks(command.checks, ctx):
             return
         if not command.usage:
             usage = ""
@@ -159,6 +163,26 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         if command.aliases != []:
             embed.add_field(name="Aliases:", value=", ".join(command.aliases), inline=False)
         await ctx.send(embed=embed)
+
+    async def send_group_help(self, command):
+        ctx = self.context
+        bot = ctx.bot
+        if command.hidden or not await run_command_checks(command.checks, ctx):
+            return
+        if not command.usage:
+            usage = ""
+        else:
+            usage = command.usage
+        if isinstance(ctx.channel, discord.DMChannel):
+            embed = discord.Embed(title=str(command) + " " + usage, description=command.description)
+        else:
+            embed = discord.Embed(title=str(command) + " " + usage, description=command.description, color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
+        if command.help != None:
+            embed.add_field(name="Detailed Help:", value=command.help, inline=False)
+        if command.aliases != []:
+            embed.add_field(name="Aliases:", value=", ".join(command.aliases), inline=False)
+        await ctx.send(embed=embed)
+
 
 
 class Meta(commands.Cog):
