@@ -100,26 +100,34 @@ class Games(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.command(name="hangman", description="A hangman game")
     async def hangman(self, ctx):
+        pictures = {6:"https://upload.wikimedia.org/wikipedia/commons/8/8b/Hangman-0.png",
+            5:"https://upload.wikimedia.org/wikipedia/commons/3/30/Hangman-1.png",
+            4:"https://upload.wikimedia.org/wikipedia/commons/7/70/Hangman-2.png",
+            3:"https://upload.wikimedia.org/wikipedia/commons/9/97/Hangman-3.png",
+            2:"https://upload.wikimedia.org/wikipedia/commons/2/27/Hangman-4.png",
+            1:"https://upload.wikimedia.org/wikipedia/commons/6/6b/Hangman-5.png",
+            0:"https://upload.wikimedia.org/wikipedia/commons/d/d6/Hangman-6.png"}
         await ctx.send("Please configure a word in your DMs")
         await ctx.author.send("What is your word?")
         def check(msg):
             return msg.author == ctx.author and msg.channel.id == ctx.author.dm_channel.id
         message = await self.bot.wait_for("message", check=check)
         word = message.content.lower()
-        lives = 10
+        lives = 6
         guessed = ""
         incorrect = []
+        already_guessed = []
         for counter in range(len(word)):
             if word[counter] == " ":
                 guessed += " "
             else:
                 guessed += "\N{WHITE LARGE SQUARE}"
-        em = discord.Embed(title="Hangman", description="Hangman game", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+        em = discord.Embed(title="Hangman", description="Click the hand reaction to make a guess", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         em.add_field(name="Tries Remaining", value=str(lives))
         if len(incorrect) != 0:
             em.add_field(name="Incorrect guesses", value=", ".join(incorrect))
         em.add_field(name="Guessing", value=guessed)
-        em.add_field(name="Status", value="Playing")
+        em.set_thumbnail(url=pictures[lives])
         game_msg = await ctx.send(embed=em)
         await game_msg.add_reaction("✋")
         while True:
@@ -149,7 +157,10 @@ class Games(commands.Cog):
             reply = await self.bot.wait_for("message", check=check)
             if len(reply.content) != 1:
                 await ctx.send("That not a letter", delete_after=5)
-            elif reply.content in word:
+            elif reply.content in already_guessed:
+                await ctx.send("You already guessed that", delete_after=5)
+
+            elif reply.content in word: 
                 await ctx.send("Your guess was right", delete_after=5)
                 counter = 0
                 for letter in word:
@@ -157,25 +168,27 @@ class Games(commands.Cog):
                         guessed = guessed[:counter] + reply.content + guessed[counter+len(reply.content):]
                     counter += 1
 
-                em = discord.Embed(title="Hangman", description="Hangman game", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+                em = discord.Embed(title="Hangman", description="Click the hand reaction to make a guess", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
                 em.add_field(name="Tries Remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Incorrect Guesses", value=", ".join(incorrect))
                 em.add_field(name="Guessing", value=guessed)
-                em.add_field(name="Status", value="Playing")
+                em.set_thumbnail(url=pictures[lives])
                 await game_msg.edit(embed=em)
 
             else:
                 incorrect.append(reply.content)
                 lives -= 1
                 incorrect_msg = await ctx.send("Your guess was incorrect", delete_after=5)
-                em = discord.Embed(title="Hangman", description="Hangman game", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+                em = discord.Embed(title="Hangman", description="Click the hand reaaction to make a guess", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
                 em.add_field(name="Tries Remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Incorrect Guesses", value=", ".join(incorrect))
                 em.add_field(name="Guessing", value=guessed)
-                em.add_field(name="Status", value="Playing")
+                em.set_thumbnail(url=pictures[lives])
                 await game_msg.edit(embed=em)
+
+            already_guessed.append(reply.content)
 
 
             async def clearup(reply, ask):
@@ -186,22 +199,22 @@ class Games(commands.Cog):
             self.bot.loop.create_task(clearup(reply, ask))
             
             if word == guessed:
-                em = discord.Embed(title="Hangman", description="Hangman game", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+                em = discord.Embed(title="Hangman", description="You won 🎉!", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
                 em.add_field(name="Tries Remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Incorrect Guesses", value=", ".join(incorrect))
                 em.add_field(name="Guessing", value=guessed)
-                em.add_field(name="Status", value="Won 🎉!")
+                em.set_thumbnail(url=pictures[lives])
                 await game_msg.edit(embed=em)
                 return await ctx.send("You won hangman!")
 
             if lives == 0:
-                em = discord.Embed(title="Hangman", description="Hangman game", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+                em = discord.Embed(title="Hangman", description="You lost", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
                 em.add_field(name="Tries Remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Incorrect Gusesses", value=", ".join(incorrect))
                 em.add_field(name="Guessing", value=guessed)
-                em.add_field(name="Status", value="Lost")
+                em.set_thumbnail(url=pictures[lives])
                 await game_msg.edit(embed=em)
                 return await ctx.send(f"You lost hangman. The word was ||{word}||")
 
