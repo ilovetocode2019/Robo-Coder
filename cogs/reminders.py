@@ -2,8 +2,11 @@ from discord.ext import commands, tasks
 import discord
 import asyncio
 import pathlib
+
 from datetime import datetime, date, time, timedelta, timezone
 import datetime as dt
+import dateparser
+
 from .utils import time as utils_time
 import re
 
@@ -20,24 +23,16 @@ class Reminders(commands.Cog):
         try:
             time, content = reminder_data.split(", ")
         except ValueError:
-            return await ctx.send("Invalid reminder format. Try something like: `1d, Do dishes`")
-        if len(re.findall("\s*-?[0-9]{1,10}\s*d", time)) > 0:
-            days = re.findall("\s*-?[0-9]{1,10}\s*d", time)[0][:-1]
-        else:
-            days = 0
-        if len(re.findall("\s*-?[0-9]{1,10}\s*h", time)) > 0:
-            hours = re.findall("\s*-?[0-9]{1,10}\s*h", time)[0][:-1]
-        else:
-            hours = 0
-        if len(re.findall("\s*-?[0-9]{1,10}\s*m", time)) > 0:
-            minutes = re.findall("\s*-?[0-9]{1,10}\s*m", time)[0][:-1]
-        else:
-            minutes = 0
-        if len(re.findall("\s*-?[0-9]{1,10}\s*s", time)) > 0:
-            seconds = re.findall("\s*-?[0-9]{1,10}\s*s", time)[0][:-1]
-        else:
-            seconds = 0
-        sometime = datetime.utcnow() + timedelta(days=int(days), hours=int(hours), minutes=int(minutes), seconds=int(seconds))
+            return await ctx.send("Invalid reminder format.")
+
+        if not time.startswith("in"):
+            time = f"in {time}" 
+        try:
+            time_till = dateparser.parse(time)-datetime.now()
+        except:
+            return await ctx.send("Couldn't parse your time")
+        
+        sometime = datetime.utcnow() + timedelta(days=time_till.days, seconds=time_till.seconds)
         timestamp = sometime.replace(tzinfo=timezone.utc).timestamp()
         if isinstance(ctx.channel, discord.channel.DMChannel):
             await self.bot.db.execute(f'''INSERT INTO Reminders(Userid, Guildid, Channid, Msgid, Time, Content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), "@me", str(ctx.author.dm_channel.id), str(ctx.message.id), int(timestamp), content)
