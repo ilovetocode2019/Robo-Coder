@@ -118,7 +118,7 @@ class Games(commands.Cog):
         em.add_field(name="Tries Remaining", value=str(lives))
         if len(incorrect) != 0:
             em.add_field(name="Incorrect guesses", value=", ".join(incorrect))
-        em.add_field(name="Guessing", value=discord.utils.escape_markdown(" ".join(guessed)))
+        em.add_field(name="Guessing", value=guessed)
         em.add_field(name="Status", value="Playing")
         game_msg = await ctx.send(embed=em)
         await game_msg.add_reaction("✋")
@@ -161,7 +161,7 @@ class Games(commands.Cog):
                 em.add_field(name="Tries Remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Incorrect Guesses", value=", ".join(incorrect))
-                em.add_field(name="Guessing", value=discord.utils.escape_markdown(" ".join(guessed)))
+                em.add_field(name="Guessing", value=guessed)
                 em.add_field(name="Status", value="Playing")
                 await game_msg.edit(embed=em)
 
@@ -173,7 +173,7 @@ class Games(commands.Cog):
                 em.add_field(name="Tries Remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Incorrect Guesses", value=", ".join(incorrect))
-                em.add_field(name="Guessing", value=discord.utils.escape_markdown(" ".join(guessed)))
+                em.add_field(name="Guessing", value=guessed)
                 em.add_field(name="Status", value="Playing")
                 await game_msg.edit(embed=em)
 
@@ -190,7 +190,7 @@ class Games(commands.Cog):
                 em.add_field(name="Tries Remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Incorrect Guesses", value=", ".join(incorrect))
-                em.add_field(name="Guessing", value=discord.utils.escape_markdown(" ".join(guessed)))
+                em.add_field(name="Guessing", value=guessed)
                 em.add_field(name="Status", value="Won 🎉!")
                 await game_msg.edit(embed=em)
                 return await ctx.send("You won hangman!")
@@ -200,7 +200,7 @@ class Games(commands.Cog):
                 em.add_field(name="Tries Remaining", value=str(lives))
                 if len(incorrect) != 0:
                     em.add_field(name="Incorrect Gusesses", value=", ".join(incorrect))
-                em.add_field(name="Guessing", value=discord.utils.escape_markdown(" ".join(guessed)))
+                em.add_field(name="Guessing", value=guessed)
                 em.add_field(name="Status", value="Lost")
                 await game_msg.edit(embed=em)
                 return await ctx.send(f"You lost hangman. The word was ||{word}||")
