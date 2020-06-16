@@ -75,13 +75,15 @@ class Reminders(commands.Cog):
     @tasks.loop(seconds=5.0)
     async def timer(self):
         rows = await self.bot.db.fetch('SELECT Id, Userid, Guildid, Channid, Msgid, Time, Content FROM Reminders')
-        tolaunch = []
         for row in rows:
             if int(row[5])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()) < 5:
                 channel = self.bot.get_channel(int(row[3]))
                 user = self.bot.get_user(row[1])
-                tolaunch.append(self.timesend(int(row[5])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()), channel, row[6]+"\n<@"+str(row[1])+">", f"DELETE FROM Reminders WHERE Reminders.Userid='{row[1]}' and Reminders.ID='{row[0]}';"))
-        asyncio.gather(*tolaunch)
+                time = int(row[5])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
+                query = f"DELETE FROM Reminders WHERE Reminders.Userid='{row[1]}' and Reminders.ID='{row[0]}';"
+                link = f"https://discord.com/channels/{row[2]}/{row[3]}/{row[4]}"
+                mention = "<@"+str(row[1])+">"
+                self.bot.loop.create_task(self.timesend(time, channel, f"{mention}: {row[6]}\n{link}", query))
 
     @timer.before_loop
     async def before_timer(self):
