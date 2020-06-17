@@ -50,10 +50,10 @@ class Stats(commands.Cog):
         new_guild = ctx.guild
         if ctx.author.id in self.bot.config["ownerids"]:
             if guild_search != None:
-                for guild in self.bot.guilds:
-                    if guild.name == guild_search:
-                        new_guild = guild
-                        break
+                result = discord.utils.get(self.bot.guilds, name=guild_search)
+                if result != None:
+                    new_guild = result
+
         rows = await self.bot.db.fetch(f"SELECT * FROM Commands WHERE Commands.Guildid='{new_guild.id}';")
         if not len(rows):
             return await ctx.send("No commands have been used")
