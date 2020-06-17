@@ -28,7 +28,7 @@ class Reminders(commands.Cog):
         if not time.startswith("in"):
             time = f"in {time}" 
         try:
-            time_till = dateparser.parse(time)-datetime.now()
+            time_till = dateparser.parse(time, settings={'TIMEZONE': 'UTC'})-datetime.utcnow()
         except:
             return await ctx.send("Couldn't parse your time")
         
