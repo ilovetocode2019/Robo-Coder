@@ -46,8 +46,15 @@ class Stats(commands.Cog):
     
     @commands.group(name="stats", description="Look at command usage for the current guild", invoke_without_command=True)
     @commands.guild_only()
-    async def stats_group(self, ctx):
-        rows = await self.bot.db.fetch(f"SELECT * FROM Commands WHERE Commands.Guildid='{ctx.guild.id}';")
+    async def stats_group(self, ctx, *, guild_search=None):
+        new_guild = ctx.guild
+        if ctx.author.id in self.bot.config["ownerids"]:
+            if guild_search != None:
+                for guild in self.bot.guilds:
+                    if guild.name == guild_search:
+                        new_guild = guild
+                        break
+        rows = await self.bot.db.fetch(f"SELECT * FROM Commands WHERE Commands.Guildid='{new_guild.id}';")
         if not len(rows):
             return await ctx.send("No commands have been used")
         users = {}
@@ -67,7 +74,7 @@ class Stats(commands.Cog):
 
         em = discord.Embed(title="Stats", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         em.add_field(name="Top Commands Used", value="\n".join([f"{x} ({commands_used[x]})" for x in reversed(sorted(commands_used, key=commands_used.get))][:5]))
-        em.add_field(name="Top Command Users", value="\n".join([f"{str(ctx.guild.get_member(x))} ({users[x]})" for x in reversed(sorted(users, key=users.get))][:5]))
+        em.add_field(name="Top Command Users", value="\n".join([f"{str(new_guild.get_member(x))} ({users[x]})" for x in reversed(sorted(users, key=users.get))][:5]))
         await ctx.send(embed=em)
     
     @stats_group.command(name="global")
