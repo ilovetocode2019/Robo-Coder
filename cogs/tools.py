@@ -237,8 +237,8 @@ class Tools(commands.Cog):
     async def py_docs(self, ctx, obj=None):
         await self.do_docs(ctx, "python", obj)
     
-    @commands.command(name="source", descriptin="Get source code for a specified command", usage="[command]")
-    async def sourcecode(self, ctx, *, command):
+    @commands.command(name="source", descriptin="Get source code for a specified command", usage="(command)")
+    async def sourcecode(self, ctx, *, command=None):
         source_url = "https://github.com/ilovetocode2019/Robo-Coder"
         branch = "master"
 
