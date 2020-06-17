@@ -35,27 +35,27 @@ class Reminders(commands.Cog):
         sometime = datetime.utcnow() + timedelta(days=time_till.days, seconds=time_till.seconds)
         timestamp = sometime.replace(tzinfo=timezone.utc).timestamp()
         if isinstance(ctx.channel, discord.channel.DMChannel):
-            await self.bot.db.execute(f'''INSERT INTO Reminders(Userid, Guildid, Channid, Msgid, Time, Content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), "@me", str(ctx.author.dm_channel.id), str(ctx.message.id), int(timestamp), content)
+            await self.bot.db.execute(f'''INSERT INTO reminders(userid, guildid, channid, msgid, time, content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), "@me", str(ctx.author.dm_channel.id), str(ctx.message.id), int(timestamp), content)
         else:
-            await self.bot.db.execute(f'''INSERT INTO Reminders(Userid, Guildid, Channid, Msgid, Time, Content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), str(ctx.guild.id), str(ctx.channel.id), str(ctx.message.id), int(timestamp), content)
+            await self.bot.db.execute(f'''INSERT INTO reminders(userid, guildid, channid, msgid, time, content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), str(ctx.guild.id), str(ctx.channel.id), str(ctx.message.id), int(timestamp), content)
         remindtime = sometime-datetime.utcnow()
         await ctx.send(f"✅ I will remind you in {remindtime.days} days, {utils_time.readable(remindtime.seconds)}")
 
     @remind.command(name="delete", description="Remove a reminder", aliases=["remove"], usage="[id]")
     async def remindremove(self, ctx, *, content: int):
-        rows = await self.bot.db.fetch(f"SELECT * FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}' and Reminders.ID={content};")
+        rows = await self.bot.db.fetch(f"SELECT * FROM reminders WHERE reminders.userid='{str(ctx.author.id)}' and reminders.id={content};")
         if len(rows) == 0:
             return await ctx.send("That reminder doesn't exist")
-        await self.bot.db.execute(f"DELETE FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}' and Reminders.ID={content};")
+        await self.bot.db.execute(f"DELETE FROM reminders WHERE reminders.userid='{str(ctx.author.id)}' and reminders.id={content};")
         await ctx.send("Reminder deleted")
 
     @remind.command(name="list", description="Get a list of your reminders")
     async def remindlist(self, ctx):
-        rows = await self.bot.db.fetch(f"SELECT ID, Time, Content FROM Reminders WHERE Reminders.Userid='{str(ctx.author.id)}'")
+        rows = await self.bot.db.fetch(f"SELECT id, time, Content FROM reminders WHERE reminders.userid='{str(ctx.author.id)}'")
         if isinstance(ctx.channel, discord.DMChannel):
-            em = discord.Embed(title="Reminders", description="")
+            em = discord.Embed(title="reminders", description="")
         else:
-            em = discord.Embed(title="Reminders", description="", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+            em = discord.Embed(title="reminders", description="", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         for row in rows:
             time = datetime.fromtimestamp(row[1])-datetime.now()
             em.add_field(name=f"in {time.days} days, {utils_time.readable(time.seconds)}", value=f"{row[2]} `{row[0]}`", inline=False)
@@ -69,13 +69,13 @@ class Reminders(commands.Cog):
 
     @tasks.loop(seconds=5.0)
     async def timer(self):
-        rows = await self.bot.db.fetch('SELECT Id, Userid, Guildid, Channid, Msgid, Time, Content FROM Reminders')
+        rows = await self.bot.db.fetch('SELECT id, userid, guildid, channid, msgid, time, content FROM reminders')
         for row in rows:
             if int(row[5])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()) < 5:
                 channel = self.bot.get_channel(int(row[3]))
                 user = self.bot.get_user(row[1])
                 time = int(row[5])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
-                query = f"DELETE FROM Reminders WHERE Reminders.Userid='{row[1]}' and Reminders.ID='{row[0]}';"
+                query = f"DELETE FROM reminders WHERE reminders.userid='{row[1]}' and reminders.id='{row[0]}';"
                 link = f"https://discord.com/channels/{row[2]}/{row[3]}/{row[4]}"
                 mention = "<@"+str(row[1])+">"
                 self.bot.loop.create_task(self.timesend(time, channel, f"{mention}: {row[6]}\n{link}", query))

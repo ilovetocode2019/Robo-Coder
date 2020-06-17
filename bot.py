@@ -86,41 +86,41 @@ class RoboCoder(commands.Bot):
         #self.db = await asyncpg.connect(user=self.config["sqlname"], password=self.config["sqlpass"], database=self.config["dbname"], host='localhost')
         self.db = await asyncpg.create_pool(self.config["sqllogin"])
         await self.db.execute('''
-            CREATE TABLE IF NOT EXISTS Notes(
-                Id serial PRIMARY KEY,
-                Userid text,
-                Title text,
-                Content text
+            CREATE TABLE IF NOT EXISTS notes(
+                id serial PRIMARY KEY,
+                userid text,
+                title text,
+                content text
             )
         ''')
 
         await self.db.execute('''
-            CREATE TABLE IF NOT EXISTS Todo(
-                Id serial PRIMARY KEY,
-                Userid text,
-                Content text,
-                Status text
+            CREATE TABLE IF NOT EXISTS todo(
+                id serial PRIMARY KEY,
+                userid text,
+                content text,
+                status text
             )
         ''')
 
         await self.db.execute('''
-            CREATE TABLE IF NOT EXISTS Reminders(
-                Id serial PRIMARY KEY,
-                Userid text,
-                Guildid text,
-                Channid text,
-                Msgid text,
-                Time int,
-                Content text
+            CREATE TABLE IF NOT EXISTS reminders(
+                id serial PRIMARY KEY,
+                userid text,
+                guildid text,
+                channid text,
+                msgid text,
+                time int,
+                content text
             )
         ''')
-
+        
         await self.db.execute('''
-            CREATE TABLE IF NOT EXISTS Commands(
-                Userid text,
-                Guildid text,
-                Command text,
-                Time int
+            CREATE TABLE IF NOT EXISTS commands(
+                userid text,
+                guildid text,
+                command text,
+                time int
             )
         ''')
 
