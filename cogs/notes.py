@@ -31,7 +31,7 @@ class Notes(commands.Cog):
         await ctx.send("Note created")
 
     @note.command(name="delete", description="Remove a note", usage="[id]", aliases=["remove"])
-    async def noteremove(self, ctx, content):
+    async def noteremove(self, ctx, content: int):
         rows = await self.bot.db.fetch(f"SELECT * FROM Notes WHERE Notes.Userid='{str(ctx.author.id)}' and Notes.ID={content};")
         if len(rows) == 0:
             return await ctx.send("That note doesn't exist")
