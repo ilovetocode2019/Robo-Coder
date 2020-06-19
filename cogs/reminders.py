@@ -75,7 +75,7 @@ class Reminders(commands.Cog):
         await ctx.send(embed=em)
 
 
-    async def timesend(self, seconds, channel, text, query):
+    async def dispatch_timer(self, seconds, channel, text, query):
         await asyncio.sleep(seconds)
         await channel.send(text)
         await self.bot.db.execute(query)
@@ -91,7 +91,7 @@ class Reminders(commands.Cog):
                 query = f"DELETE FROM reminders WHERE reminders.userid='{row[1]}' and reminders.id='{row[0]}';"
                 link = f"https://discord.com/channels/{row[2]}/{row[3]}/{row[4]}"
                 mention = "<@"+str(row[1])+">"
-                self.bot.loop.create_task(self.timesend(time, channel, f"{mention}: {row[6]}\n{link}", query))
+                self.bot.loop.create_task(self.dispatch_timer(time, channel, f"{mention}: {row[6]}\n{link}", query))
 
     @timer.before_loop
     async def before_timer(self):
