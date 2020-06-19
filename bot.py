@@ -53,7 +53,7 @@ class RoboCoder(commands.Bot):
             command_prefix = get_prefix,
             description = "A discord bot with tools, fun and coding related stuff.",
             case_insensitive=True,
-            owner_ids=self.config["ownerids"],
+            owner_id=self.config["dev"],
         )
 
 

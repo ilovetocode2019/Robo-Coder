@@ -48,7 +48,7 @@ class Stats(commands.Cog):
     @commands.guild_only()
     async def stats_group(self, ctx, *, guild_search=None):
         new_guild = ctx.guild
-        if ctx.author.id in self.bot.config["ownerids"]:
+        if ctx.author.id in self.bot.owner_id:
             if guild_search != None:
                 result = discord.utils.get(self.bot.guilds, name=guild_search)
                 if result != None:

@@ -428,7 +428,7 @@ class Music(commands.Cog):
 
     
     def cog_check(self, ctx):
-        if ctx.guild.id in self.bot.config["homeservers"] or ctx.author.id in self.bot.owner_ids:
+        if ctx.guild.id in self.bot.config["homeservers"] or ctx.author.id == self.bot.owner_id:
             return True
         return False
 

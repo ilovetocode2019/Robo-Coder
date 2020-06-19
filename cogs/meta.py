@@ -25,7 +25,7 @@ def has_manage_guild():
         except commands.errors.MissingPermissions:
             permissions = False
         return (
-            ctx.author.id in ctx.bot.owner_ids
+            ctx.author.id == ctx.bot.owner_id
             or permissions
         )
     return commands.check(predicate)
@@ -273,17 +273,6 @@ class Meta(commands.Cog):
                            timestamp=d.utcnow())
         em.description = f"```py\n{str(e)}```\n"
         msg = await ctx.send(embed=em)
-
-        if ctx.author.id in self.bot.owner_ids:
-            checkmark = await msg.add_reaction("👀")
-            def check(reaction, user):
-                return user == ctx.author and str(reaction.emoji) == "👀"
-            try:
-                reaction, user = await self.bot.wait_for('reaction_add', timeout=30.0, check=check)
-                if str(reaction.emoji) == "👀":
-                    await user.send(f"```python\n{''.join(traceback.format_exception(type(e), e, e.__traceback__, 1))}```")              
-            except asyncio.TimeoutError:
-                await msg.remove_reaction("👀", self.bot.user)
 
     @commands.Cog.listener("on_message")
     async def detect_mention(self, msg):
