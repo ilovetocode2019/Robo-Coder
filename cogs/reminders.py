@@ -26,7 +26,6 @@ class Reminders(commands.Cog):
         except ValueError:
             time = reminder_data
             content = "No reminder content"
-            await ctx.send("To add a message to your reminder use: `[time], [reminder message]`")
 
         if not time.startswith("in") and not time.startswith("at"):
             time = f"in {time}"
