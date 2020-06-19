@@ -380,14 +380,6 @@ class Meta(commands.Cog):
             print(f"Extension 'cogs.{cog}' not unloaded.\n{traceback_data}")
 
         
-
-    @commands.command(name="log", description="Get the log for the bot", hidden=True)
-    @commands.is_owner()
-    async def log(self, ctx):
-        file = discord.File("coder.log", filename="log.txt")
-        await ctx.send(content="Here is the log", file=file)
-
-        
     @commands.command(name = "ping", description = "Test the bots's latency")
     async def ping(self, ctx):
         start = datetime.timestamp(datetime.now())
