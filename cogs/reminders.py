@@ -7,7 +7,8 @@ from datetime import datetime, date, time, timedelta, timezone
 import datetime as dt
 import dateparser
 
-from .utils import time as utils_time
+from .utils import time as time_utils
+import time as time_module
 import re
 
 class Reminders(commands.Cog):
@@ -23,23 +24,35 @@ class Reminders(commands.Cog):
         try:
             time, content = reminder_data.split(", ")
         except ValueError:
-            return await ctx.send("Invalid reminder format.")
+            time = reminder_data
+            content = "No reminder content"
+            await ctx.send("To add a message to your reminder use: `[time], [reminder message]`")
 
-        if not time.startswith("in"):
-            time = f"in {time}" 
+        if not time.startswith("in") and not time.startswith("at"):
+            time = f"in {time}"
+
         try:
-            time_till = dateparser.parse(time, settings={'TIMEZONE': 'UTC'})-datetime.utcnow()
+            remindtime = dateparser.parse(time, settings={'TIMEZONE': 'UTC'})
         except:
             return await ctx.send("Couldn't parse your time")
-        
-        sometime = datetime.utcnow() + timedelta(days=time_till.days, seconds=time_till.seconds)
-        timestamp = sometime.replace(tzinfo=timezone.utc).timestamp()
+
+        if not remindtime:
+            return await ctx.send("Couldn't parse your time")
+
+        timestamp = remindtime.replace(tzinfo=timezone.utc).timestamp()
         if isinstance(ctx.channel, discord.channel.DMChannel):
-            await self.bot.db.execute(f'''INSERT INTO reminders(userid, guildid, channid, msgid, time, content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), "@me", str(ctx.author.dm_channel.id), str(ctx.message.id), int(timestamp), content)
+            query = (f'''INSERT INTO reminders(userid, guildid, channid, msgid, time, content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), "@me", str(ctx.author.dm_channel.id), str(ctx.message.id), int(timestamp), content)
+            await self.bot.db.execute(*query)
         else:
-            await self.bot.db.execute(f'''INSERT INTO reminders(userid, guildid, channid, msgid, time, content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), str(ctx.guild.id), str(ctx.channel.id), str(ctx.message.id), int(timestamp), content)
-        remindtime = sometime-datetime.utcnow()
-        await ctx.send(f"✅ I will remind you in {remindtime.days} days, {utils_time.readable(remindtime.seconds)}")
+            query = (f'''INSERT INTO reminders(userid, guildid, channid, msgid, time, content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), str(ctx.guild.id), str(ctx.channel.id), str(ctx.message.id), int(timestamp), content)
+            await self.bot.db.execute(*query)
+        if remindtime.tzinfo:
+            now = datetime.utcnow().replace(tzinfo=remindtime.tzinfo)
+        else:
+            now = datetime.utcnow()
+
+        time_till = remindtime-now
+        await ctx.send(f"✅ I will remind you in {time_till.days} days, {time_utils.readable(time_till.seconds)}")
 
     @remind.command(name="delete", description="Remove a reminder", aliases=["remove"], usage="[id]")
     async def remindremove(self, ctx, *, content: int):
@@ -58,7 +71,7 @@ class Reminders(commands.Cog):
             em = discord.Embed(title="reminders", description="", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         for row in rows:
             time = datetime.fromtimestamp(row[1])-datetime.now()
-            em.add_field(name=f"in {time.days} days, {utils_time.readable(time.seconds)}", value=f"{row[2]} `{row[0]}`", inline=False)
+            em.add_field(name=f"in {time.days} days, {time_utils.readable(time.seconds)}", value=f"{row[2]} `{row[0]}`", inline=False)
         await ctx.send(embed=em)
 
 
