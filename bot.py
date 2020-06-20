@@ -56,11 +56,12 @@ class RoboCoder(commands.Bot):
             owner_id=self.config["dev"],
         )
 
-
         self.cogs_to_add = ["cogs.meta", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders", "cogs.stats"]
 
         self.loop.create_task(self.load_cogs_to_add())
         self.loop.create_task(self.on_start())
+        
+        self.connected_at = "Not connected yet..."
         self.startup_time = datetime.now()
 
     async def load_cogs_to_add(self):
@@ -69,7 +70,6 @@ class RoboCoder(commands.Bot):
             self.get_command("jishaku").hidden = True
         except Exception as e:
             print("Couldn't load jishaku")
-        await self.wait_until_ready()
         self.remove_command('help')
         for cog in self.cogs_to_add:
             self.load_extension(cog)

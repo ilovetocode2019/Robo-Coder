@@ -279,6 +279,10 @@ class Meta(commands.Cog):
         if msg.content == f"<@!{self.bot.user.id}>":
             await msg.channel.send(f"Hi. For help use {self.get_guild_prefix(msg.guild)}help.")
 
+    @commands.Cog.listener("on_connect")
+    async def on_connect(self):
+        self.bot.connected_at = datetime.now()
+
     def get_guild_prefix(self, guild):
         if not guild:
             return "r!"
@@ -391,7 +395,8 @@ class Meta(commands.Cog):
     @commands.group(name="uptime", description="Get the uptime", invoke_without_command=True)
     async def uptime(self, ctx):
         uptime = datetime.now()-self.bot.startup_time
-        await ctx.send(f"I have been up for {uptime.days} days, {time.readable(uptime.seconds)}")      
+        connected_time = datetime.now()-self.bot.connected_at
+        await ctx.send(f"I started up at {uptime.days} days, {time.readable(uptime.seconds)}, I connected {connected_time.days} days, {time.readable(connected_time.seconds)}")      
 
     
     @commands.command(name="invite", description="Get a invite to add me to your server")
