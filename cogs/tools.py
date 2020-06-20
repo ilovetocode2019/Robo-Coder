@@ -337,6 +337,8 @@ class Tools(commands.Cog):
     @commands.command(name="serverinfo", description="Get info on the server", aliases=["guildinfo"])
     @commands.guild_only()
     async def serverinfo(self, ctx):
+        await ctx.channel.trigger_typing()
+        
         guild = ctx.guild
         
         try:
@@ -369,6 +371,8 @@ class Tools(commands.Cog):
     @commands.command(name="userinfo", description="Get info on a user", usage="[member]")
     @commands.guild_only()
     async def userinfo(self, ctx, *, user:discord.Member=None):
+        await ctx.channel.trigger_typing()
+
         if not user:
             user = ctx.author
 
@@ -401,6 +405,7 @@ class Tools(commands.Cog):
 
     @commands.command(name="avatar", description="Get a users avatar")
     async def avatar(self, ctx, *, user:discord.Member=None):
+        await ctx.channel.trigger_typing()
 
         if user == None:
             user = ctx.author
