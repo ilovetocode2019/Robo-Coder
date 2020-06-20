@@ -347,20 +347,22 @@ class Tools(commands.Cog):
         
         em.set_thumbnail(url=guild.icon_url)
 
-        em.add_field(name="Owner", value=guild.owner.mention)
+        em.add_field(name="👑 Owner", value=guild.owner.mention)
 
-        em.add_field(name="ID", value=guild.id)
+        em.add_field(name="🆔 ID", value=guild.id)
 
-        em.add_field(name="Created at", value=str(guild.created_at))
+        em.add_field(name="<:nitro:723958775970791544> Level", value=guild.premium_tier)
 
-        em.add_field(name="Channels", value=f"Text: {str(guild.member_count)}\nVoice: {str(len(guild.voice_channels))}")
+        em.add_field(name="🕒 Created at", value=str(guild.created_at))
 
-        em.add_field(name="Members", value=len(guild.members))
+        em.add_field(name="🗣️ Channels", value=f"Text: {str(guild.member_count)}\nVoice: {str(len(guild.voice_channels))}")
+
+        em.add_field(name="👪 Members", value=len(guild.members))
         
         status = {"online":0, "idle":0, "dnd":0, "offline":0}
         for member in guild.members:
             status[str(member.status)] += 1
-        em.add_field(name="Status List", value=f"Online {status['online']}\nIdle {status['idle']}\nDnd {status['dnd']}\nOffline {status['offline']}")
+        em.add_field(name="Status List", value=f"<:online:723954455292411974> {status['online']}\n<:idle:723954480957358142> {status['idle']}\n<:dnd:723954508396494878> {status['dnd']}\n<:offline:723954530072658010> {status['offline']}")
 
         await ctx.send(embed=em)
 
@@ -389,9 +391,9 @@ class Tools(commands.Cog):
         if user.bot:
             em.description += "\n🤖 This person is a bot"
 
-        em.add_field(name="Created at", value=str(user.created_at))
+        em.add_field(name="🕒 Created at", value=str(user.created_at))
 
-        em.add_field(name="Joined at", value=str(user.joined_at))
+        em.add_field(name="➡️ Joined at", value=str(user.joined_at))
 
         em.add_field(name="Roles", value=" ".join([role.mention for role in user.roles]))
 
