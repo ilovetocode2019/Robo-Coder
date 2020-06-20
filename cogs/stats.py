@@ -54,7 +54,7 @@ class Stats(commands.Cog):
                 if result != None:
                     new_guild = result
 
-        rows = await self.bot.db.fetch(f"SELECT * FROM Commands WHERE Commands.Guildid='{new_guild.id}';")
+        rows = await self.bot.db.fetch(f"SELECT * FROM commands WHERE commands.guildid='{new_guild.id}';")
         if not len(rows):
             return await ctx.send("No commands have been used")
         users = {}
@@ -71,10 +71,39 @@ class Stats(commands.Cog):
             else:
                 commands_used[row[2]] += 1
 
+        
+        timestamp = datetime.utcnow().timestamp()-86400
+        
+        users_today = {}
+        for row in rows:
+            if row[3] > timestamp:
+                print("g"*100)
+                if int(row[0]) not in users_today:
+                    users_today[int(row[0])] = 1
+                else:
+                    users_today[int(row[0])] += 1
+
+        commands_used_today = {}
+        for row in rows:
+            if row[3] > timestamp:
+                print("g"*100)
+                if row[2] not in commands_used_today:
+                    commands_used_today[row[2]] = 1
+                else:
+                    commands_used_today[row[2]] += 1
+
 
         em = discord.Embed(title="Stats", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
         em.add_field(name="Top Commands Used", value="\n".join([f"{x} ({commands_used[x]})" for x in reversed(sorted(commands_used, key=commands_used.get))][:5]))
+        
+        if len(users_today) != 0:
+            em.add_field(name="Top Commands Used Today", value="\n".join([f"{x} ({commands_used_today[x]})" for x in reversed(sorted(commands_used_today, key=commands_used_today.get))][:5]))
+        
         em.add_field(name="Top Command Users", value="\n".join([f"{str(new_guild.get_member(x))} ({users[x]})" for x in reversed(sorted(users, key=users.get))][:5]))
+        
+        if len(commands_used_today) != 0:
+            em.add_field(name="Top Command Users Today", value="\n".join([f"{str(new_guild.get_member(x))} ({users_today[x]})" for x in reversed(sorted(users_today, key=users_today.get))][:5]))
+
         await ctx.send(embed=em)
     
     @stats_group.command(name="global")
