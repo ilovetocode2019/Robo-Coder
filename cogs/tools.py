@@ -357,7 +357,7 @@ class Tools(commands.Cog):
 
         em.add_field(name="🕒 Created at", value=str(guild.created_at))
 
-        em.add_field(name="🗣️ Channels", value=f"Text: {str(guild.member_count)}\nVoice: {str(len(guild.voice_channels))}")
+        em.add_field(name="🗣️ Channels", value=f"Text: {str(len(guild.text_channels))}\nVoice: {str(len(guild.voice_channels))}")
 
         em.add_field(name="👪 Members", value=len(guild.members))
         
