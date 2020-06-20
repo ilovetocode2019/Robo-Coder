@@ -338,7 +338,7 @@ class Tools(commands.Cog):
     @commands.guild_only()
     async def serverinfo(self, ctx):
         await ctx.channel.trigger_typing()
-        
+
         guild = ctx.guild
         
         try:
@@ -364,7 +364,7 @@ class Tools(commands.Cog):
         status = {"online":0, "idle":0, "dnd":0, "offline":0}
         for member in guild.members:
             status[str(member.status)] += 1
-        em.add_field(name="Status List", value=f"<:online:723954455292411974> {status['online']}\n<:idle:723954480957358142> {status['idle']}\n<:dnd:723954508396494878> {status['dnd']}\n<:offline:723954530072658010> {status['offline']}")
+        em.add_field(name="👪 Members", value=f" {len(guild.members)} total \n<:online:723954455292411974> {status['online']}\n<:idle:723954480957358142> {status['idle']}\n<:dnd:723954508396494878> {status['dnd']}\n<:offline:723954530072658010> {status['offline']}")
 
         await ctx.send(embed=em)
 
