@@ -51,7 +51,8 @@ class Reminders(commands.Cog):
             now = datetime.utcnow()
 
         time_till = remindtime-now
-        await ctx.send(f"✅ I will remind you in {time_till.days} days, {time_utils.readable(time_till.seconds)}")
+
+        await ctx.send(f"✅ '{content}' in {time_till.days} days, {time_utils.readable(time_till.seconds)}")
 
     @remind.command(name="delete", description="Remove a reminder", aliases=["remove"], usage="[id]")
     async def remindremove(self, ctx, *, content: int):
