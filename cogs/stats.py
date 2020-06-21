@@ -77,7 +77,6 @@ class Stats(commands.Cog):
         users_today = {}
         for row in rows:
             if row[3] > timestamp:
-                print("g"*100)
                 if int(row[0]) not in users_today:
                     users_today[int(row[0])] = 1
                 else:
@@ -86,7 +85,6 @@ class Stats(commands.Cog):
         commands_used_today = {}
         for row in rows:
             if row[3] > timestamp:
-                print("g"*100)
                 if row[2] not in commands_used_today:
                     commands_used_today[row[2]] = 1
                 else:
