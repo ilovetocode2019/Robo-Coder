@@ -43,6 +43,17 @@ async def run_command_checks(checks, ctx):
     except:
         return False
 
+async def run_cog_check(check, ctx):
+    try:
+        if inspect.iscoroutinefunction(check):
+            if not await check(ctx):
+                return False
+        else:
+            if not check(ctx):
+                return False
+        return True
+    except:
+        return False
 class CogHelp(menus.ListPageSource):
     def __init__(self, data, ctx):
         self.cog = data
@@ -131,7 +142,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             else:
                 description = cog.description
 
-            if not name in ["Jishaku", "Music"]:
+            if await run_cog_check(cog.cog_check, ctx):
                 if name in emojis:
                     em.add_field(name=f"{emojis[name]} {name} ({guild_prefix}help {cog.qualified_name})", value=description, inline=False)
                 else:
@@ -143,10 +154,9 @@ class RoboCoderHelpCommand(commands.HelpCommand):
     async def send_cog_help(self, cog):
         ctx = self.context
         bot = ctx.bot
-        if not cog.qualified_name in ["Jishaku", "Music"]:
-            if cog.cog_check(ctx):
-                pages = menus.MenuPages(source=CogHelp(cog, ctx), clear_reactions_after=True)
-                await pages.start(ctx)
+        if await run_cog_check(cog.cog_check, ctx):
+            pages = menus.MenuPages(source=CogHelp(cog, ctx), clear_reactions_after=True)
+            await pages.start(ctx)
 
     async def send_command_help(self, command):
         ctx = self.context
