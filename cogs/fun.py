@@ -7,7 +7,6 @@ import random
 from .utils import custom
 
 class Fun(commands.Cog):
-    """Lots of fun."""
     def __init__(self, bot):
         self.bot = bot
 

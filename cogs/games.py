@@ -60,7 +60,7 @@ class GameTimedOut(Exception):
     pass
 
 class Games(commands.Cog):
-    """Fun games."""
+    """Fun games to play on discord."""
     def __init__(self, bot):
         self.bot = bot
     @commands.guild_only()
