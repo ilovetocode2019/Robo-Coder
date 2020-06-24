@@ -16,6 +16,8 @@ import io
 import re
 import zlib
 
+from .utils import custom
+
 class DocsPages(menus.ListPageSource):
     def __init__(self, data, search, ctx):
         self.search = search
@@ -26,10 +28,7 @@ class DocsPages(menus.ListPageSource):
 
     async def format_page(self, menu, entries):
         offset = menu.current_page * self.per_page
-        if isinstance(self.ctx.channel, discord.DMChannel):
-            em = discord.Embed(title=f"Results for search '{self.search}'", description="")
-        else:
-            em = discord.Embed(title=f"Results for search '{self.search}'", description="", color=discord.Colour.from_rgb(*self.bot.customization[str(self.ctx.guild.id)]["color"]))
+        em = discord.Embed(title=f"Results for search '{self.search}'", description="", color=custom.colors.discord)
         for i, v in enumerate(entries, start=offset):
             em.description += "\n[`"+v[0]+"`]("+v[1]+")"
         em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{int(len(self.data)/10)+1}")
@@ -285,10 +284,7 @@ class Tools(commands.Cog):
             async with session.get(f"https://api.github.com/repos/{repo}/releases") as response:
                 releases_data = await response.json()
           
-        if isinstance(ctx.channel, discord.DMChannel):
-            em = discord.Embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"))
-        else:
-            em = discord.Embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+        em = discord.Embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=custom.colors.github)
         em.add_field(name="Language", value=data.get("language"))
         em.add_field(name="Branch", value=data.get("default_branch"))
         em.add_field(name="Stars", value=data.get("stargazers_count"))
@@ -317,11 +313,7 @@ class Tools(commands.Cog):
             return await ctx.send("User not found")
 
 
-        if isinstance(ctx.channel, discord.DMChannel):
-            em = discord.Embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"))
-        else:
-            em = discord.Embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
-
+        em = discord.Embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=custom.colors.github)
         em.add_field(name="Repositories", value=data.get("public_repos"))
         em.add_field(name="Gists", value=data.get("public_gists"))
         em.add_field(name="Followers", value=data.get("followers"))

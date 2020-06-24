@@ -5,6 +5,7 @@ import pathlib
 from datetime import datetime
 from datetime import timezone
 
+from .utils import custom
 class Notes(commands.Cog):
     """Sticky notes and todo lists."""
     def __init__(self, bot):
@@ -17,10 +18,7 @@ class Notes(commands.Cog):
     @note.command(name="list", description="Check your sticky notes")
     async def notelist(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT id, title, Content FROM notes WHERE notes.Userid='{str(ctx.author.id)}'")
-        if isinstance(ctx.channel, discord.DMChannel):
-            em = discord.Embed(title="Sticky notes")
-        else:
-            em = discord.Embed(title="Sticky notes", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+        em = discord.Embed(title="Sticky notes", color=custom.colors.notes)
         for row in rows:
             em.add_field(name=row[1], value=f"{row[2]} `{row[0]}`", inline=False)
         await ctx.send(embed=em)
@@ -42,10 +40,7 @@ class Notes(commands.Cog):
     @commands.group(invoke_without_command=True, description="See your todo list")
     async def todo(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT id, content, Status FROM todo WHERE todo.Userid='{ctx.author.id}'")
-        if isinstance(ctx.channel, discord.DMChannel):
-            em = discord.Embed(title="Todo", description="")
-        else:
-            em = discord.Embed(title="Todo", description="", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+        em = discord.Embed(title="Todo", description="", color=custom.colors.notes)
         for row in rows:
             em.description += f"\n{row[2]}: {row[1]} `{row[0]}`"
 

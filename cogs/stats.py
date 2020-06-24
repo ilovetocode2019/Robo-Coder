@@ -4,11 +4,12 @@ import discord
 
 from datetime import datetime
 
-from .utils import time
-
 import os
 import codecs
 import pathlib
+
+from .utils import time
+from .utils import custom
 
 def get_lines_of_code(comments=False):
     total_lines = 0
@@ -91,7 +92,7 @@ class Stats(commands.Cog):
                     commands_used_today[row[2]] += 1
 
 
-        em = discord.Embed(title="Stats", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+        em = discord.Embed(title="Stats", color=custom.colors.default)
         em.add_field(name="Top Commands Used", value="\n".join([f"{x} ({commands_used[x]})" for x in reversed(sorted(commands_used, key=commands_used.get))][:5]))
         
         if len(users_today) != 0:
@@ -130,7 +131,7 @@ class Stats(commands.Cog):
         if isinstance(ctx.channel, discord.DMChannel):
             em = discord.Embed(title="Stats")
         else:
-            em = discord.Embed(title="Stats", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+            em = discord.Embed(title="Stats", color=custom.colors.default)
         lines = 0
         em.add_field(name="Code", value=get_lines_of_code())
         uptime = datetime.now()-self.bot.startup_time

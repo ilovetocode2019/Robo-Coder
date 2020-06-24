@@ -4,6 +4,8 @@ from discord.ext import commands
 
 import random
 
+from .utils import custom
+
 class Fun(commands.Cog):
     """Lots of fun."""
     def __init__(self, bot):
@@ -23,7 +25,7 @@ class Fun(commands.Cog):
         if isinstance(ctx.channel, discord.DMChannel):
             em = discord.Embed(title=title, description=msg)
         else:
-            em = discord.Embed(title=title, description=msg, color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+            em = discord.Embed(title=title, description=msg, color=custom.colors.default)
         em.set_author(name=str(ctx.author.display_name), icon_url=ctx.author.avatar_url)
         em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
         msg = await ctx.send(embed=em)

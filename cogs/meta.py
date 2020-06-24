@@ -15,8 +15,9 @@ import json
 import sys
 import importlib
 import inspect
-from .utils import time
 
+from .utils import time
+from .utils import custom
 def has_manage_guild():
     async def predicate(ctx):
         try:
@@ -70,10 +71,7 @@ class CogHelp(menus.ListPageSource):
             cogdescription = ""
         else:
             cogdescription = self.cog.description
-        if isinstance(self.ctx.channel, discord.DMChannel):
-            em = discord.Embed(title=self.cog.qualified_name, description=cogdescription+"\n")
-        else:
-            em = discord.Embed(title=self.cog.qualified_name, description=cogdescription+"\n", color=discord.Colour.from_rgb(*self.bot.customization[str(self.ctx.guild.id)]["color"]))
+        em = discord.Embed(title=self.cog.qualified_name, description=cogdescription+"\n", color=custom.colors.default)
 
         for i, command in enumerate(entries, start=offset):
             if command.hidden != True:
@@ -132,10 +130,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             guild_prefix = bot.get_cog("Meta").get_guild_prefix(ctx.guild)
         else:
             guild_prefix = "r!"
-        if isinstance(ctx.channel, discord.DMChannel):
-            em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument")
-        else:
-            em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument", color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
+        em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument", color=custom.colors.default)
         for name, cog in bot.cogs.items():
             if not cog.description:
                 description = "No description"
@@ -174,10 +169,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             usage = ""
         else:
             usage = command.usage
-        if isinstance(ctx.channel, discord.DMChannel):
-            embed = discord.Embed(title=guild_prefix+command.name + " " + usage, description=command.description)
-        else:
-            embed = discord.Embed(title=guild_prefix+command.name + " " + usage, description=command.description, color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
+        embed = discord.Embed(title=guild_prefix+command.name + " " + usage, description=command.description, color=custom.colors.default)
         if command.help != None:
             embed.add_field(name="Detailed Help:", value=command.help, inline=False)
         if command.aliases != []:
@@ -196,10 +188,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             usage = ""
         else:
             usage = command.usage
-        if isinstance(ctx.channel, discord.DMChannel):
-            embed = discord.Embed(title=guild_prefix+command.name + " " + usage, description=command.description)
-        else:
-            embed = discord.Embed(title=guild_prefix+command.name + " " + usage, description=command.description, color=discord.Colour.from_rgb(*bot.customization[str(ctx.guild.id)]["color"]))
+        embed = discord.Embed(title=guild_prefix+command.name + " " + usage, description=command.description, color=custom.colors.default)
         if command.help != None:
             embed.add_field(name="Detailed Help:", value=command.help, inline=False)
         if command.aliases != []:
@@ -242,14 +231,14 @@ class Meta(commands.Cog):
         bot.help_command = RoboCoderHelpCommand()
         bot.help_command.cog = self
 
-        if os.path.exists("customization.json"):
-            with open("customization.json", "r") as f:
-                self.bot.customization = json.load(f)
+        if os.path.exists("prefixes.json"):
+            with open("prefixes.json", "r") as f:
+                self.bot.guild_prefixes = json.load(f)
         else:
-            with open("customization.json", "w") as f:
+            with open("prefixes.json", "w") as f:
                 data = {}
                 json.dump(data, f)
-            self.bot.customization = {}
+            self.bot.guild_prefixes = {}
 
 
     def cog_unload(self):
@@ -296,49 +285,40 @@ class Meta(commands.Cog):
     def get_guild_prefix(self, guild):
         if not guild:
             return "r!"
-        return self.bot.customization[str(guild.id)]["prefixes"][0]
+        return self.bot.guild_prefixes[str(guild.id)][0]
 
     @commands.group(invoke_without_command=True)
     async def prefix(self, ctx):
-        await ctx.send("prefixes: " + ", ".join(self.bot.customization[str(ctx.guild.id)]["prefixes"]))        
+        await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))        
 
 
     @prefix.command(name="add", description="add a prefix", usage="[prefix]")
     @commands.guild_only()
     @has_manage_guild()
     async def add(self, ctx, *, arg):
-        self.bot.customization[str(ctx.guild.id)]["prefixes"].append(arg)
-        with open("customization.json", "w") as f:
-            json.dump(self.bot.customization, f)
+        self.bot.guild_prefixes[str(ctx.guild.id)].append(arg)
+        with open("prefixes.json", "w") as f:
+            json.dump(self.bot.guild_prefixes, f)
         await ctx.send("Added prefix: " + arg)
     
     @prefix.command(name="remove", description="remove prefix", usage="[prefix]")
     @commands.guild_only()
     @has_manage_guild()
     async def remove(self, ctx, *, arg):
-        if arg in self.bot.customization[str(ctx.guild.id)]["prefixes"]:
-            self.bot.customization[str(ctx.guild.id)]["prefixes"].remove(arg)
+        if arg in self.bot.guild_prefixes[str(ctx.guild.id)]:
+            self.bot.guild_prefixes[str(ctx.guild.id)].remove(arg)
             await ctx.send("Removed prefix: " + arg)
         else:
             await ctx.send(f"That prefix does not exist. Try '{self.get_guild_prefix(ctx.guild)}prefixes' to get a list of prefixes")
 
-        with open("customization.json", "w") as f:
-            json.dump(self.bot.customization, f)
+        with open("prefixes.json", "w") as f:
+            json.dump(self.bot.guild_prefixes, f)
 
     @prefix.command(name="prefixes", description="veiw a list of prefixes")
     @commands.guild_only()
     async def prefixes(self, ctx):
-        #if str(ctx.guild.id) in self.bot.guild_prefixes.keys():
-        server_prefixes = self.bot.customization[str(ctx.guild.id)]["prefixes"]
+        server_prefixes = self.bot.guild_prefixes
         await ctx.send("prefixes: " + ", ".join(server_prefixes))        
-    
-    @commands.command(name="setcolor", description="Set the bot's embed color", usage="[red] [green] [blue]")
-    @has_manage_guild()
-    async def setcolor(self, ctx, red: int, green: int, blue: int):
-        server_prefixes = self.bot.customization[str(ctx.guild.id)]["color"] = (red, green, blue)
-        with open("customization.json", "w") as f:
-            json.dump(self.bot.customization, f)
-        await ctx.send(f"Color set to {(red, green, blue)}")
 
     @commands.command(name="reload", description="Reload an extension", usage="[cog]", hidden=True)
     @commands.is_owner()

@@ -40,7 +40,7 @@ class Moderation(commands.Cog):
         chanid = self.bot.logging[str(before.guild.id)]
         channel = self.bot.get_channel(int(chanid))
 
-        em = discord.Embed(title="Nickname update", value=str(before.name), color=discord.Colour.from_rgb(*self.bot.customization[str(before.guild.id)]["color"]))
+        em = discord.Embed(title="Nickname update", value=str(before.name), color=discord.Colour.blue())
         em.add_field(name="Before", value=str(before.nick))
         em.add_field(name="Affter", value=str(after.nick))
         em.set_footer(text=self.bot.user.name)
@@ -55,7 +55,7 @@ class Moderation(commands.Cog):
 
         msg = "user: " + str(message.author) + "\nDeleted: " + str(message.content)
         title = "Deletion"
-        em = discord.Embed(title=title, description=msg, color=discord.Colour.from_rgb(*self.bot.customization[str(message.guild.id)]["color"]))
+        em = discord.Embed(title=title, description=msg, color=discord.Colour.red())
         em.set_author(name = str(message.author.display_name), icon_url = message.author.avatar_url)
         em.set_footer(text=self.bot.user.name)
         my_msg = await channel.send(embed = em)
@@ -69,7 +69,7 @@ class Moderation(commands.Cog):
 
         msg = "user: " + str(before.author) + "\nEdited: " + str(before.content) + "\nTo: " + str(after.content)
         title = "Edit"
-        em = discord.Embed(title = title, description = msg, color=discord.Colour.from_rgb(*self.bot.customization[str(before.guild.id)]["color"]))
+        em = discord.Embed(title = title, description = msg, color=discord.Colour.blue())
         em.set_author(name = str(before.author.display_name), icon_url = before.author.avatar_url)
         em.add_field(name="Jump!", value=f"https://discord.com/channels/{after.guild.id}/{after.channel.id}/{after.id}")
         em.set_footer(text=self.bot.user.name)

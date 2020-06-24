@@ -7,10 +7,10 @@ from datetime import datetime, date, time, timedelta, timezone
 import datetime as dt
 import dateparser
 
-from .utils import time as time_utils
 import time as time_module
-import re
 
+from .utils import time as time_utils
+from .utils import custom
 class Reminders(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -65,10 +65,7 @@ class Reminders(commands.Cog):
     @remind.command(name="list", description="Get a list of your reminders")
     async def remindlist(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT id, time, Content FROM reminders WHERE reminders.userid='{str(ctx.author.id)}'")
-        if isinstance(ctx.channel, discord.DMChannel):
-            em = discord.Embed(title="reminders", description="")
-        else:
-            em = discord.Embed(title="reminders", description="", color=discord.Colour.from_rgb(*self.bot.customization[str(ctx.guild.id)]["color"]))
+        em = discord.Embed(title="reminders", description="", color=custom.colors.notes)
         for row in rows:
             time = datetime.fromtimestamp(row[1])-datetime.now()
             em.add_field(name=f"in {time.days} days, {time_utils.readable(time.seconds)}", value=f"{row[2]} `{row[0]}`", inline=False)

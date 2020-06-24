@@ -8,6 +8,8 @@ import os
 import pathlib
 import asyncpg
 
+from cogs.utils import custom
+
 logger = logging.getLogger("discord")
 logger.setLevel(logging.INFO)
 handler = logging.FileHandler(filename="coder.log", encoding="utf-8", mode="w")
@@ -29,10 +31,11 @@ def get_prefix(client, message):
         if client.get_cog("Meta"):
 
             if not isinstance(message.channel, discord.DMChannel):
-                if str(message.guild.id) in client.customization.keys():
-                    prefixes += client.customization[str(message.guild.id)]["prefixes"]
+                if str(message.guild.id) in client.guild_prefixes.keys():
+                    prefixes += client.guild_prefixes[str(message.guild.id)]
                 else:
-                    client.customization[str(message.guild.id)] = {"prefixes":["r!"], "color": (46, 184, 76)}
+                    client.guild_prefixes[str(message.guild.id)] = ["r!"]
+                    prefixes = ["r!"]
             else:
                 prefixes = ["r!"]
 
@@ -59,7 +62,7 @@ class RoboCoder(commands.Bot):
         self.cogs_to_add = ["cogs.meta", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders", "cogs.stats"]
 
         self.loop.create_task(self.load_cogs_to_add())
-        self.loop.create_task(self.on_start())
+        self.loop.create_task(self.setup_bot())
         
         self.connected_at = "Not connected yet..."
         self.startup_time = datetime.now()
@@ -82,7 +85,7 @@ class RoboCoder(commands.Bot):
         logging.info(f"Logged in as {self.user.name} - {self.user.id}")
 
 
-    async def on_start(self):
+    async def setup_bot(self):
         #self.db = await asyncpg.connect(user=self.config["sqlname"], password=self.config["sqlpass"], database=self.config["dbname"], host='localhost')
         self.db = await asyncpg.create_pool(self.config["sqllogin"])
         await self.db.execute('''
