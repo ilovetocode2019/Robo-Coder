@@ -28,7 +28,7 @@ class DocsPages(menus.ListPageSource):
 
     async def format_page(self, menu, entries):
         offset = menu.current_page * self.per_page
-        em = discord.Embed(title=f"Results for search '{self.search}'", description="", color=custom.colors.discord)
+        em = self.bot.build_embed(title=f"Results for search '{self.search}'", description="")
         for i, v in enumerate(entries, start=offset):
             em.description += "\n[`"+v[0]+"`]("+v[1]+")"
         em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{int(len(self.data)/10)+1}")
@@ -221,10 +221,6 @@ class Tools(commands.Cog):
         if len(matches) == 0:
             return await ctx.send("Could not find anything. Sorry.")
         
-        em = discord.Embed(title=f"Results for search '{obj}'", description="")
-        for match in matches[:5]:
-            em.description += "\n["+match[0]+"]("+match[1]+")"
-        """await ctx.send(embed=em)"""
         pages = menus.MenuPages(source=DocsPages(matches, obj, ctx), clear_reactions_after=True)
         await pages.start(ctx)
 
@@ -284,7 +280,7 @@ class Tools(commands.Cog):
             async with session.get(f"https://api.github.com/repos/{repo}/releases") as response:
                 releases_data = await response.json()
           
-        em = discord.Embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=custom.colors.github)
+        em = self.bot.build_embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=custom.colors.github)
         em.add_field(name="Language", value=data.get("language"))
         em.add_field(name="Branch", value=data.get("default_branch"))
         em.add_field(name="Stars", value=data.get("stargazers_count"))
@@ -313,7 +309,7 @@ class Tools(commands.Cog):
             return await ctx.send("User not found")
 
 
-        em = discord.Embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=custom.colors.github)
+        em = self.bot.build_embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=custom.colors.github)
         em.add_field(name="Repositories", value=data.get("public_repos"))
         em.add_field(name="Gists", value=data.get("public_gists"))
         em.add_field(name="Followers", value=data.get("followers"))
@@ -337,7 +333,7 @@ class Tools(commands.Cog):
             color = await average_image_color(guild.icon_url, self.bot.loop)
         except:
             color = discord.Embed.Empty
-        em = discord.Embed(title=guild.name, description="", color=color)
+        em = self.bot.build_embed(title=guild.name, description="", color=color)
         
         em.set_thumbnail(url=guild.icon_url)
 
@@ -377,7 +373,7 @@ class Tools(commands.Cog):
             color = await average_image_color(user.avatar_url, self.bot.loop)
         except:
             color = discord.Embed.Empty
-        em = discord.Embed(title=user.name, description=nick, color=color)
+        em = self.bot.build_embed(title=user.name, description=nick, color=color)
         
         em.set_thumbnail(url=user.avatar_url)
 
@@ -407,7 +403,7 @@ class Tools(commands.Cog):
             color = await average_image_color(user.avatar_url, self.bot.loop)
         except:
             color = discord.Embed.Empty
-        em = discord.Embed(color=color)
+        em = self.bot.build_embed(color=color)
         em.set_image(url=user.avatar_url)
         await ctx.send(embed=em)
 

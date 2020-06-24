@@ -92,7 +92,7 @@ class Stats(commands.Cog):
                     commands_used_today[row[2]] += 1
 
 
-        em = discord.Embed(title="Stats", color=custom.colors.default)
+        em = self.bot.build_embed(title="Stats", color=custom.colors.default)
         em.add_field(name="Top Commands Used", value="\n".join([f"{x} ({commands_used[x]})" for x in reversed(sorted(commands_used, key=commands_used.get))][:5]))
         
         if len(users_today) != 0:
@@ -128,10 +128,7 @@ class Stats(commands.Cog):
     
     @commands.command(name="about", description="Info about me", aliases=["info"])
     async def about(self, ctx):
-        if isinstance(ctx.channel, discord.DMChannel):
-            em = discord.Embed(title="Stats")
-        else:
-            em = discord.Embed(title="Stats", color=custom.colors.default)
+        em = self.bot.build_embed(title="Stats")
         lines = 0
         em.add_field(name="Code", value=get_lines_of_code())
         uptime = datetime.now()-self.bot.startup_time

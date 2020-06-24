@@ -127,5 +127,12 @@ class RoboCoder(commands.Bot):
             )
         ''')
 
+    def build_embed(self, **embed_kwargs):
+        if "color" not in embed_kwargs:
+            embed_kwargs["color"] = custom.Color.default
+        
+        em = discord.Embed(**embed_kwargs)
+        return em
+
 bot = RoboCoder()
 bot.run(bot.config["token"])

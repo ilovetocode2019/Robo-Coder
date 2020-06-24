@@ -21,10 +21,7 @@ class Fun(commands.Cog):
     
     @commands.command(name="embed", description="Create a simple embed", usage="[title] [content]")
     async def embed(self, ctx, title, *, msg):
-        if isinstance(ctx.channel, discord.DMChannel):
-            em = discord.Embed(title=title, description=msg)
-        else:
-            em = discord.Embed(title=title, description=msg, color=custom.colors.default)
+        em = self.bot.build_embed(title=title, description=msg)
         em.set_author(name=str(ctx.author.display_name), icon_url=ctx.author.avatar_url)
         em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
         msg = await ctx.send(embed=em)

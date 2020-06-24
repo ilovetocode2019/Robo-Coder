@@ -33,7 +33,7 @@ class MusicList(menus.ListPageSource):
     async def format_page(self, menu, entries):
         offset = menu.current_page * self.per_page
         
-        em = discord.Embed(title="Songs", description="")
+        em = self.bot.build_embed(title="Songs", description="")
         for i, song in enumerate(entries, start=offset):
             em.description += "\n" + song
         return em
@@ -327,7 +327,7 @@ class Player:
             
 
     def player_update(self):
-        em = discord.Embed(title="Player", color=custom.colors.default)
+        em = self.bot.build_embed(title="Player", color=custom.colors.default)
         if self.now != None:
             em.add_field(name="Playing", value=f"{str(self.now.song)} ({str(self.now.status)})", inline=False)
             
@@ -375,7 +375,7 @@ class Music(commands.Cog):
         player = self.players.get(ctx.guild.id)
         if not player:
             try:
-                em = discord.Embed(title="Player", color=custom.colors.default)
+                em = self.bot.build_embed(title="Player")
                 em.add_field(name="Playing", value="No song is playing", inline=False)
                 msg = await ctx.send(embed=em)
                 await msg.add_reaction("⏸️")
@@ -773,7 +773,7 @@ class Music(commands.Cog):
             trail = "..."
         else:
             trail = ""
-        em = discord.Embed(title=song.title, description=song.description[:500]+trail, color=custom.colors.default)
+        em = self.bot.build_embed(title=song.title, description=song.description[:500]+trail)
 
         em.add_field(name="Duration", value=str(song.duration))
         em.add_field(name="Uploader", value=str(song.uploader))

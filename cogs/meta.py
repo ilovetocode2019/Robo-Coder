@@ -71,7 +71,7 @@ class CogHelp(menus.ListPageSource):
             cogdescription = ""
         else:
             cogdescription = self.cog.description
-        em = discord.Embed(title=self.cog.qualified_name, description=cogdescription+"\n", color=custom.colors.default)
+        em = self.bot.build_embed(title=self.cog.qualified_name, description=cogdescription+"\n")
 
         for i, command in enumerate(entries, start=offset):
             if command.hidden != True:
@@ -130,7 +130,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             guild_prefix = bot.get_cog("Meta").get_guild_prefix(ctx.guild)
         else:
             guild_prefix = "r!"
-        em = discord.Embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument", color=custom.colors.default)
+        em = bot.build_embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument")
         for name, cog in bot.cogs.items():
             if not cog.description:
                 description = "No description"
@@ -169,7 +169,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             usage = ""
         else:
             usage = command.usage
-        embed = discord.Embed(title=guild_prefix+command.name + " " + usage, description=command.description, color=custom.colors.default)
+        embed = self.build_embed(title=guild_prefix+command.name + " " + usage, description=command.description)
         if command.help != None:
             embed.add_field(name="Detailed Help:", value=command.help, inline=False)
         if command.aliases != []:
@@ -188,7 +188,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             usage = ""
         else:
             usage = command.usage
-        embed = discord.Embed(title=guild_prefix+command.name + " " + usage, description=command.description, color=custom.colors.default)
+        embed = bot.build_embed(title=guild_prefix+command.name + " " + usage, description=command.description)
         if command.help != None:
             embed.add_field(name="Detailed Help:", value=command.help, inline=False)
         if command.aliases != []:

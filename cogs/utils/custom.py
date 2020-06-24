@@ -1,10 +1,7 @@
-import discord
+from discord import Colour
 
 class Color:
-    def __init__(self):
-        self.default = 0x2EB84C
-        self.github = 0xE8E8E8
-        self.discord = discord.Colour.blurple()
-        self.notes = discord.Colour.dark_blue()
-
-colors = Color()
+    default = 0x2EB84C
+    github = 0xE8E8E8
+    discord = Colour.blurple()
+    notes = Colour.dark_blue()
