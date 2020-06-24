@@ -398,8 +398,9 @@ class Tools(commands.Cog):
         em.add_field(name="🕒 Created at", value=str(user.created_at))
 
         em.add_field(name="➡️ Joined at", value=str(user.joined_at))
-
-        em.add_field(name="Roles", value=" ".join([role.mention for role in user.roles]))
+        
+        if len(user.roles) != 0:
+            em.add_field(name="Roles", value=" ".join([role.mention for role in user.roles]))
 
         await ctx.send(embed=em)
 
