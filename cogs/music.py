@@ -327,7 +327,7 @@ class Player:
             
 
     def player_update(self):
-        em = self.bot.build_embed(title="Player", color=custom.colors.default)
+        em = self.bot.build_embed(title="Player", color=custom.Color.default)
         if self.now != None:
             em.add_field(name="Playing", value=f"{str(self.now.song)} ({str(self.now.status)})", inline=False)
             

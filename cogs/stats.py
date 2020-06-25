@@ -92,7 +92,7 @@ class Stats(commands.Cog):
                     commands_used_today[row[2]] += 1
 
 
-        em = self.bot.build_embed(title="Stats", color=custom.colors.default)
+        em = self.bot.build_embed(title="Stats", color=custom.Color.default)
         em.add_field(name="Top Commands Used", value="\n".join([f"{x} ({commands_used[x]})" for x in reversed(sorted(commands_used, key=commands_used.get))][:5]))
         
         if len(users_today) != 0:
