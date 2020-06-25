@@ -334,13 +334,11 @@ class Tools(commands.Cog):
             color = await average_image_color(guild.icon_url, self.bot.loop)
         except:
             color = discord.Embed.Empty
-        em = self.bot.build_embed(title=guild.name, description="", color=color)
+        em = self.bot.build_embed(title=f"{guild.name} ({guild.id})", description="", color=color)
         
         em.set_thumbnail(url=guild.icon_url)
 
         em.add_field(name="👑 Owner", value=guild.owner.mention)
-
-        em.add_field(name="🆔 ID", value=guild.id)
 
         em.add_field(name="<:nitro:723958775970791544> Level", value=guild.premium_tier)
 
