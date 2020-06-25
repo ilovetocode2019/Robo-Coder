@@ -384,6 +384,10 @@ class Tools(commands.Cog):
 
         em.add_field(name="➡️ Joined at", value=f"{humanize.naturaldate(user.joined_at)} ({humanize.naturaltime(user.joined_at)})")
 
+        for x in enumerate(sorted(ctx.guild.members, key=lambda x: x.joined_at)):
+            if x[1] == user:
+                em.add_field(name="👪 Join Position", value=x[0]+1)
+
         if len(user.roles) != 0:
             em.add_field(name="Roles", value=" ".join([role.mention for role in user.roles]))
 
