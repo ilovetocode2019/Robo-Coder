@@ -9,6 +9,7 @@ import pathlib
 import asyncpg
 
 from cogs.utils import custom
+from cogs.utils import context
 
 logger = logging.getLogger("discord")
 logger.setLevel(logging.INFO)
@@ -83,6 +84,9 @@ class RoboCoder(commands.Bot):
 
     async def on_ready(self):
         logging.info(f"Logged in as {self.user.name} - {self.user.id}")
+
+    async def get_context(self, message, *, cls=None):
+        return await super().get_context(message, cls=context.RoboCoderContext)
 
 
     async def setup_bot(self):
