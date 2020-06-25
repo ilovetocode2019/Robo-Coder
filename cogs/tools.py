@@ -346,8 +346,6 @@ class Tools(commands.Cog):
 
         em.add_field(name="🗣️ Channels", value=f"Text: {str(len(guild.text_channels))}\nVoice: {str(len(guild.voice_channels))}")
 
-        em.add_field(name="👪 Members", value=len(guild.members))
-        
         status = {"online":0, "idle":0, "dnd":0, "offline":0}
         for member in guild.members:
             status[str(member.status)] += 1
