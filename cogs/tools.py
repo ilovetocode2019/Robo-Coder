@@ -3,6 +3,7 @@ from discord.ext import menus
 import discord
 
 from datetime import datetime as d
+import humanize
 import inspect
 import os
 import asyncio
@@ -343,7 +344,7 @@ class Tools(commands.Cog):
 
         em.add_field(name="<:nitro:723958775970791544> Level", value=guild.premium_tier)
 
-        em.add_field(name="🕒 Created at", value=str(guild.created_at))
+        em.add_field(name="🕒 Created at", value=f"{humanize.naturaldate(guild.created_at)} ({humanize.naturaltime(guild.created_at)})")
 
         em.add_field(name="🗣️ Channels", value=f"Text: {str(len(guild.text_channels))}\nVoice: {str(len(guild.voice_channels))}")
 
@@ -383,10 +384,10 @@ class Tools(commands.Cog):
         if user.bot:
             em.description += "\n🤖 This person is a bot"
 
-        em.add_field(name="🕒 Created at", value=str(user.created_at))
+        em.add_field(name="🕒 Created at", value=f"{humanize.naturaldate(user.created_at)} ({humanize.naturaltime(user.created_at)})")
 
-        em.add_field(name="➡️ Joined at", value=str(user.joined_at))
-        
+        em.add_field(name="➡️ Joined at", value=f"{humanize.naturaldate(user.joined_at)} ({humanize.naturaltime(user.joined_at)})")
+
         if len(user.roles) != 0:
             em.add_field(name="Roles", value=" ".join([role.mention for role in user.roles]))
 
