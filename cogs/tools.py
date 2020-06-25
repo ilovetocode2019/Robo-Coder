@@ -340,11 +340,11 @@ class Tools(commands.Cog):
 
         em.add_field(name="👑 Owner", value=guild.owner.mention)
 
-        em.add_field(name="<:nitro:723958775970791544> Level", value=guild.premium_tier)
+        em.add_field(name="<:nitro:725730843930132560> Level", value=guild.premium_tier)
 
         em.add_field(name="🕒 Created at", value=f"{humanize.naturaldate(guild.created_at)} ({humanize.naturaltime(guild.created_at)})")
 
-        em.add_field(name="🗣️ Channels", value=f"Text: {str(len(guild.text_channels))}\nVoice: {str(len(guild.voice_channels))}")
+        em.add_field(name="🗣️ Channels", value=f"<:textchannel:725730867644858518> {str(len(guild.text_channels))} \N{BULLET} <:voicechannel:725730883872751666> {str(len(guild.voice_channels))}")
 
         status = {"online":0, "idle":0, "dnd":0, "offline":0}
         for member in guild.members:
