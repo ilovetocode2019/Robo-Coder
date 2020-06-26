@@ -60,7 +60,7 @@ class RoboCoder(commands.Bot):
             owner_id=self.config["dev"],
         )
 
-        self.cogs_to_add = ["cogs.meta", "cogs.music", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders", "cogs.stats"]
+        self.cogs_to_add = ["cogs.meta", "cogs.tools", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders", "cogs.stats"]
 
         self.loop.create_task(self.load_cogs_to_add())
         self.loop.create_task(self.setup_bot())
