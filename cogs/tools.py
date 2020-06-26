@@ -366,11 +366,40 @@ class Tools(commands.Cog):
         else:
             nick = user.nick
 
+        badges = ""
+
+        if user.public_flags.staff:
+            badges += "<:staff:726131232534036572>"
+        
+        if user.public_flags.partner:
+            badges += "<:partner:726131508330496170>"
+        
+        if user.public_flags.hypesquad:
+            badges += "<:hypesquad:726131852427001887>"
+
+        if user.public_flags.bug_hunter:
+            badges += "<:bughunter:726132004604608553>"
+
+        if user.public_flags.hypesquad_bravery:
+            badges += "<:hypesquad_bravery:726132273082007659>"
+
+        if user.public_flags.hypesquad_brilliance:
+            badges += "<:hypesquad_brilliance:726132442343145583>"
+
+        if user.public_flags.hypesquad_balance:
+            badges += "<:hypesquad_balance:726132611084320879>"
+
+        if user.public_flags.early_supporter:
+            badges += "<:earlysupporter:726132986516471918>"
+
+        if user.public_flags.verified_bot_developer:
+            badges += "<:verified:726134370544386189>"
+
         try:
             color = await average_image_color(user.avatar_url, self.bot.loop)
         except:
             color = discord.Embed.Empty
-        em = self.bot.build_embed(title=user.name, description=nick, color=color)
+        em = self.bot.build_embed(title=f"{user.name} ({nick})", description=badges, color=color)
         
         em.set_thumbnail(url=user.avatar_url)
 
