@@ -353,7 +353,7 @@ class Tools(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.command(name="userinfo", description="Get info on a user", usage="[member]")
+    @commands.command(name="userinfo", description="Get info on a user", usage="[member]", aliases=["ui"])
     @commands.guild_only()
     async def userinfo(self, ctx, *, user:discord.Member=None):
         await ctx.channel.trigger_typing()
