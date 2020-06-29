@@ -386,7 +386,7 @@ class Meta(commands.Cog):
     async def uptime(self, ctx):
         uptime = datetime.now()-self.bot.startup_time
         connected_time = datetime.now()-self.bot.connected_at
-        await ctx.send(f"I started up {uptime.days} days, {time.readable(uptime.seconds)} ago, I connected {connected_time.days} days, {time.readable(connected_time.seconds)} ago")      
+        await ctx.send(f"I started up {uptime.days} days, {time.readable(uptime.seconds)} ago")      
 
     
     @commands.command(name="invite", description="Get a invite to add me to your server")
