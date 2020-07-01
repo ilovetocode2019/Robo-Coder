@@ -4,6 +4,8 @@ import discord
 
 from datetime import datetime as d
 import humanize
+import dateparser
+
 import inspect
 import os
 import asyncio
@@ -459,7 +461,7 @@ class Tools(commands.Cog):
             links = soup.find_all("img")
             avatar_url = links[0].get("src")         
 
-        em = discord.Embed(title=data["displayName"], description=data["description"], url=f"https://roblox.com/users/{userid}")
+        em = self.bot.build_embed(title=data["displayName"], description=data["description"], url=f"https://roblox.com/users/{userid}", timestamp=dateparser.parse(data["created"]))
 
         async with session.get(f"https://users.roblox.com/v1/users/{userid}/status") as resp:
             status = await resp.json()
@@ -469,12 +471,12 @@ class Tools(commands.Cog):
 
         async with session.get(f"https://friends.roblox.com/v1/users/{userid}/friends/count") as resp:
             friends = await resp.json()
-       
+        
         em.add_field(name="Friends Count", value=friends["count"])
 
         em.set_thumbnail(url=avatar_url)
 
-        em.set_footer(text=f"Created at {data['created']}")
+        em.set_footer(text="Created at")
 
         await ctx.send(embed=em)
 
