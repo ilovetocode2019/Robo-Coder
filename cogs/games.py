@@ -66,6 +66,7 @@ class Games(commands.Cog):
         self.bot = bot
         
     @commands.guild_only()
+    @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.command(name="tictactoe", description="A tic tac toe game", aliases=["ttt"], usage="[opponent]")
     async def ttt(self, ctx, *, opponent: discord.Member):
         msg = await ctx.send("Setting up the game....")
