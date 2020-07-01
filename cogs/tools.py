@@ -271,7 +271,7 @@ class Tools(commands.Cog):
         await ctx.send(final_url)
 
 
-    @commands.cooldown(1, 20)
+    @commands.cooldown(1, 20, commands.BucketType.user)
     @commands.group(name="github", description="Get infromation about a GitHub repository", usage="[username/repositpry]", invoke_without_command=True)
     async def github(self, ctx, repo):
         session = self.bot.session
@@ -301,7 +301,7 @@ class Tools(commands.Cog):
         await ctx.send(embed=em)
 
 
-    @commands.cooldown(1, 20)
+    @commands.cooldown(1, 20, commands.BucketType.user)
     @github.command(name="user", description="Get a GitHub user", usage="[user]")
     async def github_user(self, ctx, user):
         session = self.bot.session
