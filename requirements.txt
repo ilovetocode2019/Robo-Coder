@@ -6,3 +6,4 @@ git+https://github.com/Rapptz/discord-ext-menus
 youtube_dl
 Pillow
 dateparser
+bs4

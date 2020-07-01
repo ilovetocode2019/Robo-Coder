@@ -16,6 +16,7 @@ from io import BytesIO
 import io
 import re
 import zlib
+from bs4 import BeautifulSoup
 
 from .utils import custom
 
@@ -437,7 +438,45 @@ class Tools(commands.Cog):
         em.set_image(url=user.avatar_url)
         await ctx.send(embed=em)
 
+    @commands.cooldown(1, 15, commands.BucketType.user)
+    @commands.command(name="roblox", description="Get a Roblox user", usage="[username]")
+    async def roblox(self, ctx, username):
+        session = aiohttp.ClientSession()
+        async with session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
+            data = await resp.json()
+            if "Id" not in data:
+                return await ctx.send("Sorry, that user not found")
+        
+        userid = data["Id"]
+        async with session.get(f"https://users.roblox.com/v1/users/{userid}") as resp:
+            data = await resp.json()
 
+        async with session.get(f"https://www.roblox.com/users/{userid}/profile") as resp:
+            html = await resp.read()
+            html = html.decode("utf-8")
+
+            soup = BeautifulSoup(html , 'html.parser')
+            links = soup.find_all("img")
+            avatar_url = links[0].get("src")         
+
+        em = discord.Embed(title=data["displayName"], description=data["description"], url=f"https://roblox.com/users/{userid}")
+
+        async with session.get(f"https://users.roblox.com/v1/users/{userid}/status") as resp:
+            status = await resp.json()
+        
+        if status["status"] != "":
+            em.add_field(name="Status", value=status["status"])
+
+        async with session.get(f"https://friends.roblox.com/v1/users/{userid}/friends/count") as resp:
+            friends = await resp.json()
+       
+        em.add_field(name="Friends Count", value=friends["count"])
+
+        em.set_thumbnail(url=avatar_url)
+
+        em.set_footer(text=f"Created at {data['created']}")
+
+        await ctx.send(embed=em)
 
 def setup(bot):
     bot.add_cog(Tools(bot))
