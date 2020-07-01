@@ -7,6 +7,7 @@ from discord.ext import commands
 import os
 import pathlib
 import asyncpg
+import aiohttp
 
 from cogs.utils import custom
 from cogs.utils import context
@@ -90,7 +91,7 @@ class RoboCoder(commands.Bot):
 
 
     async def setup_bot(self):
-        #self.db = await asyncpg.connect(user=self.config["sqlname"], password=self.config["sqlpass"], database=self.config["dbname"], host='localhost')
+        self.session = aiohttp.ClientSession()
         self.db = await asyncpg.create_pool(self.config["sqllogin"])
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS notes(

@@ -397,10 +397,8 @@ class Meta(commands.Cog):
     @commands.command(name="logout", description="Logout command", hidden=True)
     @commands.is_owner()
     async def logout(self, ctx):
-        try:
-            await self.bot.db.close()
-        except:
-            pass
+        await self.bot.db.close()
+        await self.bot.session.close()
         print("Logging out of Discord.")
         await ctx.send(":wave: Logging out.")
         await self.bot.logout()

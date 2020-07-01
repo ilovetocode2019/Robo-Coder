@@ -76,11 +76,11 @@ def snowstamp(snowflake):
 
     return d.utcfromtimestamp(timestamp).strftime('%b %d, %Y at %#I:%M %p')    
     
-async def average_image_color(avatar_url, loop):
-    async with aiohttp.ClientSession() as session:
-        async with session.get(str(avatar_url)) as resp:
-            data = await resp.read()
-            image = BytesIO(data)
+async def average_image_color(avatar_url, loop, session=None):
+    session = session or aiohttp.ClientSession()
+    async with session.get(str(avatar_url)) as resp:
+        data = await resp.read()
+        image = BytesIO(data)
 
     partial = functools.partial(Image.open, image)
     img = await loop.run_in_executor(None, partial)
@@ -178,7 +178,7 @@ class Tools(commands.Cog):
         cache = {}
         for key, page in page_types.items():
             sub = cache[key] = {}
-            async with aiohttp.ClientSession().get(page + "/objects.inv") as resp:
+            async with self.bot.session.get(page + "/objects.inv") as resp:
                 if resp.status != 200:
                     raise RuntimeError(
                         "Cannot build docs lookup table, try again later."
@@ -274,15 +274,14 @@ class Tools(commands.Cog):
     @commands.cooldown(1, 20)
     @commands.group(name="github", description="Get infromation about a GitHub repository", usage="[username/repositpry]", invoke_without_command=True)
     async def github(self, ctx, repo):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://api.github.com/repos/{repo}") as response:
-                data = await response.json()
+        session = self.bot.session
+        async with session.get(f"https://api.github.com/repos/{repo}") as response:
+            data = await response.json()
         if data.get("message") == "Not Found":
             return await ctx.send("Repository not found")
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://api.github.com/repos/{repo}/releases") as response:
-                releases_data = await response.json()
+        async with session.get(f"https://api.github.com/repos/{repo}/releases") as response:
+            releases_data = await response.json()
           
         em = self.bot.build_embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=custom.Color.github)
         em.add_field(name="Language", value=data.get("language"))
@@ -305,9 +304,9 @@ class Tools(commands.Cog):
     @commands.cooldown(1, 20)
     @github.command(name="user", description="Get a GitHub user", usage="[user]")
     async def github_user(self, ctx, user):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"https://api.github.com/users/{user}") as response:
-                data = await response.json()
+        session = self.bot.session
+        async with session.get(f"https://api.github.com/users/{user}") as response:
+            data = await response.json()
 
         if data.get("message") == "Not Found":
             return await ctx.send("User not found")
