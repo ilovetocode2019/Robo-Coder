@@ -209,6 +209,7 @@ class Internet(commands.Cog):
     @commands.cooldown(1, 20, commands.BucketType.user)
     @commands.group(name="github", description="Get infromation about a GitHub repository", usage="[username/repositpry]", invoke_without_command=True)
     async def github(self, ctx, repo):
+        await ctx.channel.trigger_typing()
         session = self.bot.session
         async with session.get(f"https://api.github.com/repos/{repo}") as response:
             data = await response.json()
@@ -239,6 +240,7 @@ class Internet(commands.Cog):
     @commands.cooldown(1, 20, commands.BucketType.user)
     @github.command(name="user", description="Get a GitHub user", usage="[user]")
     async def github_user(self, ctx, user):
+        await ctx.channel.trigger_typing()
         session = self.bot.session
         async with session.get(f"https://api.github.com/users/{user}") as response:
             data = await response.json()
@@ -261,6 +263,7 @@ class Internet(commands.Cog):
     @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.command(name="roblox", description="Get a Roblox user", usage="[username]")
     async def roblox(self, ctx, username):
+        await ctx.channel.trigger_typing()
         session = aiohttp.ClientSession()
         async with session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
             data = await resp.json()
