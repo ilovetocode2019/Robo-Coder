@@ -131,7 +131,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         else:
             guild_prefix = "r!"
         em = bot.build_embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument")
-        for name, cog in bot.cogs.items():
+        for name, cog in sorted(bot.cogs.items()):
             if not cog.description:
                 description = "No description"
             else:
