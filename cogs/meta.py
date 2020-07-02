@@ -391,7 +391,11 @@ class Meta(commands.Cog):
     
     @commands.command(name="invite", description="Get a invite to add me to your server")
     async def invite(self, ctx):
-        invite = discord.utils.oauth_url(self.bot.user.id, permissions=None, guild=None, redirect_uri=None)
+        perms  = discord.Permissions.none()
+        perms.manage_messages = True
+        perms.kick_members = True
+        perms.ban_members = True
+        invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms, guild=None, redirect_uri=None)
         await ctx.send(f"<{invite}>")
 
     @commands.command(name="logout", description="Logout command", hidden=True)
