@@ -91,7 +91,7 @@ class RoboCoder(commands.Bot):
 
 
     async def setup_bot(self):
-        self.session = aiohttp.ClientSession()
+        self.session = aiohttp.ClientSession(loop=self.loop)
         self.db = await asyncpg.create_pool(self.config["sqllogin"])
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS notes(
