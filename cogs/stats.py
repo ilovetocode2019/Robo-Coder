@@ -105,7 +105,7 @@ class Stats(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @stats_group.command(name="other")
+    @stats_group.command(name="other", hidden=True)
     @commands.is_owner()
     async def stats_other(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT * FROM Commands")
@@ -121,7 +121,7 @@ class Stats(commands.Cog):
         await ctx.send("\n".join([f"{x} ({usage[x]})" for x in reversed(sorted(usage, key=usage.get))]))
 
 
-    @stats_group.command(name="global")
+    @stats_group.command(name="global", hidden=True)
     @commands.is_owner()
     async def stats_global(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT * FROM Commands")
