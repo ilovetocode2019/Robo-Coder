@@ -104,7 +104,23 @@ class Stats(commands.Cog):
             em.add_field(name="Top Command Users Today", value="\n".join([f"{str(new_guild.get_member(x))} ({users_today[x]})" for x in reversed(sorted(users_today, key=users_today.get))][:5]))
 
         await ctx.send(embed=em)
-    
+
+    @stats_group.command(name="other")
+    @commands.is_owner()
+    async def stats_other(self, ctx):
+        rows = await self.bot.db.fetch(f"SELECT * FROM Commands")
+        usage = {}
+        for row in rows:
+            guild = self.bot.get_guild(int(row[1]))
+            if guild != None and ctx.author.id not in [member.id for member in guild.members]:
+                if row[2] not in usage:
+                    usage[row[2]] = 1
+                else:
+                    usage[row[2]]+= 1
+
+        await ctx.send("\n".join([f"{x} ({usage[x]})" for x in reversed(sorted(usage, key=usage.get))]))
+
+
     @stats_group.command(name="global")
     @commands.is_owner()
     async def stats_global(self, ctx):
