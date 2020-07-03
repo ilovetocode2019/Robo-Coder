@@ -169,7 +169,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             usage = ""
         else:
             usage = command.usage
-        embed = self.build_embed(title=guild_prefix+command.name + " " + usage, description=command.description)
+        embed = bot.build_embed(title=guild_prefix+command.name + " " + usage, description=command.description)
         if command.help != None:
             embed.add_field(name="Detailed Help:", value=command.help, inline=False)
         if command.aliases != []:
