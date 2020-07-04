@@ -123,11 +123,6 @@ class Tools(commands.Cog):
         if not user:
             user = ctx.author
 
-        if not user.nick:
-            nick = ""
-        else:
-            nick = user.nick
-
         badges = ""
 
         if user.public_flags.staff:
@@ -161,7 +156,12 @@ class Tools(commands.Cog):
             color = await average_image_color(user.avatar_url, self.bot.loop)
         except:
             color = discord.Embed.Empty
-        em = self.bot.build_embed(title=f"{user.name} ({nick})", description=badges, color=color)
+
+        title = user.name
+        if user.nick != None:
+            title += f" ({nick})"
+        title += f" - {user.id}"
+        em = self.bot.build_embed(title=title, description=badges, color=color)
         
         em.set_thumbnail(url=user.avatar_url)
 
