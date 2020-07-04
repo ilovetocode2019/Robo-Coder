@@ -159,7 +159,7 @@ class Tools(commands.Cog):
 
         title = user.name
         if user.nick != None:
-            title += f" ({nick})"
+            title += f" ({user.nick})"
         title += f" - {user.id}"
         em = self.bot.build_embed(title=title, description=badges, color=color)
         
