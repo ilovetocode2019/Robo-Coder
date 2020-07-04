@@ -112,6 +112,40 @@ class Moderation(commands.Cog):
         await asyncio.sleep(4)
         await ctx.channel.purge(limit=int(arg)+1)
 
+    @commands.command(name="mute", description="Mute someone in the server", usage="[user]")
+    @commands.has_permissions(administrator=True)
+    async def mute(self, ctx, *, user: discord.Member):
+        role = discord.utils.get(ctx.guild.roles, name="Muted")
+
+        if not role:
+            role = await ctx.guild.create_role(name="Muted")
+            for channel in ctx.guild.channels:
+                try:
+                    await channel.edit(overwrites={role: discord.PermissionOverwrite(send_messages=False)})
+                except:
+                    pass
+                        
+
+        await user.add_roles(role)
+
+        await ctx.send(f"{str(user).capitalize()} has been muted")
+
+    @commands.command(name="unmute", description="Unmute someone in the server", usage="[user]")
+    @commands.has_permissions(administrator=True)
+    async def unmute(self, ctx, *, user: discord.Member):
+        role = discord.utils.get(ctx.guild.roles, name="Muted")
+
+        if not role:
+            return await ctx.send("❌ No muted role")
+        
+        if role not in user.roles:
+            return await ctx.send("❌ User is not muted")
+
+        await user.remove_roles(role)
+
+        await ctx.send(f"{str(user).capitalize()} has been unmuted")
+
+
         
 def setup(bot):
     bot.add_cog(Moderation(bot))

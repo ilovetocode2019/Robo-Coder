@@ -342,6 +342,8 @@ class Meta(commands.Cog):
         perms.manage_messages = True
         perms.kick_members = True
         perms.ban_members = True
+        perms.manage_channels = True
+        perms.manage_roles = True
         invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms, guild=None, redirect_uri=None)
         await ctx.send(f"<{invite}>")
 
