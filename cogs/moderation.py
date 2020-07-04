@@ -121,9 +121,15 @@ class Moderation(commands.Cog):
             role = await ctx.guild.create_role(name="Muted")
             for channel in ctx.guild.channels:
                 try:
-                    await channel.edit(overwrites={role: discord.PermissionOverwrite(send_messages=False)})
+                    overwrite = discord.PermissionOverwrite()
+                    overwrite.send_messages = False
+                    overwrite.read_messages = True
+                    await channel.set_permissions(role, overwrite=overwrite)
                 except:
                     pass
+
+        if role in user.roles:
+            return await ctx.send("❌ This user is already muted")
                         
 
         await user.add_roles(role)
