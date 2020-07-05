@@ -257,7 +257,7 @@ class Meta(commands.Cog):
         elif isinstance(e, discord.ext.commands.errors.MissingPermissions):
             return await ctx.send(":x: I don't have the permissions to do this") 
         elif isinstance(e, discord.ext.commands.errors.MissingRequiredArgument):
-            return await ctx.send(f":x: You are missing some argument(s). The usage for the command is: `{ctx.command.usage}`")
+            return await ctx.send(f":x: You are missing a argument: `{e.param}`")
         elif isinstance(e, discord.ext.commands.errors.BadArgument):
             return await ctx.send(":x: You are giving a bad argument")
         elif isinstance(e, discord.ext.commands.MaxConcurrencyReached):
