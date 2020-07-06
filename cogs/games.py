@@ -93,7 +93,7 @@ class Games(commands.Cog):
         return done.pop().result()
     
     @commands.guild_only()
-    @commands.cooldown(1, 600)
+    @commands.cooldown(1, 600, commands.BucketType.guild)
     @commands.group(name="uno", description="Start a uno game", invoke_without_command=True)
     async def uno_command(self, ctx):
         if ctx.guild.id in self.uno_games:
