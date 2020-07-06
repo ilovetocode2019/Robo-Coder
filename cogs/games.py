@@ -5,6 +5,12 @@ import asyncio
 import random
 import copy
 
+from .utils import uno
+import time
+
+import importlib
+import traceback
+
 
 class TicTacToe:
     def __init__(self, ctx, bot, msg, players):
@@ -64,7 +70,114 @@ class Games(commands.Cog):
     """Fun games."""
     def __init__(self, bot):
         self.bot = bot
+        self.uno_games = {}
+
+    async def wait_for_reaction_update(self, ctx, msg):
+        def check(reaction, user):
+            if not reaction.message.guild:
+                return False
+            return reaction.message.guild.id == ctx.guild.id and reaction.message.id == msg.id and str(reaction.emoji) == "✅" and user.id != self.bot.user.id
+
+        tasks = [
+                asyncio.ensure_future(self.bot.wait_for('reaction_add', check=check)),
+                asyncio.ensure_future(self.bot.wait_for('reaction_remove', check=check))
+                ]
+    
+        done, pending = await asyncio.wait(tasks, timeout=20, return_when=asyncio.FIRST_COMPLETED)
+        for task in pending:
+            task.cancel()
+
+            if len(done) == 0:
+                raise asyncio.TimeoutError()
+
+        return done.pop().result()
+    
+    @commands.guild_only()
+    @commands.cooldown(1, 600)
+    @commands.group(name="uno", description="Start a uno game", invoke_without_command=True)
+    async def uno_command(self, ctx):
+        if ctx.guild.id in self.uno_games:
+            return await ctx.send("❌ A uno game in this server is already happening")
+
+        if not ctx.guild.me.guild_permissions.manage_channels:
+            await ctx.send("❌ I need manage channels to do uno")
+            return
+        if not ctx.guild.me.guild_permissions.manage_messages:
+            await ctx.send("❌ I need manage messages to do uno")
+            return
+
+        ctx.game = uno.Game(ctx)
+        self.uno_games[ctx.guild.id] = ctx.game
+        await asyncio.sleep(3)
+        await ctx.game.add_player(ctx.author)
+        em = self.bot.build_embed(title="Uno", description="Click the check to join")
+        em.add_field(name="Players", value="\n".join([player.mention for player in ctx.game.players]))
+        msg = await ctx.send(embed=em)
+        await msg.add_reaction("✅")
+        counter = time.time()
+
+        while True:
+            try:
+                reaction, user = await self.wait_for_reaction_update(ctx, msg)
+            except asyncio.TimeoutError:
+                break
+
+            if user in ctx.game.players:
+                ctx.game.players.remove(user)
+                try:
+                    await ctx.game.channels[user].delete()
+                except:
+                    pass
+            else:
+                await ctx.game.add_player(user)
+
+            em = self.bot.build_embed(title="Uno", description="Click the check to join")
+            em.add_field(name="Players", value="\n".join([player.mention for player in ctx.game.players]) or "No players")
+            await msg.edit(embed=em)
+            
+            if time.time()-counter > 19:
+                break
+
+        if len(ctx.game.players) < 2:
+            em = self.bot.build_embed(title="Uno", description="Sorry, not enough players joined the game")
+            em.add_field(name="Players", value="\n".join([player.mention for player in ctx.game.players]) or "No players")
+            await msg.edit(embed=em)
+            await ctx.game.cleanup()
+            self.uno_games.pop(ctx.guild.id)
+            return
+
+
+        em = self.bot.build_embed(title="Uno", description="The game has started")
+        em.add_field(name="Players", value="\n".join([player.mention for player in ctx.game.players]) or "No players")
+
+        await msg.edit(embed=em)
         
+        await ctx.game.start_game()
+        await ctx.game.game_finished.wait()
+        self.uno_games.pop(ctx.guild.id)
+    
+    @commands.guild_only()
+    @uno_command.command(name="stop", description="Stop the uno game")
+    async def uno_stop(self, ctx):
+        if ctx.guild.id not in self.uno_games:
+            return await ctx.send("❌ No uno game for guild")
+        
+        ctx.game = self.uno_games[ctx.guild.id]
+
+        if ctx.game.owner.id != ctx.author.id:
+            return await ctx.send("❌ You do not own this game")
+
+        ctx.game.main_loop.cancel()
+        ctx.game.game_finished.set()
+        await ctx.game.cleanup()
+        await ctx.send("Game has been stopped")
+
+    @commands.command(name="reload_uno", description="Reload uno.utils", hidden=True)
+    @commands.is_owner()
+    async def reload_uno(self, ctx):
+        importlib.reload(uno)
+        await ctx.send("**🔁 Reloaded** `cogs.utils.uno`")
+
     @commands.guild_only()
     @commands.max_concurrency(1, commands.BucketType.guild)
     @commands.command(name="tictactoe", description="A tic tac toe game", aliases=["ttt"], usage="[opponent]")
