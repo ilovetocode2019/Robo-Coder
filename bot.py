@@ -61,7 +61,7 @@ class RoboCoder(commands.Bot):
             owner_id=self.config["dev"],
         )
 
-        self.cogs_to_add = ["cogs.meta", "cogs.admin", "cogs.tools", "cogs.internet", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders", "cogs.stats"]
+        self.cogs_to_add = ["cogs.meta", "cogs.admin", "cogs.tools", "cogs.internet", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders", "cogs.stats", "cogs.status"]
 
         self.loop.create_task(self.load_cogs_to_add())
         self.loop.create_task(self.setup_bot())
@@ -128,6 +128,14 @@ class RoboCoder(commands.Bot):
                 userid text,
                 guildid text,
                 command text,
+                time int
+            )
+        ''')
+
+        await self.db.execute('''
+            CREATE TABLE IF NOT EXISTS status_updates(
+                userid text,
+                status text,
                 time int
             )
         ''')

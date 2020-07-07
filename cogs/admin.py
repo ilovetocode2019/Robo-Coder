@@ -4,6 +4,7 @@ import discord
 import traceback
 import sys
 import os
+import datetime
 
 class Admin(commands.Cog):
     def __init__(self, bot):
@@ -68,6 +69,9 @@ class Admin(commands.Cog):
     @commands.command(name="logout", description="Logout command")
     @commands.is_owner()
     async def logout(self, ctx):
+        timestamp = datetime.datetime.timestamp(datetime.datetime.now())
+        await self.bot.db.execute("INSERT INTO status_updates (userid, status, time) VALUES ($1, $2, $3)", str(self.bot.user.id), "offline", int(timestamp))
+
         await self.bot.db.close()
         await self.bot.session.close()
         print("Logging out of Discord.")
@@ -77,6 +81,9 @@ class Admin(commands.Cog):
     @commands.command(name="restart", description="Restart command")
     @commands.is_owner()
     async def restart(self, ctx):
+        timestamp = datetime.datetime.timestamp(datetime.datetime.now())
+        await self.bot.db.execute("INSERT INTO status_updates (userid, status, time) VALUES ($1, $2, $3)", str(self.bot.user.id), "offline", int(timestamp))
+
         try:
             await self.bot.db.close()
         except:
