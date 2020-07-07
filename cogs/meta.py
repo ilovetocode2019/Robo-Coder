@@ -329,11 +329,31 @@ class Meta(commands.Cog):
         ping = (datetime.timestamp(datetime.now()) - start) * 1000
         await msg.edit(content=f"Pong!\nOne message round-trip took {ping}ms, my latency is {int(self.bot.latency*1000)}ms")
 
+    async def get_overall_uptime(self):
+        rows = await self.bot.db.fetch("SELECT * FROM status_updates WHERE status_updates.userid=$1", str(self.bot.user.id))
+        status = {}
+        for x, row in enumerate(rows):
+            if len(rows) == x+1:
+                time = datetime.timestamp(datetime.now())-row[2]
+            else:
+                time = rows[x+1][2]-row[2]
+            
+            if row[1] in status:
+                status[row[1]] += time
+            else:
+                status[row[1]] = time
+        
+        total = sum(status.values())
+        return f"I am online {(status['online']/total)*100}% of the time"
+
+
     @commands.group(name="uptime", description="Get the uptime", invoke_without_command=True)
     async def uptime(self, ctx):
         uptime = datetime.now()-self.bot.startup_time
         connected_time = datetime.now()-self.bot.connected_at
-        await ctx.send(f"I started up {uptime.days} days, {time.readable(uptime.seconds)} ago")      
+
+
+        await ctx.send(f"I started up {uptime.days} days, {time.readable(uptime.seconds)} ago \n{await self.get_overall_uptime()}")  
 
     
     @commands.command(name="invite", description="Get a invite to add me to your server")
