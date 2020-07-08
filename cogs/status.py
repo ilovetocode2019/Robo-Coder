@@ -14,6 +14,11 @@ class Status(commands.Cog):
         timestamp = datetime.datetime.timestamp(datetime.datetime.now())
         await self.bot.db.execute("INSERT INTO status_updates (userid, status, time) VALUES ($1, $2, $3)", str(self.bot.user.id), "online", int(timestamp))
 
+    @commands.Cog.listener("on_resumed")
+    async def on_resumed(self):
+        timestamp = datetime.datetime.timestamp(datetime.datetime.now())
+        await self.bot.db.execute("INSERT INTO status_updates (userid, status, time) VALUES ($1, $2, $3)", str(self.bot.user.id), "online", int(timestamp))
+
     @commands.Cog.listener("on_disconnect")
     async def on_disconnect(self):
         timestamp = datetime.datetime.timestamp(datetime.datetime.now())
