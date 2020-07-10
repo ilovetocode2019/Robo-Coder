@@ -69,6 +69,7 @@ class Admin(commands.Cog):
     @commands.command(name="logout", description="Logout command")
     @commands.is_owner()
     async def logout(self, ctx):
+        await self.bot.status_webhook.send("I am logging out of discord.")
         timestamp = datetime.datetime.timestamp(datetime.datetime.now())
         await self.bot.db.execute("INSERT INTO status_updates (userid, status, time) VALUES ($1, $2, $3)", str(self.bot.user.id), "offline", int(timestamp))
 
@@ -77,23 +78,6 @@ class Admin(commands.Cog):
         print("Logging out of Discord.")
         await ctx.send(":wave: Logging out.")
         await self.bot.logout()
-
-    @commands.command(name="restart", description="Restart command")
-    @commands.is_owner()
-    async def restart(self, ctx):
-        timestamp = datetime.datetime.timestamp(datetime.datetime.now())
-        await self.bot.db.execute("INSERT INTO status_updates (userid, status, time) VALUES ($1, $2, $3)", str(self.bot.user.id), "offline", int(timestamp))
-
-        try:
-            await self.bot.db.close()
-        except:
-            pass
-        print("Logging out of Discord and restarting")
-        await ctx.send("Restarting...")
-        os.startfile("bot.py")
-        await self.bot.logout()
-
-
 
 def setup(bot):
     bot.add_cog(Admin(bot))

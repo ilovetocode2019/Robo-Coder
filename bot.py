@@ -4,6 +4,8 @@ from datetime import datetime
 
 import discord
 from discord.ext import commands
+from discord import Webhook, AsyncWebhookAdapter
+
 import os
 import pathlib
 import asyncpg
@@ -92,6 +94,8 @@ class RoboCoder(commands.Bot):
 
     async def setup_bot(self):
         self.session = aiohttp.ClientSession(loop=self.loop)
+        self.status_webhook = Webhook.from_url(self.config["webhook"], adapter=AsyncWebhookAdapter(self.session))
+        
         self.db = await asyncpg.create_pool(self.config["sqllogin"])
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS notes(
