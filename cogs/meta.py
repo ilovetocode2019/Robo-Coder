@@ -122,7 +122,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
     def get_command_signature(self, command):
         return '{0.clean_prefix}{1.qualified_name}{1.signature}'.format(self, command)
     async def send_bot_help(self, mapping):
-        emojis = {"Meta":"⚙️", "Moderation":"🚓", "Music":"🎵", "Tools":"🧰", "Internet":"🌐", "Fun":"🎡", "Games":"🎮", "Notes":"📓", "Reminders":"🕒", "Stats":"📈"}
+        emojis = {"Meta":"⚙️", "Moderation":"🚓", "Music":"🎵", "Tools":"🧰", "Internet":"🌐", "Fun":"🎡", "Games":"🎮", "Notes":"📓", "Reminders":"🕒", "Stats":"📈", "Linker":"🔗"}
         ctx = self.context
         bot = ctx.bot
 
@@ -364,6 +364,7 @@ class Meta(commands.Cog):
         perms.ban_members = True
         perms.manage_channels = True
         perms.manage_roles = True
+        perms.manage_webhooks = True
         invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms, guild=None, redirect_uri=None)
         await ctx.send(f"<{invite}>")
 
