@@ -23,8 +23,10 @@ class Reminders(commands.Cog):
     async def remind(self, ctx, *, reminder_data):
         #Parse the time
         try:
-            time, content = reminder_data.split(", ")
-        except ValueError:
+            data = reminder_data.split(", ")
+            time = data[0]
+            content = ", ".join(data[1:])
+        except IndexError:
             time = reminder_data
             content = "No reminder content"
 
@@ -70,7 +72,7 @@ class Reminders(commands.Cog):
     @remind.command(name="list", description="Get a list of your reminders")
     async def remindlist(self, ctx):
         rows = await self.bot.db.fetch(f"SELECT id, time, Content FROM reminders WHERE reminders.userid='{str(ctx.author.id)}'")
-        em = self.bot.build_embed(title="reminders", description="", color=custom.Color.notes)
+        em = self.bot.build_embed(title="Reminders", description="", color=custom.Color.notes)
         for row in rows:
             time = datetime.fromtimestamp(row[1])-datetime.now()
             em.add_field(name=f"in {time.days} days, {time_utils.readable(time.seconds)}", value=f"{row[2]} `{row[0]}`", inline=False)
@@ -101,7 +103,7 @@ class Reminders(commands.Cog):
     @timer.before_loop
     async def before_timer(self):
         """Waits till the bot is ready before checkign timers"""
-        
+
         await self.bot.wait_until_ready()
         await asyncio.sleep(3)
 
