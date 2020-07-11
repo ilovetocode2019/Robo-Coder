@@ -12,6 +12,8 @@ from .utils import time
 from .utils import custom
 
 def get_lines_of_code(comments=False):
+    """Gets every single line in .py files in the directory and the number or .py files"""
+
     total_lines = 0
     file_amount = 0
     for path, subdirs, files in os.walk("."):
@@ -40,6 +42,8 @@ class Stats(commands.Cog):
 
     @commands.Cog.listener("on_command_completion")
     async def on_command(self, ctx):
+        """Adds the command to be inserted into the db when it finishes"""
+
         if not ctx.guild:
             self.queries.append(("INSERT INTO Commands(Userid, Guildid, Command, Time) Values($1, $2, $3, $4)", str(ctx.author.id), "@me", str(ctx.command), int(datetime.timestamp(datetime.utcnow()))))
         else:
@@ -54,11 +58,14 @@ class Stats(commands.Cog):
                 result = discord.utils.get(self.bot.guilds, name=guild_search)
                 if result != None:
                     new_guild = result
-
+       
+        #Select all stats for the guild
         rows = await self.bot.db.fetch(f"SELECT * FROM commands WHERE commands.guildid='{new_guild.id}';")
         if not len(rows):
             return await ctx.send("No commands have been used")
         users = {}
+
+        #Goes thorugh the rows, and tracks users
         for row in rows:
             if int(row[0]) not in users:
                 users[int(row[0])] = 1
@@ -66,6 +73,7 @@ class Stats(commands.Cog):
                 users[int(row[0])] += 1
 
         commands_used = {}
+        #Go through the words, and track commands
         for row in rows:
             if row[2] not in commands_used:
                 commands_used[row[2]] = 1
@@ -74,7 +82,9 @@ class Stats(commands.Cog):
 
         
         timestamp = datetime.utcnow().timestamp()-86400
+        #Get the timestamp of 24 hours ago
         
+        #Same as above tracking, though don't add it if it's more than 24 hours ago
         users_today = {}
         for row in rows:
             if row[3] > timestamp:
@@ -91,7 +101,7 @@ class Stats(commands.Cog):
                 else:
                     commands_used_today[row[2]] += 1
 
-
+        #Create the embed
         em = self.bot.build_embed(title="Stats", color=custom.Color.default)
         em.add_field(name="Top Commands Used", value="\n".join([f"{x} ({commands_used[x]})" for x in reversed(sorted(commands_used, key=commands_used.get))][:5]))
         
@@ -102,44 +112,54 @@ class Stats(commands.Cog):
         
         if len(commands_used_today) != 0:
             em.add_field(name="Top Command Users Today", value="\n".join([f"{str(new_guild.get_member(x))} ({users_today[x]})" for x in reversed(sorted(users_today, key=users_today.get))][:5]))
-
+        
+        #Send the stats
         await ctx.send(embed=em)
 
     @stats_group.command(name="other", hidden=True)
     @commands.is_owner()
     async def stats_other(self, ctx):
+        #Get the words
         rows = await self.bot.db.fetch(f"SELECT * FROM Commands")
         usage = {}
+        #Loop through the words
         for row in rows:
             guild = self.bot.get_guild(int(row[1]))
+            #Only log it if the user is not in the guild
             if guild != None and ctx.author.id not in [member.id for member in guild.members]:
                 if row[2] not in usage:
                     usage[row[2]] = 1
                 else:
                     usage[row[2]]+= 1
-
+        
+        #Send the stats
         await ctx.send("\n".join([f"{x} ({usage[x]})" for x in reversed(sorted(usage, key=usage.get))]))
 
 
     @stats_group.command(name="global", hidden=True)
     @commands.is_owner()
     async def stats_global(self, ctx):
+        #Select all the commands
         rows = await self.bot.db.fetch(f"SELECT * FROM Commands")
         usage = {"Other":0, "DM":0}
+        #Go though the words
         for row in rows:
+            #If the row is a DM add it to the dict
             if row[1] == "@me":
                 usage["DM"] += 1
             elif self.bot.get_guild(int(row[1])) != None:
+                #If the user of the command is in the guild, add it to the dict
                 if ctx.author.id in [x.id for x in self.bot.get_guild(int(row[1])).members]:
                     guild_name = self.bot.get_guild(int(row[1])).name
                     if guild_name in usage:
                         usage[guild_name] += 1
                     else:
                         usage[guild_name] = 1
-                
+                #Otherwise, add other
                 else:
                     usage["Other"] += 1
-
+        
+        #Send the stats
         await ctx.send("\n".join([f"{x} ({usage[x]})" for x in reversed(sorted(usage, key=usage.get))]))
     
     @commands.command(name="about", description="Info about me", aliases=["info"])
@@ -154,6 +174,8 @@ class Stats(commands.Cog):
 
     @tasks.loop(seconds=15)
     async def log_commands(self):
+        """Runs every 15 seconds and logs command usage to the db"""
+
         for query in self.queries:
             await self.bot.db.execute(*query)
         self.queries = []

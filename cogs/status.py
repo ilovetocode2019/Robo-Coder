@@ -11,6 +11,8 @@ class Status(commands.Cog):
 
     @commands.Cog.listener("on_connect")
     async def on_connect(self):
+        """Send that the bot connected and logs it to db"""
+        
         await self.bot.status_webhook.send("I have connected to discord.")
 
         timestamp = datetime.datetime.timestamp(datetime.datetime.now())
@@ -18,6 +20,8 @@ class Status(commands.Cog):
 
     @commands.Cog.listener("on_resumed")
     async def on_resumed(self):
+        """Sends that the bot resumed and logs to to db"""
+
         await self.bot.status_webhook.send("I have resumed connection with discord.")
 
         timestamp = datetime.datetime.timestamp(datetime.datetime.now())
@@ -25,6 +29,8 @@ class Status(commands.Cog):
 
     @commands.Cog.listener("on_disconnect")
     async def on_disconnect(self):
+        """Sends that the bot disconnected and logs it to db"""
+
         await self.bot.status_webhook.send("I have disconnected from discord.")
 
         timestamp = datetime.datetime.timestamp(datetime.datetime.now())

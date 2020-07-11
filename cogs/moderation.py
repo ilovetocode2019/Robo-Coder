@@ -34,9 +34,11 @@ class Moderation(commands.Cog):
     
     @commands.Cog.listener("on_member_update")
     async def _on_member_update(self, before, after):
+        #Make sure it's nickname update
         if not str(before.guild.id) in self.bot.logging or before.bot or before.nick == after.nick:
             return False
-            
+        
+        #Get the channel and send it
         chanid = self.bot.logging[str(before.guild.id)]
         channel = self.bot.get_channel(int(chanid))
 
@@ -115,10 +117,14 @@ class Moderation(commands.Cog):
     @commands.command(name="mute", description="Mute someone in the server", usage="[user]")
     @commands.has_permissions(administrator=True)
     async def mute(self, ctx, *, user: discord.Member):
+        #Try to find a mute role
         role = discord.utils.get(ctx.guild.roles, name="Muted")
 
+        #If a role is not found, create it and apply it
         if not role:
+            #Make a role
             role = await ctx.guild.create_role(name="Muted")
+            #Go through and apply it to the channels if the bot has perms to
             for channel in ctx.guild.channels:
                 try:
                     overwrite = discord.PermissionOverwrite()
@@ -127,7 +133,7 @@ class Moderation(commands.Cog):
                     await channel.set_permissions(role, overwrite=overwrite)
                 except:
                     pass
-
+        
         if role in user.roles:
             return await ctx.send("❌ This user is already muted")
                         

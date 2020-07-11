@@ -21,6 +21,7 @@ class Reminders(commands.Cog):
 
     @commands.group(name="remind", description="Create a reminder \nExample: r!remind 1day, Do something", usage="[time], [reminer]", invoke_without_command=True)
     async def remind(self, ctx, *, reminder_data):
+        #Parse the time
         try:
             time, content = reminder_data.split(", ")
         except ValueError:
@@ -37,7 +38,8 @@ class Reminders(commands.Cog):
 
         if not remindtime:
             return await ctx.send("Couldn't parse your time")
-
+        
+        #Insert it into the db
         timestamp = remindtime.replace(tzinfo=timezone.utc).timestamp()
         if isinstance(ctx.channel, discord.channel.DMChannel):
             query = (f'''INSERT INTO reminders(userid, guildid, channid, msgid, time, content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), "@me", str(ctx.author.dm_channel.id), str(ctx.message.id), int(timestamp), content)
@@ -45,13 +47,16 @@ class Reminders(commands.Cog):
         else:
             query = (f'''INSERT INTO reminders(userid, guildid, channid, msgid, time, content) VALUES ($1, $2, $3, $4, $5, $6)''', str(ctx.author.id), str(ctx.guild.id), str(ctx.channel.id), str(ctx.message.id), int(timestamp), content)
             await self.bot.db.execute(*query)
+
+        #Replace the datetime with the tzinfo if needed
         if remindtime.tzinfo:
             now = datetime.utcnow().replace(tzinfo=remindtime.tzinfo)
         else:
             now = datetime.utcnow()
 
         time_till = remindtime-now
-
+        
+        #Send the finishing message
         await ctx.send(f"✅ '{content}' in {time_till.days} days, {time_utils.readable(time_till.seconds)}")
 
     @remind.command(name="delete", description="Remove a reminder", aliases=["remove"], usage="[id]")
@@ -73,12 +78,15 @@ class Reminders(commands.Cog):
 
 
     async def dispatch_timer(self, seconds, channel, text, query):
+        """Waits a time, the runs reminders the timer, and exectues a delete query"""
         await asyncio.sleep(seconds)
         await channel.send(text)
         await self.bot.db.execute(query)
 
     @tasks.loop(seconds=5.0)
     async def timer(self):
+        """Loop that waits for a reminder to be found"""
+
         rows = await self.bot.db.fetch('SELECT id, userid, guildid, channid, msgid, time, content FROM reminders')
         for row in rows:
             if int(row[5])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp()) < 5:
@@ -92,6 +100,8 @@ class Reminders(commands.Cog):
 
     @timer.before_loop
     async def before_timer(self):
+        """Waits till the bot is ready before checkign timers"""
+        
         await self.bot.wait_until_ready()
         await asyncio.sleep(3)
 

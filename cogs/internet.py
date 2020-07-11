@@ -15,6 +15,8 @@ import dateparser
 from .utils import custom
 
 class DocsPages(menus.ListPageSource):
+    """Pages for showing documentation results"""
+
     def __init__(self, data, search, ctx):
         self.search = search
         self.data = data
@@ -209,8 +211,10 @@ class Internet(commands.Cog):
     @commands.cooldown(1, 20, commands.BucketType.user)
     @commands.group(name="github", description="Get infromation about a GitHub repository", usage="[username/repositpry]", invoke_without_command=True)
     async def github(self, ctx, repo):
+        #Trigger typing, this takes a little
         await ctx.channel.trigger_typing()
         session = self.bot.session
+
         async with session.get(f"https://api.github.com/repos/{repo}") as response:
             data = await response.json()
         if data.get("message") == "Not Found":
@@ -240,6 +244,7 @@ class Internet(commands.Cog):
     @commands.cooldown(1, 20, commands.BucketType.user)
     @github.command(name="user", description="Get a GitHub user", usage="[user]")
     async def github_user(self, ctx, user):
+        #Trigger typing, this takes a little
         await ctx.channel.trigger_typing()
         session = self.bot.session
         async with session.get(f"https://api.github.com/users/{user}") as response:
@@ -263,6 +268,7 @@ class Internet(commands.Cog):
     @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.command(name="roblox", description="Get a Roblox user", usage="[username]")
     async def roblox(self, ctx, username):
+        #Roblox is a bit strange, you have to use a differnet url for each bit of info
         await ctx.channel.trigger_typing()
         session = aiohttp.ClientSession()
         async with session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
@@ -273,7 +279,8 @@ class Internet(commands.Cog):
         userid = data["Id"]
         async with session.get(f"https://users.roblox.com/v1/users/{userid}") as resp:
             data = await resp.json()
-
+        
+        #Parse html to get profile image, roblox doesn't have this in the API
         async with session.get(f"https://www.roblox.com/users/{userid}/profile") as resp:
             html = await resp.read()
             html = html.decode("utf-8")
