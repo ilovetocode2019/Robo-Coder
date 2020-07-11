@@ -105,7 +105,7 @@ class Linker(commands.Cog):
             pass
 
         self.linked.pop(user.dm_channel.id)
-        self.linked.pop(ctx.channel.id)
+        self.linked.pop(channel.id)
 
     @commands.Cog.listener("on_message")
     async def on_message(self, message):
