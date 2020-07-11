@@ -3,7 +3,7 @@ import discord
 
 class Session:
     """Represents a session with another channel"""
-    
+
     def __init__(self, channel, webhook):
         self.channel = channel
         self.webhook = webhook
@@ -67,7 +67,7 @@ class Linker(commands.Cog):
         if not session or self.linked[session.channel].webhook.id == message.author.id:
             return
         
-        msg = await session.webhook.send(message.content, username=message.author.display_name, avatar_url=message.author.avatar_url, wait=True)
+        msg = await session.webhook.send(message.content, username=message.author.display_name, avatar_url=message.author.avatar_url, embeds=message.embeds,wait=True)
         session.messages[message.id] = msg.id
 
     @commands.Cog.listener("on_message_delete")
