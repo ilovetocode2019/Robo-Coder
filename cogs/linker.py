@@ -27,6 +27,9 @@ class Linker(commands.Cog):
     @commands.has_permissions(manage_channels=True)
     @commands.group(name="link", description="Links a channel to another channel", usage="[channel id]", invoke_without_command=True)
     async def link(self, ctx, channel):
+        if len(self.linked) > 1 and ctx.author.id != self.bot.owner_id:
+            return await ctx.send("❌ Try again soon")
+
         channel = channel.strip("<#>")
         
         if not channel.isdigit():
