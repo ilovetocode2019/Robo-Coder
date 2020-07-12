@@ -194,7 +194,8 @@ class Linker(commands.Cog):
         if isinstance(session, Session):
             #Since webhooks can't edit messages, return if the message isn't on the bottom
             if before.channel.last_message_id != before.id:
-                return False
+                await after.add_reaction("❌")
+                return
 
             destination = self.bot.get_channel(session.channel)
 
