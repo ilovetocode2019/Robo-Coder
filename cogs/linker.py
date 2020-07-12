@@ -118,7 +118,7 @@ class Linker(commands.Cog):
             if self.linked[session.channel].webhook.id == message.author.id:
                 return
 
-            msg = await session.webhook.send(message.content, username=message.author.display_name, avatar_url=message.author.avatar_url, embeds=message.embeds,wait=True)
+            msg = await session.webhook.send(f"{message.content}\n{', '.join([x.url for x in message.attachments])}", username=message.author.display_name, avatar_url=message.author.avatar_url, embeds=message.embeds,wait=True)
             session.messages[message.id] = msg.id
         
         if isinstance(session, DMSession):
