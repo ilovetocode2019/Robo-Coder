@@ -334,7 +334,7 @@ class Meta(commands.Cog):
         status = {}
         for x, row in enumerate(rows):
             if len(rows) == x+1:
-                time = datetime.timestamp(datetime.now())-row[2]
+                time = datetime.timestamp(datetime.utcnow())-row[2]
             else:
                 time = rows[x+1][2]-row[2]
             
