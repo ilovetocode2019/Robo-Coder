@@ -205,6 +205,8 @@ class Linker(commands.Cog):
             msg = await session.webhook.send(f"{after.content}  ⁽ᵉᵈᶦᵗᵉᵈ⁾", username=before.author.display_name, avatar_url=before.author.avatar_url, wait=True)
             session.messages[before.id] = msg.id
 
+            await after.add_reaction("📝")
+
         if isinstance(session, DMSession):
             destination = self.bot.get_channel(session.channel)
 
