@@ -35,11 +35,11 @@ class TicTacToe:
     async def turn(self, user):
         """Runs a turn"""
 
-        reactionconvert = {"9\N{combining enclosing keycap}":8, "8\N{combining enclosing keycap}":7, "7\N{combining enclosing keycap}":6, "6\N{combining enclosing keycap}":5, "5\N{combining enclosing keycap}":4, "4\N{combining enclosing keycap}":3, "3\N{combining enclosing keycap}":2, "2\N{combining enclosing keycap}":1, "1\N{combining enclosing keycap}":0}
+        reactions = {"9\N{combining enclosing keycap}":8, "8\N{combining enclosing keycap}":7, "7\N{combining enclosing keycap}":6, "6\N{combining enclosing keycap}":5, "5\N{combining enclosing keycap}":4, "4\N{combining enclosing keycap}":3, "3\N{combining enclosing keycap}":2, "2\N{combining enclosing keycap}":1, "1\N{combining enclosing keycap}":0}
         await self.update("It's " + str(user) + "'s turn")
         def check(reaction, author):
             #Check if it's the reaction we are looking for
-            return author == user and reaction.message.channel == self.ctx.channel and reaction.emoji in reactionconvert
+            return author == user and reaction.message.channel == self.ctx.channel and str(reaction.emoji) in reactions and self.board[reactions[str(reaction.emoji)]] not in ["\N{CROSS MARK}", "\N{HEAVY LARGE CIRCLE}"]
         tasks = [
                                 asyncio.ensure_future(self.bot.wait_for('reaction_add', check=check)),
                                 asyncio.ensure_future(self.bot.wait_for('reaction_remove', check=check))
@@ -54,7 +54,7 @@ class TicTacToe:
 
         #Make the move and update the board embed
         reaction, reaction_user = done.pop().result()
-        self.board[reactionconvert[str(reaction.emoji)]] = self.playericos[user]
+        self.board[reactions[str(reaction.emoji)]] = self.playericos[user]
         await self.update("It's " + str(user) + "'s turn")
 
     async def checkwin(self, user):
