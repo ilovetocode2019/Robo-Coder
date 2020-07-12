@@ -58,7 +58,7 @@ class RoboCoder(commands.Bot):
             self.config = json.load(f)
         super().__init__(
             command_prefix = get_prefix,
-            description = "A discord bot with tools, fun and coding related stuff.",
+            description = "A discord bot with tools, fun, and coding related stuff.",
             case_insensitive=True,
             owner_id=self.config["dev"],
         )
