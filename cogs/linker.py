@@ -1,6 +1,8 @@
 from discord.ext import commands
 import discord
 
+import asyncio
+
 class Session:
     """Represents a session with another channel"""
 
@@ -109,6 +111,40 @@ class Linker(commands.Cog):
 
         self.linked.pop(user.dm_channel.id)
         self.linked.pop(channel.id)
+
+    @commands.command(name="merge", description="Merge two text channels", usage="[channel 1] [chhanel 2]")
+    @commands.has_permissions(manage_channels=True)
+    @commands.cooldown(1, 60*5)
+    async def merge(self, ctx, channel1: discord.TextChannel, channel2: discord.TextChannel):
+        channel1_history = await channel1.history(limit=100).flatten()
+        channel2_history = await channel2.history(limit=100).flatten()  
+        
+        msg = await ctx.send("Merging channels, please wait")
+
+        history = channel1_history + channel2_history
+        history = sorted(history, key=lambda x: x.created_at)
+
+        new_channel = await channel1.clone(name=f"{channel1.name}-and-{channel2.name}")
+        webhook = await new_channel.create_webhook(name="Merged Messages")
+        for counter, message in enumerate(history):
+            await webhook.send(content=discord.utils.escape_markdown(message.content), embeds=message.embeds, username=message.author.display_name, avatar_url=message.author.avatar_url)
+            if counter % 10 == 0:
+                await asyncio.sleep(10)
+
+                bar = ""
+                msgs_remaining = len(history)-(counter+1)
+                decimal = (len(history)-msgs_remaining)/len(history)
+                i = int(decimal*30)
+                for x in range(30):
+                    if x == i:
+                        bar += "🔘"
+                    else:
+                        bar += "▬"
+                await msg.edit(content=f"Merging channels\n{bar}")
+
+
+
+        await ctx.send(f"✅ Merged {channel2.mention} and {channel1.mention}")
 
     @commands.Cog.listener("on_message")
     async def on_message(self, message):
