@@ -16,3 +16,7 @@ This bot is a multipurpose bot that can do many things. Use r!help to get starte
 - Reminders and notes (r!help Reminders) (r!help Notes)
 
 - Custom Prefixes (r!help Meta)
+
+- Roblox command (r!help roblox)
+
+- Linking two channels that you have manage messages for both (r!help Linker)
