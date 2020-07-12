@@ -19,4 +19,4 @@ This bot is a multipurpose bot that can do many things. Use r!help to get starte
 
 - Roblox command (r!help roblox)
 
-- Linking two channels that you have manage messages for both (r!help Link)
+- Linking two channels that you have manage messages for both (r!help Linker)
