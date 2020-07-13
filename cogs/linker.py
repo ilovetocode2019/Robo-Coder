@@ -112,12 +112,13 @@ class Linker(commands.Cog):
         self.linked.pop(user.dm_channel.id)
         self.linked.pop(channel.id)
 
-    @commands.command(name="merge", description="Merge two text channels", usage="[channel 1] [chhanel 2]")
+    @commands.command(name="merge", description="Merge two text channels", usage="[channel 1] [chhanel 2] [limit]")
     @commands.has_permissions(manage_channels=True)
-    @commands.cooldown(1, 60*5)
-    async def merge(self, ctx, channel1: discord.TextChannel, channel2: discord.TextChannel):
-        channel1_history = await channel1.history(limit=100).flatten()
-        channel2_history = await channel2.history(limit=100).flatten()  
+    @commands.cooldown(1, 60*10)
+    @commands.max_concurrency(1)
+    async def merge(self, ctx, channel1: discord.TextChannel, channel2: discord.TextChannel, limit: int=50):
+        channel1_history = await channel1.history(limit=limit).flatten()
+        channel2_history = await channel2.history(limit=limit).flatten()  
         
         msg = await ctx.send("Merging channels, please wait")
 
@@ -127,9 +128,9 @@ class Linker(commands.Cog):
         new_channel = await channel1.clone(name=f"{channel1.name}-and-{channel2.name}")
         webhook = await new_channel.create_webhook(name="Merged Messages")
         for counter, message in enumerate(history):
-            await webhook.send(content=discord.utils.escape_markdown(message.content), embeds=message.embeds, username=message.author.display_name, avatar_url=message.author.avatar_url)
+            await webhook.send(content=discord.utils.escape_mentions(message.content), embeds=message.embeds, username=message.author.display_name, avatar_url=message.author.avatar_url)
             if counter % 10 == 0:
-                await asyncio.sleep(10)
+                await asyncio.sleep(limit/10)
 
                 bar = ""
                 msgs_remaining = len(history)-(counter+1)

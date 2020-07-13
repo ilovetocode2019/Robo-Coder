@@ -261,7 +261,23 @@ class Meta(commands.Cog):
         elif isinstance(e, discord.ext.commands.errors.BadArgument):
             return await ctx.send(":x: You are giving a bad argument")
         elif isinstance(e, discord.ext.commands.MaxConcurrencyReached):
-            return await ctx.send(f":x: sorry, this command can only be used {e.number} time(s) at once in a guild")
+            return await ctx.send(f":x: THis command can only be used {e.number} time(s) per {str(e.per.guild)} at once")
+
+            """if e.per.default:
+                return await ctx.send(f":x: This command can only be used {e.number} time(s) on the bot at once")
+            if e.per.user:
+                return await ctx.send(f":x: You can only use this command {e.number} time(s) per at once")
+            if e.per.guild:
+                return await ctx.send(f":x: This command can only be used {e.number} time(s) per server at once")
+            if e.per.channel:
+                return await ctx.send(f":x: This command can only be used {e.number} time(s) per channel at once")
+            if e.per.member:
+                return await ctx.send(f":x: You an only use this command {e.number} time(s) per member in the server at once")
+            if e.per.category:
+                return await ctx.send(f":x: You can only use this command {e.number} time(s) per category at once")
+            if e.per.role:
+                return await ctx.send(f":x: THis command can only be used {e.number} time(s) per role at once")"""
+
         elif isinstance(e, discord.ext.commands.errors.CommandOnCooldown):
             return await ctx.send(f"You are on cooldown. Try again in {e.retry_after} seconds")
         elif isinstance(e, discord.ext.commands.errors.CommandNotFound):
