@@ -72,11 +72,9 @@ class RoboCoder(commands.Bot):
         self.startup_time = datetime.now()
 
     async def load_cogs_to_add(self):
-        try:
-            self.load_extension("debug_cog")
-            self.get_command("jishaku").hidden = True
-        except Exception as e:
-            print("Couldn't load debug_cog")
+        self.load_extension("debug_cog")
+        self.get_command("debug").hidden = True
+
         self.remove_command('help')
         for cog in self.cogs_to_add:
             self.load_extension(cog)
