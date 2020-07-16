@@ -1,8 +1,8 @@
-git+https://github.com/Rapptz/discord.py.git
-async_timeout
-jishaku
-asyncpg
+git+https://github.com/Rapptz/discord.py
 git+https://github.com/Rapptz/discord-ext-menus
+git+https://github.com/ilovetocode2019/debug-cog
+async_timeout
+asyncpg
 youtube_dl
 Pillow
 dateparser
