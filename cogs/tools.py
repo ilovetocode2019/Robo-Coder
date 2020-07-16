@@ -199,5 +199,29 @@ class Tools(commands.Cog):
         em.set_image(url=user.avatar_url)
         await ctx.send(embed=em)
 
+    @commands.command(name="copy", description="Copies messages from the current channel to another", usage="[destination] [limit]")
+    @commands.cooldown(1, 60)
+    @commands.has_permissions(manage_channels=True, manage_messages=True)
+    async def copy(self, ctx, channel: discord.TextChannel, limit: int):
+        if limit > 50:
+            return await ctx.send("❌ You cannot copy over 50 messages")
+        history = await ctx.channel.history(limit=limit+1).flatten()
+        history = history[:-1]
+
+        await ctx.send("Copying, This make take a moment")
+
+        webhook = discord.utils.get((await channel.webhooks()), name="Copied Messages")
+        if not webhook:
+            webhook = await channel.create_webhook(name="Copied Messages")
+
+        for message in history:
+            try:
+                await webhook.send(f"{discord.utils.escape_mentions(message.content)}\n{', '.join([x.url for x in message.attachments])}", embeds=message.embeds, username=message.author.display_name, avatar_url=message.author.avatar_url)
+            except discord.HTTPException:
+                pass
+
+        await ctx.send(f"Finish copying messages into {channel.mention}")
+
+
 def setup(bot):
     bot.add_cog(Tools(bot))
