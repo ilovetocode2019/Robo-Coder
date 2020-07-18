@@ -274,7 +274,7 @@ class Internet(commands.Cog):
         async with session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
             data = await resp.json()
             if "Id" not in data:
-                return await ctx.send("Sorry, that user not found")
+                return await ctx.send("Sorry, that user is not found")
         
         userid = data["Id"]
         async with session.get(f"https://users.roblox.com/v1/users/{userid}") as resp:
