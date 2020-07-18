@@ -98,7 +98,7 @@ class RoboCoder(commands.Bot):
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS notes(
                 id serial PRIMARY KEY,
-                userid text,
+                userid bigint,
                 title text,
                 content text
             )
@@ -107,7 +107,7 @@ class RoboCoder(commands.Bot):
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS todo(
                 id serial PRIMARY KEY,
-                userid text,
+                userid bigint,
                 content text,
                 status text
             )
@@ -116,10 +116,10 @@ class RoboCoder(commands.Bot):
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS reminders(
                 id serial PRIMARY KEY,
-                userid text,
-                guildid text,
-                channid text,
-                msgid text,
+                userid bigint,
+                guildid bigint,
+                channid bigint,
+                msgid bigint,
                 time int,
                 content text
             )
@@ -127,8 +127,8 @@ class RoboCoder(commands.Bot):
         
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS commands(
-                userid text,
-                guildid text,
+                userid int,
+                guildid int,
                 command text,
                 time int
             )
