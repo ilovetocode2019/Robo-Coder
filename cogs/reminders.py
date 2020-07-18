@@ -63,15 +63,15 @@ class Reminders(commands.Cog):
 
     @remind.command(name="delete", description="Remove a reminder", aliases=["remove"], usage="[id]")
     async def remindremove(self, ctx, *, content: int):
-        rows = await self.bot.db.fetch(f"SELECT * FROM reminders WHERE reminders.userid='{str(ctx.author.id)}' and reminders.id={content};")
+        rows = await self.bot.db.fetch(f"SELECT * FROM reminders WHERE reminders.userid=$1 AND reminders.id=$2", str(ctx.author.id), content)
         if len(rows) == 0:
             return await ctx.send("That reminder doesn't exist")
-        await self.bot.db.execute(f"DELETE FROM reminders WHERE reminders.userid='{str(ctx.author.id)}' and reminders.id={content};")
+        await self.bot.db.execute("DELETE FROM reminders WHERE reminders.userid=$1 AND reminders.id=$2", str(ctx.author.id), content)
         await ctx.send("Reminder deleted")
 
     @remind.command(name="list", description="Get a list of your reminders")
     async def remindlist(self, ctx):
-        rows = await self.bot.db.fetch(f"SELECT id, time, Content FROM reminders WHERE reminders.userid='{str(ctx.author.id)}'")
+        rows = await self.bot.db.fetch(f"SELECT id, time, Content FROM reminders WHERE reminders.userid=$1", str(ctx.author.id))
         em = self.bot.build_embed(title="Reminders", description="", color=custom.Color.notes)
         for row in rows:
             time = datetime.fromtimestamp(row[1])-datetime.now()
@@ -83,7 +83,7 @@ class Reminders(commands.Cog):
         """Waits a time, the runs reminders the timer, and exectues a delete query"""
         await asyncio.sleep(seconds)
         await channel.send(text)
-        await self.bot.db.execute(query)
+        await self.bot.db.execute(*query)
 
     @tasks.loop(seconds=5.0)
     async def timer(self):
@@ -95,14 +95,14 @@ class Reminders(commands.Cog):
                 channel = self.bot.get_channel(int(row[3]))
                 user = self.bot.get_user(row[1])
                 time = int(row[5])-int(datetime.utcnow().replace(tzinfo=timezone.utc).timestamp())
-                query = f"DELETE FROM reminders WHERE reminders.userid='{row[1]}' and reminders.id='{row[0]}';"
+                query = ("DELETE FROM reminders WHERE reminders.userid=$1 AND reminders.id=$2", str(row[1]), int(row[0]))
                 link = f"https://discord.com/channels/{row[2]}/{row[3]}/{row[4]}"
                 mention = "<@"+str(row[1])+">"
                 self.bot.loop.create_task(self.dispatch_timer(time, channel, f"{mention}: {row[6]}\n{link}", query))
 
     @timer.before_loop
     async def before_timer(self):
-        """Waits till the bot is ready before checkign timers"""
+        """Waits till the bot is ready before checking timers"""
 
         await self.bot.wait_until_ready()
         await asyncio.sleep(3)
