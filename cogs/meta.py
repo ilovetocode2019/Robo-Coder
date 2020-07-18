@@ -346,7 +346,7 @@ class Meta(commands.Cog):
         await msg.edit(content=f"Pong!\nOne message round-trip took {ping}ms, my latency is {int(self.bot.latency*1000)}ms")
 
     async def get_overall_uptime(self):
-        rows = await self.bot.db.fetch("SELECT * FROM status_updates WHERE status_updates.userid=$1", str(self.bot.user.id))
+        rows = await self.bot.db.fetch("SELECT * FROM status_updates WHERE status_updates.userid=$1", self.bot.user.id)
         status = {}
         for x, row in enumerate(rows):
             if len(rows) == x+1:
