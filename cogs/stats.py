@@ -45,9 +45,9 @@ class Stats(commands.Cog):
         """Adds the command to be inserted into the db when it finishes"""
 
         if not ctx.guild:
-            self.queries.append(("INSERT INTO Commands(Userid, Guildid, Command, Time) Values($1, $2, $3, $4)", str(ctx.author.id), "@me", str(ctx.command), int(datetime.timestamp(datetime.utcnow()))))
+            self.queries.append(("INSERT INTO Commands(Userid, Guildid, Command, Time) Values($1, $2, $3, $4)", ctx.author.id, "@me", str(ctx.command), int(datetime.timestamp(datetime.utcnow()))))
         else:
-            self.queries.append(("INSERT INTO Commands(Userid, Guildid, Command, Time) Values($1, $2, $3, $4)", str(ctx.author.id), str(ctx.guild.id), str(ctx.command), int(datetime.timestamp(datetime.utcnow()))))
+            self.queries.append(("INSERT INTO Commands(Userid, Guildid, Command, Time) Values($1, $2, $3, $4)", ctx.author.id, ctx.guild.id, str(ctx.command), int(datetime.timestamp(datetime.utcnow()))))
     
     @commands.group(name="stats", description="Look at command usage for the current guild", invoke_without_command=True)
     @commands.guild_only()
@@ -60,7 +60,7 @@ class Stats(commands.Cog):
                     new_guild = result
        
         #Select all stats for the guild
-        rows = await self.bot.db.fetch(f"SELECT * FROM commands WHERE commands.guildid='{new_guild.id}';")
+        rows = await self.bot.db.fetch(f"SELECT * FROM commands WHERE commands.guildid=$1;", new_guild.id)
         if not len(rows):
             return await ctx.send("No commands have been used")
         users = {}

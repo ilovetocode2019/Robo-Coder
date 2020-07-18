@@ -127,8 +127,8 @@ class RoboCoder(commands.Bot):
         
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS commands(
-                userid int,
-                guildid int,
+                userid bigint,
+                guildid bigint,
                 command text,
                 time int
             )
@@ -136,7 +136,7 @@ class RoboCoder(commands.Bot):
 
         await self.db.execute('''
             CREATE TABLE IF NOT EXISTS status_updates(
-                userid text,
+                userid bigint,
                 status text,
                 time int
             )
