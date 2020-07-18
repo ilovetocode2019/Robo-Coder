@@ -71,7 +71,7 @@ class Admin(commands.Cog):
     async def logout(self, ctx):
         await self.bot.status_webhook.send("I am logging out of discord.")
         timestamp = datetime.datetime.timestamp(datetime.datetime.utcnow())
-        await self.bot.db.execute("INSERT INTO status_updates (userid, status, time) VALUES ($1, $2, $3)", str(self.bot.user.id), "offline", int(timestamp))
+        await self.bot.db.execute("INSERT INTO status_updates (userid, status, time) VALUES ($1, $2, $3)", self.bot.user.id, "offline", int(timestamp))
 
         await self.bot.db.close()
         await self.bot.session.close()
