@@ -209,7 +209,7 @@ class Internet(commands.Cog):
         await self.do_docs(ctx, "python", obj)
 
     @commands.cooldown(1, 20, commands.BucketType.user)
-    @commands.group(name="github", description="Get infromation about a GitHub repository", usage="[username/repositpry]", invoke_without_command=True)
+    @commands.group(name="github", description="Get infromation about a GitHub repository", usage="[username/repository]", invoke_without_command=True)
     async def github(self, ctx, repo):
         #Trigger typing, this takes a little
         await ctx.channel.trigger_typing()
