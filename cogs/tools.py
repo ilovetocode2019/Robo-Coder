@@ -196,6 +196,7 @@ class Tools(commands.Cog):
         except:
             color = discord.Embed.Empty
         em = self.bot.build_embed(color=color)
+        em.set_author(name=user.display_name, icon_url=user.avatar_url)
         em.set_image(url=user.avatar_url)
         await ctx.send(embed=em)
 
