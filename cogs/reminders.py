@@ -59,7 +59,7 @@ class Reminders(commands.Cog):
         time_till = remindtime-now
         
         #Send the finishing message
-        await ctx.send(f"✅ '{content}' in {time_till.days} days, {time_utils.readable(time_till.seconds)}")
+        await ctx.send(f"✅ '{content}' in {time_utils.readable(time_till)}")
 
     @remind.command(name="delete", description="Remove a reminder", aliases=["remove"], usage="[id]")
     async def remindremove(self, ctx, *, content: int):
@@ -75,7 +75,7 @@ class Reminders(commands.Cog):
         em = self.bot.build_embed(title="Reminders", description="", color=custom.Color.notes)
         for row in rows:
             time = datetime.fromtimestamp(row[1])-datetime.now()
-            em.add_field(name=f"in {time.days} days, {time_utils.readable(time.seconds)}", value=f"{row[2]} `{row[0]}`", inline=False)
+            em.add_field(name=f"in {time_utils.readable(time)}", value=f"{row[2]} `{row[0]}`", inline=False)
         await ctx.send(embed=em)
 
 

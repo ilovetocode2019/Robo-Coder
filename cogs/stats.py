@@ -168,7 +168,7 @@ class Stats(commands.Cog):
         lines = 0
         em.add_field(name="Code", value=get_lines_of_code())
         uptime = datetime.now()-self.bot.startup_time
-        em.add_field(name="Uptime", value=f"{uptime.days} days, {time.readable(uptime.seconds)}")
+        em.add_field(name="Uptime", value=f"{time.readable(uptime)}")
         em.add_field(name="Latency", value=f"{self.bot.latency}ms")
         await ctx.send(embed=em)
 
