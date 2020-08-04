@@ -362,7 +362,7 @@ class Meta(commands.Cog):
         return f"I am online {(status['online']/total)*100}% of the time"
 
 
-    @commands.group(name="uptime", description="Get the uptime", invoke_without_command=True)
+    @commands.group(name="uptime", description="Get the uptime", aliases=["up"], invoke_without_command=True)
     async def uptime(self, ctx):
         uptime = datetime.now()-self.bot.startup_time
         connected_time = datetime.now()-self.bot.connected_at
