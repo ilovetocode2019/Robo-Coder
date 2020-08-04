@@ -97,18 +97,21 @@ class Moderation(commands.Cog):
 
     @commands.command(name="kick", description="Kick a member from the server", usage="[user]")
     @commands.has_permissions(kick_members=True)
+    @commands.bot_has_permissions(kick_members=True)
     async def kick(self, ctx, *, member:discord.Member):
         await member.kick()
         await ctx.send(f"{member.name} kicked")
 
     @commands.command(name="ban", description="Ban a member from the server", usage="[user]")
     @commands.has_permissions(ban_members=True)
+    @commands.bot_has_permissions(ban_members=True)
     async def ban(self, ctx, *, member:discord.Member):
         await member.ban()
         await ctx.send(f"{member.name} banned")
 
     @commands.command(name="purge", description="Delete a mass amount of messages", usage="[amount]", hidden=True)
     @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
     async def purge(self, ctx, *, arg):
         await ctx.send("Deleting " + str(arg) + " messages......")
         await asyncio.sleep(4)
@@ -116,6 +119,7 @@ class Moderation(commands.Cog):
 
     @commands.command(name="mute", description="Mute someone in the server", usage="[user]")
     @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(manage_roles=True)
     async def mute(self, ctx, *, user: discord.Member):
         #Try to find a mute role
         role = discord.utils.get(ctx.guild.roles, name="Muted")
@@ -144,6 +148,7 @@ class Moderation(commands.Cog):
 
     @commands.command(name="unmute", description="Unmute someone in the server", usage="[user]")
     @commands.has_permissions(administrator=True)
+    @commands.bot_has_permissions(manage_roles=True)
     async def unmute(self, ctx, *, user: discord.Member):
         role = discord.utils.get(ctx.guild.roles, name="Muted")
 
@@ -156,8 +161,6 @@ class Moderation(commands.Cog):
         await user.remove_roles(role)
 
         await ctx.send(f"{str(user).capitalize()} has been unmuted")
-
-
         
 def setup(bot):
     bot.add_cog(Moderation(bot))

@@ -27,6 +27,7 @@ class Linker(commands.Cog):
         self.dm_sessions = {}
     
     @commands.has_permissions(manage_channels=True)
+    @commands.bot_has_permissions(manage_webhooks=True)
     @commands.group(name="link", description="Links a channel to another channel", usage="[channel id]", invoke_without_command=True)
     async def link(self, ctx, channel):
         if len(self.linked) > 1 and ctx.author.id != self.bot.owner_id:

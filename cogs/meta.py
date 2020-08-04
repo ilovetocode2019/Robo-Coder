@@ -252,31 +252,30 @@ class Meta(commands.Cog):
         
         if isinstance(e, discord.ext.commands.NoPrivateMessage):
             return await ctx.send("This command can not be used in DMs")
-        if isinstance(e, discord.ext.commands.errors.CheckFailure):
+        elif isinstance(e, discord.ext.commands.errors.BotMissingPermissions):
+            perms_text = "\n".join([f"- {perm}" for perm in e.missing_perms])
+            return await ctx.send(f":x: I am missing some permissions:\n {perms_text}") 
+        elif isinstance(e, discord.ext.commands.errors.CheckFailure):
             return
-        elif isinstance(e, discord.ext.commands.errors.MissingPermissions):
-            return await ctx.send(":x: I don't have the permissions to do this") 
         elif isinstance(e, discord.ext.commands.errors.MissingRequiredArgument):
             return await ctx.send(f":x: You are missing a argument: `{e.param}`")
         elif isinstance(e, discord.ext.commands.errors.BadArgument):
             return await ctx.send(f":x: {e}")
         elif isinstance(e, discord.ext.commands.MaxConcurrencyReached):
-            return await ctx.send(f":x: THis command can only be used {e.number} time(s) per {str(e.per.guild)} at once")
-
-            """if e.per.default:
+            if e.per == commands.BucketType.default:
                 return await ctx.send(f":x: This command can only be used {e.number} time(s) on the bot at once")
-            if e.per.user:
+            if e.per == commands.BucketType.user:
                 return await ctx.send(f":x: You can only use this command {e.number} time(s) per at once")
-            if e.per.guild:
+            if e.per == commands.BucketType.guild:
                 return await ctx.send(f":x: This command can only be used {e.number} time(s) per server at once")
-            if e.per.channel:
+            if e.per == commands.BucketType.channel:
                 return await ctx.send(f":x: This command can only be used {e.number} time(s) per channel at once")
-            if e.per.member:
+            if e.per == commands.BucketType.member:
                 return await ctx.send(f":x: You an only use this command {e.number} time(s) per member in the server at once")
-            if e.per.category:
+            if e.per == commands.BucketType.category:
                 return await ctx.send(f":x: You can only use this command {e.number} time(s) per category at once")
-            if e.per.role:
-                return await ctx.send(f":x: THis command can only be used {e.number} time(s) per role at once")"""
+            if e.per == commands.BucketType.role:
+                return await ctx.send(f":x: THis command can only be used {e.number} time(s) per role at once")
 
         elif isinstance(e, discord.ext.commands.errors.CommandOnCooldown):
             return await ctx.send(f"You are on cooldown. Try again in {e.retry_after} seconds")

@@ -203,6 +203,7 @@ class Tools(commands.Cog):
     @commands.command(name="copy", description="Copies messages from the current channel to another", usage="[destination] [limit]")
     @commands.cooldown(1, 60)
     @commands.has_permissions(manage_channels=True, manage_messages=True)
+    @commands.bot_has_permissions(manage_webhooks=True)
     async def copy(self, ctx, channel: discord.TextChannel, limit: int):
         if limit > 50:
             return await ctx.send("❌ You cannot copy over 50 messages")
