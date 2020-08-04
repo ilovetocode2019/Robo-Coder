@@ -5,6 +5,17 @@ import traceback
 import sys
 import os
 import datetime
+import importlib
+
+class ExtensionConverter(commands.Converter):
+    """Converts an extension name to extension object"""
+
+    async def convert(self, ctx, arg):
+        ext = sys.modules.get(arg)
+
+        if not ext:
+            raise commands.errors.BadArgument(f"{arg} is not loaded")
+        return ext
 
 class Admin(commands.Cog):
     def __init__(self, bot):
@@ -13,7 +24,7 @@ class Admin(commands.Cog):
     def cog_check(self, ctx):
         return ctx.author.id == self.bot.owner_id
 
-    @commands.command(name="reload", description="Reload an extension", usage="[cog]")
+    @commands.group(name="reload", description="Reload an extension", usage="[cog]", invoke_without_command=True)
     @commands.is_owner()
     async def _reload(self, ctx, cog="all"):
         if cog == "all":
@@ -41,6 +52,17 @@ class Admin(commands.Cog):
             traceback_data = ''.join(traceback.format_exception(type(e), e, e.__traceback__, 1))
             await ctx.send(f"**:warning: Extension `{cog.lower()}` not reloaded.**\n```py\n{traceback_data}```")
             print(f"Extension 'cogs.{cog.lower()}' not reloaded.\n{traceback_data}")
+
+    @_reload.command(name="module", description="Reload a module that's not a cog")
+    async def reload_module(self, ctx, extension: ExtensionConverter):
+        try:
+            importlib.reload(extension)
+            await ctx.send(f"**:repeat: Reloaded** `{extension.__name__}`")
+            print(f"Extension '{extension.__name__.lower()}' successfully reloaded.")
+        except Exception as e:
+            traceback_data = ''.join(traceback.format_exception(type(e), e, e.__traceback__))
+            await ctx.send(f"**:warning: `{extension.__name__.lower()}` is not reloaded.**\n```py\n{traceback_data}```")
+            print(f"Extension 'cogs.{extension.__name__.lower()}' not reloaded.\n{traceback_data}")
 
     @commands.command(name="load", description="Load an extension", usage="[cog]")
     @commands.is_owner()
