@@ -259,7 +259,7 @@ class Meta(commands.Cog):
         elif isinstance(e, discord.ext.commands.errors.MissingRequiredArgument):
             return await ctx.send(f":x: You are missing a argument: `{e.param}`")
         elif isinstance(e, discord.ext.commands.errors.BadArgument):
-            return await ctx.send(":x: You are giving a bad argument")
+            return await ctx.send(f":x: {e}")
         elif isinstance(e, discord.ext.commands.MaxConcurrencyReached):
             return await ctx.send(f":x: THis command can only be used {e.number} time(s) per {str(e.per.guild)} at once")
 
