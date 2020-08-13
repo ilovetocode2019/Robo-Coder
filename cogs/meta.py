@@ -196,8 +196,6 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         await ctx.send(embed=embed)
 
     async def command_callback(self, ctx, *, command=None):
-        #Overiding this so I can have case insensitivity for cog help
- 
         await self.prepare_help_command(ctx, command)
         bot = ctx.bot
 
@@ -220,6 +218,8 @@ class RoboCoderHelpCommand(commands.HelpCommand):
                 return await self.send_group_help(command_obj)
             else:
                 return await self.send_command_help(command_obj)
+
+        await ctx.send(f"Command '{command}' not found")
 
 
 class Meta(commands.Cog):
