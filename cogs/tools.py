@@ -169,7 +169,7 @@ class Tools(commands.Cog):
             em.description += "\n👑 This person owns the server"
 
         if user.bot:
-            em.description += "\n🤖 This person is a bot"
+            em.description += "\n🤖 This user is a bot"
 
         em.add_field(name="🕒 Created at", value=f"{humanize.naturaldate(user.created_at)} ({humanize.naturaltime(user.created_at)})")
 
