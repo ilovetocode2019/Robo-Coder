@@ -253,7 +253,7 @@ class Meta(commands.Cog):
         if isinstance(e, discord.ext.commands.NoPrivateMessage):
             return await ctx.send("This command can not be used in DMs")
         elif isinstance(e, discord.ext.commands.errors.BotMissingPermissions):
-            perms_text = "\n".join([f"- {perm}" for perm in e.missing_perms])
+            perms_text = "\n".join([f"- {perm.replace('_', ' ').capitalize()}" for perm in e.missing_perms])
             return await ctx.send(f":x: I am missing some permissions:\n {perms_text}") 
         elif isinstance(e, discord.ext.commands.errors.CheckFailure):
             return
