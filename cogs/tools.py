@@ -93,7 +93,7 @@ class Tools(commands.Cog):
         guild = ctx.guild
         
         try:
-            color = await average_image_color(guild.icon_url, self.bot.loop)
+            color = await average_image_color(guild.icon_url, self.bot.loop, self.bot.session)
         except:
             color = discord.Embed.Empty
         em = self.bot.build_embed(title=f"{guild.name} ({guild.id})", description="", color=color)
@@ -153,7 +153,7 @@ class Tools(commands.Cog):
             badges += "<:verified:726134370544386189>"
 
         try:
-            color = await average_image_color(user.avatar_url, self.bot.loop)
+            color = await average_image_color(user.avatar_url, self.bot.loop, session=self.bot.session)
         except:
             color = discord.Embed.Empty
 
@@ -192,7 +192,7 @@ class Tools(commands.Cog):
             user = ctx.author
 
         try:
-            color = await average_image_color(user.avatar_url, self.bot.loop)
+            color = await average_image_color(user.avatar_url, self.bot.loop, self.bot.session)
         except:
             color = discord.Embed.Empty
         em = self.bot.build_embed(color=color)

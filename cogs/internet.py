@@ -270,7 +270,7 @@ class Internet(commands.Cog):
     async def roblox(self, ctx, username):
         #Roblox is a bit strange, you have to use a differnet url for each bit of info
         await ctx.channel.trigger_typing()
-        session = aiohttp.ClientSession()
+        session = self.bot.session
         async with session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
             data = await resp.json()
             if "Id" not in data:
