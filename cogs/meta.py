@@ -338,10 +338,10 @@ class Meta(commands.Cog):
         
     @commands.command(name = "ping", description = "Test the bots's latency")
     async def ping(self, ctx):
-        start = datetime.timestamp(datetime.now())
+        start = datetime.timestamp(ctx.message.created_at)
         msg = await ctx.send("Pinging")
 
-        ping = round((datetime.timestamp(datetime.now()) - start) * 1000, 2)
+        ping = round((datetime.timestamp(datetime.utcnow()) - start) * 1000, 2)
         await msg.edit(content=f"Pong!\nOne message round-trip took {ping}ms, my latency is {int(self.bot.latency*1000)}ms")
 
     async def get_overall_uptime(self):
