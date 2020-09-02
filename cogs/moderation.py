@@ -56,7 +56,7 @@ class Moderation(commands.Cog):
                        VALUES ($1, $2, $3);
                     """
             await self.bot.db.execute(query, ctx.guild.id, None, [])
-            return {"guild_id": ctx.guild.id, "mute_role_id": None, "muted": []}
+            ctx.guild_config = {"guild_id": ctx.guild.id, "mute_role_id": None, "muted": []}
 
     @commands.command(name="kick", description="Kick a member from the server", usage="[user] <reason>")
     @commands.has_permissions(kick_members=True)
@@ -250,6 +250,8 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def unmute(self, ctx, user: typing.Union[discord.Member, int], *, reason=None):
+        if not ctx.guild_config["mute_role_id"]:
+            return await ctx.send(":x: No mute role set")
         if reason:
             reason = f"Unmute by {ctx.author} with reason {reason}"
         role = ctx.guild.get_role(ctx.guild_config["mute_role_id"])
