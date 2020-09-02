@@ -1,166 +1,414 @@
-from discord.ext import commands
 import discord
-import os
-import json
-import asyncio
-import pickle
+from discord.ext import commands
+
+import typing
+import dateparser
+import humanize
+import datetime
+
+class TimeConverter(commands.Converter):
+    """Converts a string to datetime.datetime."""
+
+    async def convert(self, ctx, arg):
+        try:
+            if not arg.startswith("in") and not arg.startswith("at"):
+                time = f"in {arg}"
+            else:
+                time = arg
+
+            time = dateparser.parse(time, settings={"TIMEZONE": "UTC"})
+        except:
+            time = None
+
+        if not time:
+            raise commands.BadArgument("Could not parse your time")
+        return time
+
+class BannedUser(commands.Converter):
+    """Converts a string to a banned user."""
+
+    async def convert(self, ctx, arg):
+        try:
+            arg = int(arg)
+            user = discord.Object(id=arg)
+        except ValueError:
+            user = None
+
+        if not user:
+            raise commands.BadArgument("User is not banned")
+        return user
 
 class Moderation(commands.Cog):
+    """Moderation commands for Discord servers."""
+
     def __init__(self, bot):
         self.bot = bot
-        self.open_channels = []
-        if os.path.exists("logcha.json"):
-            with open("logcha.json", "r") as f:
-                self.bot.logging = json.load(f)
-        else:
-            with open("logcha.json", "w") as f:
-                data = {}
-                json.dump(data, f)
-            self.bot.logging = {}
 
-        if os.path.exists("channels.json"):
-            with open("channels.json") as f:
-                self.open_channels = json.load(f)
-        else:
-            with open("channels.json", "w") as f:
-                self.open_channels = []
-                json.dump(self.open_channels, f)
+    async def cog_before_invoke(self, ctx):
+        query = """SELECT *
+                   FROM guild_config
+                   WHERE guild_config.guild_id=$1;
+                """
+        ctx.guild_config = await self.bot.db.fetchrow(query, ctx.guild.id)
 
-    def check(self, msg):
-        if msg.author == self.bot.user or msg.author.bot or str(msg.guild.id) not in self.bot.logging:
-            return False
-        else:
-            return True
-    
-    @commands.Cog.listener("on_member_update")
-    async def _on_member_update(self, before, after):
-        #Make sure it's nickname update
-        if not str(before.guild.id) in self.bot.logging or before.bot or before.nick == after.nick:
-            return False
-        
-        #Get the channel and send it
-        chanid = self.bot.logging[str(before.guild.id)]
-        channel = self.bot.get_channel(int(chanid))
+        if not ctx.guild_config:
+            query = """INSERT INTO guild_config (guild_id, mute_role_id, muted)
+                       VALUES ($1, $2, $3);
+                    """
+            await self.bot.db.execute(query, ctx.guild.id, None, [])
+            return {"guild_id": ctx.guild.id, "mute_role_id": None, "muted": []}
 
-        em = self.bot.build_embed(title="Nickname update", value=str(before.name), color=discord.Colour.blue())
-        em.add_field(name="Before", value=str(before.nick))
-        em.add_field(name="Affter", value=str(after.nick))
-        em.set_footer(text=self.bot.user.name)
-        await channel.send(embed=em)
-
-    @commands.Cog.listener("on_message_delete")
-    async def _deletion_detector(self, message):
-        if not self.check(message):
-            return
-        chanid = self.bot.logging[str(message.guild.id)]
-        channel = self.bot.get_channel(int(chanid))
-
-        msg = "user: " + str(message.author) + "\nDeleted: " + str(message.content)
-        title = "Deletion"
-        em = self.bot.build_embed(title=title, description=msg, color=discord.Colour.red())
-        em.set_author(name = str(message.author.display_name), icon_url = message.author.avatar_url)
-        em.set_footer(text=self.bot.user.name)
-        my_msg = await channel.send(embed = em)
-
-    @commands.Cog.listener("on_message_edit")
-    async def _edit_detector(self, before, after):
-        if not self.check(before):
-            return
-        chanid = self.bot.logging[str(before.guild.id)]
-        channel = self.bot.get_channel(int(chanid))
-
-        msg = "user: " + str(before.author) + "\nEdited: " + str(before.content) + "\nTo: " + str(after.content)
-        title = "Edit"
-        em = self.bot.build_embed(title = title, description = msg, color=discord.Colour.blue())
-        em.set_author(name = str(before.author.display_name), icon_url = before.author.avatar_url)
-        em.add_field(name="Jump!", value=f"https://discord.com/channels/{after.guild.id}/{after.channel.id}/{after.id}")
-        em.set_footer(text=self.bot.user.name)
-        my_msg = await channel.send(embed = em)
-
-    @commands.command(name="setlog", description="Set a channel for logging")
-    @commands.has_permissions(manage_guild=True)
-    async def setlog(self, ctx):
-        self.bot.logging[str(ctx.guild.id)] = str(ctx.channel.id)
-        with open("logcha.json", "w") as f:
-            json.dump(self.bot.logging, f)
-        await ctx.send("Log set for this channel")
-
-    @commands.command(name="unsetlog", description="Unset a channel for logging")
-    @commands.has_permissions(manage_guild=True)
-    async def unsetlog(self, ctx):
-        if str(ctx.guild.id) not in self.bot.logging:
-            return await ctx.send("Not enabled")
-        self.bot.logging.pop(str(ctx.guild.id))
-        with open("logcha.json", "w") as f:
-            json.dump(self.bot.logging, f)
-        await ctx.send("Log disabled for this channel")
-
-    @commands.command(name="kick", description="Kick a member from the server", usage="[user]")
+    @commands.command(name="kick", description="Kick a member from the server")
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
-    async def kick(self, ctx, *, member:discord.Member):
-        await member.kick()
-        await ctx.send(f"{member.name} kicked")
+    async def kick(self, ctx, user: discord.Member, *, reason=None):
+        if reason:
+            reason = f"Kick by {ctx.author} with reason {reason}"
+        await user.kick(reason=reason or f"Kick by {ctx.author}")
+        await ctx.send(f":white_check_mark: Kicked {user.display_name}")
 
-    @commands.command(name="ban", description="Ban a member from the server", usage="[user]")
+    @commands.command(name="ban", description="Ban a member from the server")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
-    async def ban(self, ctx, *, member:discord.Member):
-        await member.ban()
-        await ctx.send(f"{member.name} banned")
+    async def ban(self, ctx, user: discord.Member, *, reason=None):
+        if reason:
+            reason = f"Ban by {ctx.author} with reason {reason}"
+        await user.ban(reason=reason or f"Ban by {ctx.author}")
+        await ctx.send(f":white_check_mark: Banned {user.display_name}")
 
-    @commands.command(name="purge", description="Delete a mass amount of messages", usage="[amount]", hidden=True)
+    @commands.command(name="tempban", description="Temporarily ban a member from the server")
+    @commands.has_permissions(ban_members=True)
+    @commands.bot_has_permissions(ban_members=True)
+    async def tempban(self, ctx, user: discord.Member, time: TimeConverter, *, reason=None):
+        if reason:
+            reason = f"Temporary ban by {ctx.author} with reason {reason}"
+
+        query = """INSERT INTO tasks (task, guild_id, channel_id, user_id, time)
+                   VALUES ($1, $2, $3, $4, $5);
+                """
+        await self.bot.db.execute(query, "unban", ctx.guild.id, ctx.channel.id, user.id, time)
+
+        await user.ban(reason=reason or f"Temporary ban by {ctx.author}")
+        await ctx.send(f":white_check_mark: Temporarily banned {user.display_name}")
+
+    @commands.command(name="unban", description="Unban a user")
+    @commands.has_permissions(ban_members=True)
+    @commands.has_permissions(ban_members=True)
+    async def unban(self, ctx, user: BannedUser, *, reason=None):
+        if reason:
+            reason = f"Unban by {ctx.author} with reason {reason}"
+
+        try:
+            await ctx.guild.unban(user, reason=reason or f"Unban by {ctx.author}")
+        except discord.NotFound:
+            return await ctx.send(":x: User is not banned")
+
+        query = """DELETE FROM tasks
+                   WHERE tasks.guild_id=$1 AND tasks.user_id=$2 AND tasks.task=$3;
+                """
+        await self.bot.db.execute(query, ctx.guild.id, user.id, "unban")
+
+        await ctx.send(f":white_check_mark: Unbanned {user}")
+
+    @commands.group(name="mute", description="Mute a member", invoke_without_command=True)
+    @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def mute(self, ctx, user: discord.Member, *, reason=None):
+        if user.id in ctx.guild_config["muted"]:
+            return await ctx.send(":x: User is already muted")
+        if not ctx.guild_config["mute_role_id"]:
+            return await ctx.send(":x: No mute role set")
+
+        if reason:
+            reason = f"Mute by {ctx.author} with reason {reason}"
+        role = ctx.guild.get_role(ctx.guild_config["mute_role_id"])
+        await user.add_roles(role, reason=reason or f"Mute by {ctx.author}")
+
+        ctx.guild_config["muted"].append(user.id)
+
+        query = """UPDATE guild_config
+                   SET Muted=$1
+                   WHERE guild_config.guild_id=$2;
+                """
+        await self.bot.db.execute(query, ctx.guild_config["muted"], ctx.guild.id)
+
+        await ctx.send(f":white_check_mark: Muted {user}")
+
+    @commands.command(name="tempmute", description="Temporarily mute a member")
+    @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def tempmute(self, ctx, user: discord.Member, time: TimeConverter, *, reason=None):
+        if user.id in ctx.guild_config["muted"]:
+            return await ctx.send(":x: User is already muted")
+        if not ctx.guild_config["mute_role_id"]:
+            return await ctx.send(":x: No mute role set")
+
+        if reason:
+            reason = f"Temporary mute by {ctx.author} with reason {reason}"
+        role = ctx.guild.get_role(ctx.guild_config["mute_role_id"])
+        await user.add_roles(role, reason=reason or f"Temporary mute by {ctx.author}")
+
+        ctx.guild_config["muted"].append(user.id)
+
+        query = """UPDATE guild_config
+                   SET muted=$1
+                   WHERE guild_config.guild_id=$2;
+                """
+        await self.bot.db.execute(query, ctx.guild_config["muted"], ctx.guild.id)
+
+        query = """INSERT INTO tasks (task, guild_id, channel_id, user_id, time)
+                   VALUES ($1, $2, $3, $4, $5);
+                """
+        await self.bot.db.execute(query, "unmute", ctx.guild.id, ctx.channel.id, user.id, time)
+
+        await ctx.send(f":white_check_mark: Muted {user} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}")
+
+    @commands.command(name="selfmute", description="Mute your self")
+    @commands.bot_has_permissions(manage_roles=True)
+    async def selfmute(self, ctx, time: TimeConverter, *, reason=None):
+        if ctx.author.id in ctx.guild_config["muted"]:
+            return await ctx.send(":x: You are already muted")
+        if not ctx.guild_config["mute_role_id"]:
+            return await ctx.send(":x: No mute role set")
+
+        if reason:
+            reason = f"Self mute with reason {reason}"
+        role = ctx.guild.get_role(ctx.guild_config["mute_role_id"])
+        await ctx.author.add_roles(role, reason=reason or f"Self mute")
+
+        ctx.guild_config["muted"].append(ctx.author.id)
+
+        query = """UPDATE guild_config
+                   SET muted=$1
+                   WHERE guild_config.guild_id=$2;
+                """
+        await self.bot.db.execute(query, ctx.guild_config["muted"], ctx.guild.id)
+
+        query = """INSERT INTO tasks (task, guild_id, channel_id, user_id, time)
+                   VALUES ($1, $2, $3, $4, $5);
+                """
+        await self.bot.db.execute(query, "unmute", ctx.guild.id, ctx.channel.id, ctx.author.id, time)
+
+        await ctx.send(f":white_check_mark: You are muted")
+
+    @mute.group(name="role", invoke_without_command=True)
+    async def mute_role(self, ctx):
+        mute_role = ctx.guild.get_role(ctx.guild_config["mute_role_id"])
+        if not mute_role:
+            return await ctx.send(":x: No mute role")
+        role = ctx.guild.get_role(ctx.guild_config["mute_role_id"])
+        await ctx.send(f"The muted role for this server is `{role.name}` ({role.id})")
+
+    @mute_role.command(name="set", description="Set the mute role")
+    async def mute_role_set(self, ctx, role: discord.Role):
+        query = """UPDATE guild_config
+                   SET mute_role_id=$1, muted=$2
+                   WHERE guild_config.guild_id=$3;
+                """
+        await self.bot.db.execute(query, role.id, [], ctx.guild.id)
+
+        await ctx.send(":white_check_mark: Set mute role")
+
+    @mute_role.command(name="create", description="Create a mute role")
+    async def mute_role_create(self, ctx):
+        reason = f"Create mute role by {ctx.author}"
+        role = await ctx.guild.create_role(name="Muted", reason=reason)
+
+        channels = ctx.guild.text_channels + ctx.guild.categories
+        success = 0
+        failed = 0
+
+        for channel in channels:
+            try:
+                overwrite = discord.PermissionOverwrite()
+                overwrite.send_messages = False
+                overwrite.add_reactions = False
+                await channel.set_permissions(role, overwrite=overwrite, reason=reason)
+                success += 1
+            except:
+                failed += 1
+
+        query = """UPDATE guild_config
+                   SET mute_role_id=$1, muted=$2
+                   WHERE guild_config.guild_id=$3;
+                """
+        await self.bot.db.execute(query, role.id, [], ctx.guild.id)
+
+        await ctx.send(":white_check_mark: Created mute role")
+
+    @mute_role.command(name="unbind", description="Unbind the current mute role")
+    async def mute_role_unbind(self, ctx):
+        query = """UPDATE guild_config
+                   SET mute_role_id=$1, muted=$2
+                   WHERE guild_config.guild_id=$3;
+                """
+        await self.bot.db.execute(query, None, [], ctx.guild.id)
+
+        await ctx.send(":white_check_mark: Unbound mute role")
+
+    @commands.command(name="unmute", description="Unmute a member")
+    @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def unmute(self, ctx, user: typing.Union[discord.Member, int], *, reason=None):
+        if reason:
+            reason = f"Unmute by {ctx.author} with reason {reason}"
+        role = ctx.guild.get_role(ctx.guild_config["mute_role_id"])
+
+        if isinstance(user, discord.Member):
+            if user.id not in ctx.guild_config["muted"]:
+                return await ctx.send(":x: User is not muted")
+
+            await user.remove_roles(role, reason=reason or f"Unmute by {ctx.author}")
+
+            ctx.guild_config["muted"].remove(user.id)
+
+            query = """UPDATE guild_config 
+                       SET muted=$1
+                       WHERE guild_config.guild_id=$2;
+                    """
+            await self.bot.db.execute(query, ctx.guild_config["muted"], ctx.guild.id)
+    
+            query = """DELETE FROM tasks
+                       WHERE tasks.guild_id=$1 AND tasks.user_id=$2 AND tasks.task=$3;"""
+            await self.bot.db.execute(query, ctx.guild.id, user.id, "unmute")
+        else:
+            if user not in ctx.guild_config["muted"]:
+                return await ctx.send(":x: User is not muted")
+
+            ctx.guild_config["muted"].remove(user)
+            query = """UPDATE guild_config 
+                       SET muted=$1
+                       WHERE guild_config.guild_id=$2;
+                    """
+            await self.bot.db.execute(query, ctx.guild_config["muted"], ctx.guild.id)
+    
+            query = """DELETE FROM tasks
+                       WHERE tasks.guild_id=$1 AND tasks.user_id=$2 AND tasks.task=$3;"""
+            await self.bot.db.execute(query, ctx.guild.id, user, "unmute")
+
+        await ctx.send(f":white_check_mark: Unmuted {user}")
+
+    @commands.command(name="muted", description="View a list of muted members")
+    @commands.has_permissions(manage_roles=True)
+    async def muted(self, ctx):
+        if not ctx.guild_config["muted"]:
+            return await ctx.send("No muted members")
+
+        msg = "```ini"
+        for counter, muted_user in enumerate(ctx.guild_config["muted"]):
+            user = ctx.guild.get_member(muted_user)
+            if user:
+                msg += f"\n[{counter+1}] {user} ({user.id})"
+            else:
+                msg += f"\n[{counter+1}] Not in server ({muted_user})"
+        msg += "\n```"
+
+        await ctx.send(msg)
+
+    @commands.command(name="purge", description="Purge messages from a channel")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
-    async def purge(self, ctx, *, arg):
-        await ctx.send("Deleting " + str(arg) + " messages......")
-        await asyncio.sleep(4)
-        await ctx.channel.purge(limit=int(arg)+1)
+    async def purge(self, ctx, limit: int = 100):
+        deleted = await ctx.channel.purge(limit=limit+1)
+        await ctx.send(f":white_check_mark: Deleted {len(deleted)} messages(s)", delete_after=5)
 
-    @commands.command(name="mute", description="Mute someone in the server", usage="[user]")
-    @commands.has_permissions(administrator=True)
-    @commands.bot_has_permissions(manage_roles=True)
-    async def mute(self, ctx, *, user: discord.Member):
-        #Try to find a mute role
-        role = discord.utils.get(ctx.guild.roles, name="Muted")
+    @commands.Cog.listener()
+    async def on_member_join(self, member):
+        query = """SELECT * FROM guild_config
+                   WHERE guild_config.guild_id=$1;"""
+        guild_config = await self.bot.db.fetchrow(query, member.guild.id)
 
-        #If a role is not found, create it and apply it
-        if not role:
-            #Make a role
-            role = await ctx.guild.create_role(name="Muted")
-            #Go through and apply it to the channels if the bot has perms to
-            for channel in ctx.guild.channels:
-                try:
-                    overwrite = discord.PermissionOverwrite()
-                    overwrite.send_messages = False
-                    overwrite.read_messages = True
-                    await channel.set_permissions(role, overwrite=overwrite)
-                except:
-                    pass
-        
-        if role in user.roles:
-            return await ctx.send("❌ This user is already muted")
-                        
+        if member.id in guild_config["muted"]:
+            role = member.guild.get_role(guild_config["mute_role_id"])
+            await member.add_roles(role, reason="Member was muted when they left")
 
-        await user.add_roles(role)
+    @commands.Cog.listener()
+    async def on_guild_role_delete(self, role):
+        query = """SELECT *
+                   FROM guild_config
+                   WHERE guild_config.guild_id=$1;
+                """
+        guild_config = await self.bot.db.fetchrow(query, role.guild.id)
 
-        await ctx.send(f"{str(user).capitalize()} has been muted")
+        if guild_config["mute_role_id"] != role.id:
+            return
 
-    @commands.command(name="unmute", description="Unmute someone in the server", usage="[user]")
-    @commands.has_permissions(administrator=True)
-    @commands.bot_has_permissions(manage_roles=True)
-    async def unmute(self, ctx, *, user: discord.Member):
-        role = discord.utils.get(ctx.guild.roles, name="Muted")
+        query = """UPDATE guild_config
+                   SET mute_role_id=$1, muted=$2
+                   WHERE guild_config.guild_id=$3;
+                """
+        await self.bot.db.execute(query, None, [], role.guild.id)
 
-        if not role:
-            return await ctx.send("❌ No muted role")
-        
-        if role not in user.roles:
-            return await ctx.send("❌ User is not muted")
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        query = """SELECT *
+                   FROM guild_config
+                   WHERE guild_config.guild_id=$1;
+                """
+        guild_config = await self.bot.db.fetchrow(query, after.guild.id)
 
-        await user.remove_roles(role)
+        if not guild_config or not guild_config["mute_role_id"]:
+            return
 
-        await ctx.send(f"{str(user).capitalize()} has been unmuted")
-        
+        if after.id not in guild_config["muted"] and guild_config["mute_role_id"] in [x.id for x in after.roles]:
+            guild_config["muted"].append(after.id)
+            query = """UPDATE guild_config
+                       SET muted=$1
+                       WHERE guild_config.guild_id=$2;
+                    """
+            await self.bot.db.execute(query, guild_config["muted"], after.guild.id)
+
+        if after.id in guild_config["muted"] and guild_config["mute_role_id"] not in [x.id for x in after.roles]:
+            guild_config["muted"].remove(after.id)
+            query = """UPDATE guild_config
+                       SET muted=$1
+                       WHERE guild_config.guild_id=$2;
+                    """
+            await self.bot.db.execute(query, guild_config["muted"], after.guild.id)
+
+    @commands.Cog.listener()
+    async def on_guild_role_delete(self, role):
+        query = """SELECT *
+                   FROM guild_config
+                   WHERE guild_config.guild_id=$1;
+                """
+        guild_config = await self.bot.db.fetchrow(query, role.guild.id)
+
+        if guild_config["mute_role_id"] != role.id:
+            return
+
+        query = """UPDATE guild_config
+                   SET mute_role_id=$1, muted=$2
+                   WHERE guild_config.guild_id=$3;
+                """
+        await self.bot.db.execute(query, None, [], role.guild.id)
+
+    @commands.Cog.listener()
+    async def on_unban_task(self, task):
+        guild = self.bot.get_guild(task["guild_id"])
+        user = self.bot.get_user(task["user_id"])
+        await guild.unban(discord.Object(id=task["user_id"]), reason="Temporary ban is over")
+
+    @commands.Cog.listener()
+    async def on_unmute_task(self, task):
+        guild = self.bot.get_guild(task["guild_id"])
+
+        query = """SELECT * FROM guild_config
+                    WHERE guild_config.guild_id=$1;
+                """
+        guild_config = await self.bot.db.fetchrow(query, task["guild_id"])
+
+        user = guild.get_member(task["user_id"])
+        if user:
+            role = guild.get_role(guild_config["mute_role_id"])
+            await user.remove_roles(role, reason="Temporary mute is over")
+
+        guild_config["muted"].remove(user.id)
+
+        query = """UPDATE guild_config
+                    SET muted=$1 WHERE guild_config.guild_id=$2;
+                """
+        await self.bot.db.execute(query, guild_config["muted"], task["guild_id"])
+
 def setup(bot):
     bot.add_cog(Moderation(bot))

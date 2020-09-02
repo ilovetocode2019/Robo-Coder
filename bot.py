@@ -63,7 +63,7 @@ class RoboCoder(commands.Bot):
             owner_id=self.config["dev"],
         )
 
-        self.cogs_to_add = ["cogs.meta", "cogs.admin", "cogs.tools", "cogs.internet", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders", "cogs.stats", "cogs.status", "cogs.linker"]
+        self.cogs_to_add = ["cogs.meta", "cogs.admin", "cogs.tools", "cogs.internet", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders", "cogs.stats", "cogs.status", "cogs.linker", "cogs.tasks"]
 
         self.loop.create_task(self.load_cogs_to_add())
         self.loop.create_task(self.setup_bot())
@@ -141,6 +141,9 @@ class RoboCoder(commands.Bot):
                 time int
             )
         ''')
+
+        await self.db.execute("CREATE TABLE IF NOT EXISTS tasks (id serial PRIMARY KEY, task text, guild_id bigint, channel_id bigint, user_id bigint, time timestamp);")
+        await self.db.execute("CREATE TABLE IF NOT EXISTS guild_config (guild_id bigint, mute_role_id bigint, muted bigint ARRAY);")
 
     def build_embed(self, **embed_kwargs):
         if "color" not in embed_kwargs:
