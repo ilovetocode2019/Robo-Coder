@@ -9,14 +9,14 @@ This bot is a multipurpose bot that can do many things. Use r!help to get starte
 
 ## Features
 
-- Lots of tools for your server (r!help Tools)
+- Moderation for Discord servers
 
-- Games to play with your friends (r!help Games)
+- Usefull tools for Discord
 
-- Reminders and notes (r!help Reminders) (r!help Notes)
+- Games to play with your friends
 
-- Custom Prefixes (r!help Meta)
+- Reminders and notes
 
-- Roblox command (r!help roblox)
+- Custom Prefixes
 
-- Linking two channels that you have manage messages for both (r!help Linker)
+- Roblox command
