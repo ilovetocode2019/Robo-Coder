@@ -18,6 +18,8 @@ class ExtensionConverter(commands.Converter):
         return ext
 
 class Admin(commands.Cog):
+    """Admin commands."""
+
     def __init__(self, bot):
         self.bot = bot
     

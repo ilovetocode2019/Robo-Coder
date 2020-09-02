@@ -8,6 +8,7 @@ from datetime import timezone
 from .utils import custom
 class Notes(commands.Cog):
     """Sticky notes and todo lists."""
+
     def __init__(self, bot):
         self.bot = bot
 

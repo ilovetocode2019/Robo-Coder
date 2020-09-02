@@ -32,6 +32,8 @@ def get_lines_of_code(comments=False):
     return f"I am made of {total_lines} lines of code spread out over {file_amount} files"
 
 class Stats(commands.Cog):
+    """Stats on Robo Coder."""
+
     def __init__(self, bot):
         self.bot = bot
         self.queries = []

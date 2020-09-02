@@ -19,7 +19,7 @@ class DMSession:
         self.messages = {}
 
 class Linker(commands.Cog):
-    """Linking two channels together"""
+    """Channel linking."""
 
     def __init__(self, bot):
         self.bot = bot

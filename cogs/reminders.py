@@ -12,6 +12,8 @@ import time as time_module
 from .utils import time as time_utils
 from .utils import custom
 class Reminders(commands.Cog):
+    """Reminders on Discord."""
+
     def __init__(self, bot):
         self.bot = bot
         self.timer.start()

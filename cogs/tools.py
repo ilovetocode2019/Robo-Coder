@@ -46,7 +46,8 @@ async def average_image_color(avatar_url, loop, session=None):
     return(discord.Color(int("0x{:02x}{:02x}{:02x}".format(*color), 16)))
 
 class Tools(commands.Cog):
-    """Tools for discord."""
+    """Tools for Discord."""
+
     def __init__(self, bot):
         self.bot = bot
     

@@ -77,7 +77,8 @@ class GameTimedOut(Exception):
     pass
 
 class Games(commands.Cog):
-    """Fun games."""
+    """Games on Discord."""
+
     def __init__(self, bot):
         self.bot = bot
         self.uno_games = {}

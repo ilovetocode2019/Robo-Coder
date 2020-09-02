@@ -86,7 +86,7 @@ def finder(text, collection, *, key=None, lazy=True):
         return [z for _, _, z in sorted(suggestions, key=sort_key)]
 
 class Internet(commands.Cog):
-    """Stuff from the internet. Not related to the discord API."""
+    """Internet commands."""
 
     def __init__(self, bot):
         self.bot = bot

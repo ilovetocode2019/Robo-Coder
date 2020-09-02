@@ -7,10 +7,11 @@ import random
 from .utils import custom
 
 class Fun(commands.Cog):
+    """Fun commands."""
+
     def __init__(self, bot):
         self.bot = bot
 
-    
     @commands.command(name="flipcoin", description="Flip a coin")
     async def flipcoin(self, ctx):
         await ctx.send(f"You got a {random.choice(['head', 'tail'])}")

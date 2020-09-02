@@ -224,6 +224,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
 
 class Meta(commands.Cog):
     """Everything about the bot itself."""
+
     def __init__(self, bot):
         self.bot = bot
 
