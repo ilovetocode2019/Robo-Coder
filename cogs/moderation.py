@@ -58,7 +58,7 @@ class Moderation(commands.Cog):
             await self.bot.db.execute(query, ctx.guild.id, None, [])
             return {"guild_id": ctx.guild.id, "mute_role_id": None, "muted": []}
 
-    @commands.command(name="kick", description="Kick a member from the server")
+    @commands.command(name="kick", description="Kick a member from the server", usage="[user] <reason>")
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
     async def kick(self, ctx, user: discord.Member, *, reason=None):
@@ -67,7 +67,7 @@ class Moderation(commands.Cog):
         await user.kick(reason=reason or f"Kick by {ctx.author}")
         await ctx.send(f":white_check_mark: Kicked {user.display_name}")
 
-    @commands.command(name="ban", description="Ban a member from the server")
+    @commands.command(name="ban", description="Ban a member from the server", usage="[user] <reason>")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def ban(self, ctx, user: discord.Member, *, reason=None):
@@ -76,7 +76,7 @@ class Moderation(commands.Cog):
         await user.ban(reason=reason or f"Ban by {ctx.author}")
         await ctx.send(f":white_check_mark: Banned {user.display_name}")
 
-    @commands.command(name="tempban", description="Temporarily ban a member from the server")
+    @commands.command(name="tempban", description="Temporarily ban a member from the server", usage="[user] [time] <reason>")
     @commands.has_permissions(ban_members=True)
     @commands.bot_has_permissions(ban_members=True)
     async def tempban(self, ctx, user: discord.Member, time: TimeConverter, *, reason=None):
@@ -91,7 +91,7 @@ class Moderation(commands.Cog):
         await user.ban(reason=reason or f"Temporary ban by {ctx.author}")
         await ctx.send(f":white_check_mark: Temporarily banned {user.display_name}")
 
-    @commands.command(name="unban", description="Unban a user")
+    @commands.command(name="unban", description="Unban a user", usage="[user] <reason>")
     @commands.has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
     async def unban(self, ctx, user: BannedUser, *, reason=None):
@@ -110,7 +110,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(f":white_check_mark: Unbanned {user}")
 
-    @commands.group(name="mute", description="Mute a member", invoke_without_command=True)
+    @commands.group(name="mute", description="Mute a member", invoke_without_command=True, usage="[user] <reason>")
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def mute(self, ctx, user: discord.Member, *, reason=None):
@@ -134,7 +134,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(f":white_check_mark: Muted {user}")
 
-    @commands.command(name="tempmute", description="Temporarily mute a member")
+    @commands.command(name="tempmute", description="Temporarily mute a member", usage="[user] [time] <reason>")
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def tempmute(self, ctx, user: discord.Member, time: TimeConverter, *, reason=None):
@@ -163,7 +163,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(f":white_check_mark: Muted {user} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}")
 
-    @commands.command(name="selfmute", description="Mute your self")
+    @commands.command(name="selfmute", description="Mute your self", usage="[time] <reason>")
     @commands.bot_has_permissions(manage_roles=True)
     async def selfmute(self, ctx, time: TimeConverter, *, reason=None):
         if ctx.author.id in ctx.guild_config["muted"]:
@@ -199,7 +199,7 @@ class Moderation(commands.Cog):
         role = ctx.guild.get_role(ctx.guild_config["mute_role_id"])
         await ctx.send(f"The muted role for this server is `{role.name}` ({role.id})")
 
-    @mute_role.command(name="set", description="Set the mute role")
+    @mute_role.command(name="set", description="Set the mute role", usage="[role]")
     async def mute_role_set(self, ctx, role: discord.Role):
         query = """UPDATE guild_config
                    SET mute_role_id=$1, muted=$2
@@ -246,7 +246,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(":white_check_mark: Unbound mute role")
 
-    @commands.command(name="unmute", description="Unmute a member")
+    @commands.command(name="unmute", description="Unmute a member", usage="[user] <reason>")
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def unmute(self, ctx, user: typing.Union[discord.Member, int], *, reason=None):
@@ -305,7 +305,7 @@ class Moderation(commands.Cog):
 
         await ctx.send(msg)
 
-    @commands.command(name="purge", description="Purge messages from a channel")
+    @commands.command(name="purge", description="Purge messages from a channel", usage="<limit>")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def purge(self, ctx, limit: int = 100):
