@@ -210,103 +210,76 @@ class Internet(commands.Cog):
         await self.do_docs(ctx, "python", obj)
 
     @commands.cooldown(1, 20, commands.BucketType.user)
-    @commands.group(name="github", description="Get infromation about a GitHub repository", invoke_without_command=True)
-    async def github(self, ctx, repo):
+    @commands.command(name="github", description="Get a GitHub user or repository")
+    async def github_user(self, ctx, item):
         #Trigger typing, this takes a little
         await ctx.channel.trigger_typing()
         session = self.bot.session
 
-        async with session.get(f"https://api.github.com/repos/{repo}") as response:
-            data = await response.json()
-        if data.get("message") == "Not Found":
-            return await ctx.send("Repository not found")
+        if "/" in item:
+            async with session.get(f"https://api.github.com/repos/{item}") as response:
+                data = await response.json()
+            if data.get("message") == "Not Found":
+                return await ctx.send("Repository not found")
 
-        async with session.get(f"https://api.github.com/repos/{repo}/releases") as response:
-            releases_data = await response.json()
-          
-        em = self.bot.build_embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=custom.Color.github)
-        em.add_field(name="Language", value=data.get("language"))
-        em.add_field(name="Branch", value=data.get("default_branch"))
-        em.add_field(name="Stars", value=data.get("stargazers_count"))
-        em.add_field(name="Watching", value=data.get("watchers_count"))
-        em.add_field(name="Forks", value=data.get("forks"))
+            em = self.bot.build_embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=custom.Color.github)
+            em.add_field(name="Language", value=data.get("language"))
+            em.add_field(name="Branch", value=data.get("default_branch"))
+            em.add_field(name="Stars", value=data.get("stargazers_count"))
+            em.add_field(name="Watching", value=data.get("watchers_count"))
+            em.add_field(name="Forks", value=data.get("forks"))
+            em.set_thumbnail(url=data.get("owner").get("avatar_url"))
 
-        releases = ""
-        for release in releases_data:
-            releases += f"\n[{release.get('tag_name')}]({release.get('html_url')})"
-        
-        if releases != "":
-            em.add_field(name="Releases", value=releases)
+        else:
+            async with session.get(f"https://api.github.com/users/{item}") as response:
+                data = await response.json()
+            if data.get("message") == "Not Found":
+                return await ctx.send(":x: User not found")
 
-        em.set_thumbnail(url=data.get("owner").get("avatar_url"))
-        await ctx.send(embed=em)
+            em = self.bot.build_embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=custom.Color.github)
+            em.add_field(name="Repositories", value=data.get("public_repos"))
+            em.add_field(name="Gists", value=data.get("public_gists"))
+            em.add_field(name="Followers", value=data.get("followers"))
+            em.add_field(name="Following", value=data.get("following"))
+            if data.get("blog"):
+                em.add_field(name="Blog", value=data.get("blog"))
+            em.set_thumbnail(url=data.get("avatar_url"))
 
-
-    @commands.cooldown(1, 20, commands.BucketType.user)
-    @github.command(name="user", description="Get a GitHub user")
-    async def github_user(self, ctx, user):
-        #Trigger typing, this takes a little
-        await ctx.channel.trigger_typing()
-        session = self.bot.session
-        async with session.get(f"https://api.github.com/users/{user}") as response:
-            data = await response.json()
-
-        if data.get("message") == "Not Found":
-            return await ctx.send("User not found")
-
-
-        em = self.bot.build_embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=custom.Color.github)
-        em.add_field(name="Repositories", value=data.get("public_repos"))
-        em.add_field(name="Gists", value=data.get("public_gists"))
-        em.add_field(name="Followers", value=data.get("followers"))
-        em.add_field(name="Following", value=data.get("following"))
-        
-        if data.get("blog") != "":
-            em.add_field(name="Blog", value=data.get("blog"))
-        em.set_thumbnail(url=data.get("avatar_url"))
         await ctx.send(embed=em)
 
     @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.command(name="roblox", description="Get a Roblox user")
     async def roblox(self, ctx, username):
-        #Roblox is a bit strange, you have to use a differnet url for each bit of info
         await ctx.channel.trigger_typing()
         session = self.bot.session
         async with session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
             data = await resp.json()
             if "Id" not in data:
                 return await ctx.send("Sorry, that user is not found")
-        
         userid = data["Id"]
+
+        #Make API requests
         async with session.get(f"https://users.roblox.com/v1/users/{userid}") as resp:
             data = await resp.json()
-        
-        #Parse html to get profile image, roblox doesn't have this in the API
+        async with session.get(f"https://users.roblox.com/v1/users/{userid}/status") as resp:
+            status = await resp.json()
+        async with session.get(f"https://friends.roblox.com/v1/users/{userid}/friends/count") as resp:
+            friends = await resp.json()
+
+        #Parse html to get profile image
         async with session.get(f"https://www.roblox.com/users/{userid}/profile") as resp:
             html = await resp.read()
             html = html.decode("utf-8")
-
             soup = BeautifulSoup(html , 'html.parser')
             links = soup.find_all("img")
             avatar_url = links[0].get("src")         
 
         em = self.bot.build_embed(title=data["displayName"], description=data["description"], url=f"https://roblox.com/users/{userid}", timestamp=dateparser.parse(data["created"]))
-
-        async with session.get(f"https://users.roblox.com/v1/users/{userid}/status") as resp:
-            status = await resp.json()
-        
-        if status["status"] != "":
-            em.add_field(name="Status", value=status["status"])
-
-        async with session.get(f"https://friends.roblox.com/v1/users/{userid}/friends/count") as resp:
-            friends = await resp.json()
-        
+        if status["status"]:
+            em.add_field(name="Status", value=status["status"]) 
         em.add_field(name="Friends Count", value=friends["count"])
-
         em.set_thumbnail(url=avatar_url)
-
         em.set_footer(text="Created at")
-
         await ctx.send(embed=em)
 
 def setup(bot):
