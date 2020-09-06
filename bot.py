@@ -30,27 +30,29 @@ logging.basicConfig(
 )
 
 def get_prefix(client, message):
-    prefixes = []
-    try:
-        if client.get_cog("Meta"):
-
-            if not isinstance(message.channel, discord.DMChannel):
-                if str(message.guild.id) in client.guild_prefixes.keys():
-                    prefixes += client.guild_prefixes[str(message.guild.id)]
-                else:
-                    client.guild_prefixes[str(message.guild.id)] = ["r!"]
-                    prefixes = ["r!"]
-            else:
-                prefixes = ["r!"]
-
+    prefixes = ["r!"]
+    if not isinstance(message.channel, discord.DMChannel) and hasattr(bot, "guild_prefixes"):
+        if str(message.guild.id) in client.guild_prefixes.keys():
+            prefixes = client.guild_prefixes[str(message.guild.id)]
         else:
-
-            prefixes = ["r!"]
-    except Exception as e:
-        print(e)
-            
+            client.guild_prefixes[str(message.guild.id)] = ["r!"]
 
     return commands.when_mentioned_or(*prefixes)(client, message)
+
+extensions = [
+"cogs.meta",
+"cogs.admin",
+"cogs.tools",
+"cogs.internet",
+"cogs.moderation",
+"cogs.fun",
+"cogs.games", 
+"cogs.notes",
+"cogs.reminders",
+"cogs.stats",
+"cogs.tasks",
+"cogs.linker"
+]
 
 class RoboCoder(commands.Bot):
     def __init__(self):
@@ -63,87 +65,44 @@ class RoboCoder(commands.Bot):
             owner_id=self.config["dev"],
         )
 
-        self.cogs_to_add = ["cogs.meta", "cogs.admin", "cogs.tools", "cogs.internet", "cogs.moderation", "cogs.fun", "cogs.games", "cogs.notes", "cogs.reminders", "cogs.stats", "cogs.status", "cogs.linker", "cogs.tasks"]
-
-        self.loop.create_task(self.load_cogs_to_add())
-        self.loop.create_task(self.setup_bot())
-        
-        self.connected_at = "Not connected yet..."
+        self.loop.create_task(self.load_extensions())
+        self.loop.create_task(self.setup_bot())    
         self.startup_time = datetime.now()
 
-    async def load_cogs_to_add(self):
+    async def load_extensions(self):
         self.load_extension("debug_cog")
         self.get_cog("Debug").hidden = True
 
-        self.remove_command('help')
-        for cog in self.cogs_to_add:
+        for cog in extensions:
             self.load_extension(cog)
 
     def run(self, token):
         super().run(token)
 
-
     async def on_ready(self):
         logging.info(f"Logged in as {self.user.name} - {self.user.id}")
-
-    async def get_context(self, message, *, cls=None):
-        return await super().get_context(message, cls=context.RoboCoderContext)
-
 
     async def setup_bot(self):
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.status_webhook = Webhook.from_url(self.config["webhook"], adapter=AsyncWebhookAdapter(self.session))
-        
+
         self.db = await asyncpg.create_pool(self.config["sqllogin"])
-        await self.db.execute('''
-            CREATE TABLE IF NOT EXISTS notes(
-                id serial PRIMARY KEY,
-                userid bigint,
-                title text,
-                content text
-            )
-        ''')
-
-        await self.db.execute('''
-            CREATE TABLE IF NOT EXISTS todo(
-                id serial PRIMARY KEY,
-                userid bigint,
-                content text,
-                status text
-            )
-        ''')
-
-        await self.db.execute('''
-            CREATE TABLE IF NOT EXISTS reminders(
-                id serial PRIMARY KEY,
-                userid bigint,
-                guildid bigint,
-                channid bigint,
-                msgid bigint,
-                time int,
-                content text
-            )
-        ''')
-        
-        await self.db.execute('''
-            CREATE TABLE IF NOT EXISTS commands(
-                userid bigint,
-                guildid bigint,
-                command text,
-                time int
-            )
-        ''')
-
-        await self.db.execute('''
-            CREATE TABLE IF NOT EXISTS status_updates(
-                userid bigint,
-                status text,
-                time int
-            )
-        ''')
-
+        await self.db.execute("CREATE TABLE IF NOT EXISTS notes(id serial PRIMARY KEY, userid bigint, title text, content text)")
+        await self.db.execute("CREATE TABLE IF NOT EXISTS todo(id serial PRIMARY KEY, userid bigint, content text, status text)")
+        await self.db.execute("CREATE TABLE IF NOT EXISTS reminders(id serial PRIMARY KEY, userid bigint, guildid bigint, channid bigint, msgid bigint, time int, content text)")
+        await self.db.execute("CREATE TABLE IF NOT EXISTS commands(userid bigint, guildid bigint, command text, time int)")
+        await self.db.execute("CREATE TABLE IF NOT EXISTS status_updates(userid bigint, status text, time int)")
         await self.db.execute("CREATE TABLE IF NOT EXISTS tasks (id serial PRIMARY KEY, task text, guild_id bigint, channel_id bigint, user_id bigint, time timestamp);")
         await self.db.execute("CREATE TABLE IF NOT EXISTS guild_config (guild_id bigint, mute_role_id bigint, muted bigint ARRAY);")
+
+    async def on_connect(self):
+        await self.status_webhook.send("Connected to Discord")
+
+    async def on_disconnect(self):
+        await self.status_webhook.send("Disconnected from Discord")
+
+    async def on_resumed(self):
+        await self.status_webhook.send("Resumed connection with to Discord")
 
     def build_embed(self, **embed_kwargs):
         if "color" not in embed_kwargs:
