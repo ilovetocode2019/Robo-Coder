@@ -7,6 +7,7 @@ import asyncio
 class Tasks(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.hidden = True
         self.loop.start()
 
     def cog_unload(self):

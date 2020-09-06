@@ -73,7 +73,7 @@ class RoboCoder(commands.Bot):
 
     async def load_cogs_to_add(self):
         self.load_extension("debug_cog")
-        self.get_command("debug").hidden = True
+        self.get_cog("Debug").hidden = True
 
         self.remove_command('help')
         for cog in self.cogs_to_add:

@@ -50,8 +50,9 @@ class Tools(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.emoji = ":toolbox:"
     
-    @commands.command(name="source", descriptin="Get source code for a specified command", usage="(command)")
+    @commands.command(name="source", descriptin="Get source code for a specified command")
     async def sourcecode(self, ctx, *, command=None):
         source_url = "https://github.com/ilovetocode2019/Robo-Coder"
         branch = "master"
@@ -116,7 +117,7 @@ class Tools(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.command(name="userinfo", description="Get info on a user", usage="[member]", aliases=["ui"])
+    @commands.command(name="userinfo", description="Get info on a user", aliases=["ui"])
     @commands.guild_only()
     async def userinfo(self, ctx, *, user:discord.Member=None):
         await ctx.channel.trigger_typing()
@@ -201,7 +202,7 @@ class Tools(commands.Cog):
         em.set_image(url=user.avatar_url)
         await ctx.send(embed=em)
 
-    @commands.command(name="copy", description="Copies messages from the current channel to another", usage="[destination] [limit]")
+    @commands.command(name="copy", description="Copies messages from the current channel to another")
     @commands.cooldown(1, 60)
     @commands.has_permissions(manage_channels=True, manage_messages=True)
     @commands.bot_has_permissions(manage_webhooks=True)

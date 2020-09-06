@@ -8,6 +8,7 @@ import os
 class Status(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.hidden = True
 
     @commands.Cog.listener("on_connect")
     async def on_connect(self):

@@ -81,6 +81,7 @@ class Games(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.emoji = ":video_game:"
         self.uno_games = {}
 
     async def wait_for_reaction_update(self, ctx, msg):
@@ -113,7 +114,7 @@ class Games(commands.Cog):
 
     @commands.guild_only()
     @commands.max_concurrency(1, commands.BucketType.guild)
-    @commands.command(name="tictactoe", description="A tic tac toe game", aliases=["ttt"], usage="[opponent]")
+    @commands.command(name="tictactoe", description="A tic tac toe game", aliases=["ttt"])
     async def ttt(self, ctx, *, opponent: discord.Member):
         #Creates a message and reacts to it
         msg = await ctx.send("Setting up the game....")

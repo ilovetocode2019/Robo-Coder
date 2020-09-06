@@ -36,6 +36,7 @@ class Stats(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.emoji = "📈"
         self.queries = []
         self.log_commands.start()
 

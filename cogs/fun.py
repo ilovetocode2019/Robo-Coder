@@ -11,6 +11,8 @@ class Fun(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.emoji = ":tada:"
+        self.hidden = True
 
     @commands.command(name="flipcoin", description="Flip a coin")
     async def flipcoin(self, ctx):
@@ -20,7 +22,7 @@ class Fun(commands.Cog):
     async def magic8ball(self, ctx):
         await ctx.send(f"{random.choice(['Yes', 'No', 'Maybe'])}")
     
-    @commands.command(name="embed", description="Create a simple embed", usage="[title] [content]")
+    @commands.command(name="embed", description="Create a simple embed")
     async def embed(self, ctx, title, *, msg):
         em = self.bot.build_embed(title=title, description=msg)
         em.set_author(name=str(ctx.author.display_name), icon_url=ctx.author.avatar_url)

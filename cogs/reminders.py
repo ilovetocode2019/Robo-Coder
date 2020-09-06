@@ -16,20 +16,21 @@ class Reminders(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.emoji = ":pencil:"
         self.timer.start()
 
     def cog_unload(self):
         self.timer.cancel()
 
-    @commands.group(name="remind", description="Create a reminder \nExample: r!remind 1day, Do something", usage="[time], [reminer]", invoke_without_command=True)
-    async def remind(self, ctx, *, reminder_data):
+    @commands.group(name="remind", description="Create a reminder \nExample: r!remind 1day, Do something", invoke_without_command=True)
+    async def remind(self, ctx, *, reminder):
         #Parse the time
         try:
-            data = reminder_data.split(", ")
+            data = reminder.split(", ")
             time = data[0]
             content = ", ".join(data[1:])
         except IndexError:
-            time = reminder_data
+            time = reminder
             content = "No reminder content"
 
         if not time.startswith("in") and not time.startswith("at"):
@@ -63,12 +64,12 @@ class Reminders(commands.Cog):
         #Send the finishing message
         await ctx.send(f"✅ '{content}' in {time_utils.readable(time_till)}")
 
-    @remind.command(name="delete", description="Remove a reminder", aliases=["remove"], usage="[id]")
-    async def remindremove(self, ctx, *, content: int):
-        rows = await self.bot.db.fetch(f"SELECT * FROM reminders WHERE reminders.userid=$1 AND reminders.id=$2", ctx.author.id, content)
+    @remind.command(name="delete", description="Remove a reminder", aliases=["remove"])
+    async def remindremove(self, ctx, *, id: int):
+        rows = await self.bot.db.fetch(f"SELECT * FROM reminders WHERE reminders.userid=$1 AND reminders.id=$2", ctx.author.id, id)
         if len(rows) == 0:
             return await ctx.send("That reminder doesn't exist")
-        await self.bot.db.execute("DELETE FROM reminders WHERE reminders.userid=$1 AND reminders.id=$2", ctx.author.id, content)
+        await self.bot.db.execute("DELETE FROM reminders WHERE reminders.userid=$1 AND reminders.id=$2", ctx.author.id, id)
         await ctx.send("Reminder deleted")
 
     @remind.command(name="list", description="Get a list of your reminders")

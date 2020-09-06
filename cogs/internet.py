@@ -90,6 +90,7 @@ class Internet(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.emoji = ":globe_with_meridians:"
 
     def parse_object_inv(self, stream, url):
         # key: URL
@@ -200,16 +201,16 @@ class Internet(commands.Cog):
         pages = menus.MenuPages(source=DocsPages(matches, obj, ctx), clear_reactions_after=True)
         await pages.start(ctx)
 
-    @commands.group(name="docs", description="Get a link for docs on discord.py", usage="[object]", invoke_without_command=True)
+    @commands.group(name="docs", description="Get a link for docs on discord.py", invoke_without_command=True)
     async def docs(self, ctx, obj=None):
         await self.do_docs(ctx, "latest", obj)
 
-    @docs.command(name="py", description="Get a link for docs on python", usage="[object]")
+    @docs.command(name="py", description="Get a link for docs on python")
     async def py_docs(self, ctx, obj=None):
         await self.do_docs(ctx, "python", obj)
 
     @commands.cooldown(1, 20, commands.BucketType.user)
-    @commands.group(name="github", description="Get infromation about a GitHub repository", usage="[username/repository]", invoke_without_command=True)
+    @commands.group(name="github", description="Get infromation about a GitHub repository", invoke_without_command=True)
     async def github(self, ctx, repo):
         #Trigger typing, this takes a little
         await ctx.channel.trigger_typing()
@@ -242,7 +243,7 @@ class Internet(commands.Cog):
 
 
     @commands.cooldown(1, 20, commands.BucketType.user)
-    @github.command(name="user", description="Get a GitHub user", usage="[user]")
+    @github.command(name="user", description="Get a GitHub user")
     async def github_user(self, ctx, user):
         #Trigger typing, this takes a little
         await ctx.channel.trigger_typing()
@@ -266,7 +267,7 @@ class Internet(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.cooldown(1, 30, commands.BucketType.user)
-    @commands.command(name="roblox", description="Get a Roblox user", usage="[username]")
+    @commands.command(name="roblox", description="Get a Roblox user")
     async def roblox(self, ctx, username):
         #Roblox is a bit strange, you have to use a differnet url for each bit of info
         await ctx.channel.trigger_typing()

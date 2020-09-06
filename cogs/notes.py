@@ -11,6 +11,7 @@ class Notes(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.emoji = "🗒️"
 
     @commands.group(invoke_without_command=True)
     async def note(self, ctx):
@@ -24,17 +25,17 @@ class Notes(commands.Cog):
             em.add_field(name=row[1], value=f"{row[2]} `{row[0]}`", inline=False)
         await ctx.send(embed=em)
 
-    @note.command(name="add", description="Add a note", usage="[title] [content]")
+    @note.command(name="add", description="Add a note")
     async def noteadd(self, ctx, title, *, content):
         await self.bot.db.execute("INSERT INTO notes(Userid, Title, Content) VALUES ($1, $2, $3)", ctx.author.id, str(title), str(content))
         await ctx.send("Note created")
 
-    @note.command(name="delete", description="Remove a note", usage="[id]", aliases=["remove"])
-    async def noteremove(self, ctx, content: int):
-        rows = await self.bot.db.fetch("SELECT * FROM notes WHERE notes.userid=$1 AND notes.id=$2", ctx.author.id, content)
+    @note.command(name="delete", description="Remove a note", aliases=["remove"])
+    async def noteremove(self, ctx, id: int):
+        rows = await self.bot.db.fetch("SELECT * FROM notes WHERE notes.userid=$1 AND notes.id=$2", ctx.author.id, id)
         if len(rows) == 0:
             return await ctx.send("That note doesn't exist")
-        await self.bot.db.execute("DELETE FROM notes WHERE notes.userid=$1 AND notes.id=$2", ctx.author.id, content)
+        await self.bot.db.execute("DELETE FROM notes WHERE notes.userid=$1 AND notes.id=$2", ctx.author.id, id)
         await ctx.send("Note removed")
         
      
@@ -47,12 +48,12 @@ class Notes(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @todo.command(name="add", description="Add something to your todo list", usage="[todo]")
+    @todo.command(name="add", description="Add something to your todo list")
     async def todoadd(self, ctx, *, content):
         await self.bot.db.execute(f'''INSERT INTO todo(userid, content, status) VALUES ($1, $2, $3)''', ctx.author.id, str(content), "Not started")
         await ctx.send("Todo list updated")
 
-    @todo.command(name="start", description="Start something in your todo list", usage="[id]")
+    @todo.command(name="start", description="Start something in your todo list")
     async def todostart(self, ctx, *, content: int):
         rows = await self.bot.db.fetch(f"SELECT * FROM todo WHERE todo.Userid=$1 and todo.ID=$2", ctx.author.id, content)
         if len(rows) == 0:
@@ -60,7 +61,7 @@ class Notes(commands.Cog):
         await self.bot.db.execute(f"UPDATE todo SET Status='Started' WHERE todo.userid=$1 AND todo.id=$2", ctx.author.id, content)
         await ctx.send(f"`{content}` started")
 
-    @todo.command(name="complete", description="Complete something in your todo list", usage="[id]")
+    @todo.command(name="complete", description="Complete something in your todo list")
     async def todocomplete(self, ctx, *, content: int):
         rows = await self.bot.db.fetch(f"SELECT * FROM todo WHERE todo.userid=$1 and todo.id=$2", ctx.author.id, content)
         if len(rows) == 0:
@@ -68,7 +69,7 @@ class Notes(commands.Cog):
         await self.bot.db.execute(f"UPDATE todo SET Status='Complete' WHERE todo.userid=$1 and todo.id=$2", ctx.author.id, content)
         await ctx.send(f"`{content}` Complete")
 
-    @todo.command(name="delete", description="Remove something from your todo list", usage="[id]", aliases=["remove"])
+    @todo.command(name="delete", description="Remove something from your todo list", aliases=["remove"])
     async def todoremove(self, ctx, *, content: int):
         rows = await self.bot.db.fetch(f"SELECT * FROM todo WHERE todo.userid=$1 AND Todo.id=$2", ctx.author.id, content)
         if len(rows) == 0:

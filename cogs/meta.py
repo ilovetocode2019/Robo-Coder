@@ -119,114 +119,62 @@ class CogHelp(menus.ListPageSource):
 
 
 class RoboCoderHelpCommand(commands.HelpCommand):
-    def get_command_signature(self, command):
-        return '{0.clean_prefix}{1.qualified_name}{1.signature}'.format(self, command)
     async def send_bot_help(self, mapping):
-        emojis = {"Meta":"⚙️", "Moderation":"🚓", "Music":"🎵", "Tools":"🧰", "Internet":"🌐", "Fun":"🎡", "Games":"🎮", "Notes":"📓", "Reminders":"🕒", "Stats":"📈", "Linker":"🔗"}
         ctx = self.context
         bot = ctx.bot
 
-        if bot.get_cog("Meta"):
-            guild_prefix = bot.get_cog("Meta").get_guild_prefix(ctx.guild)
-        else:
-            guild_prefix = "r!"
-        em = bot.build_embed(title=f"{bot.user.name} Help", description=f"General bot help. {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [command] or {bot.get_cog('Meta').get_guild_prefix(ctx.guild)}help [category] for more specific help. \n[arg]: Required argument \n(arg): Optional argument")
+        em = bot.build_embed(title=f"{bot.user.name} Help", description="Help for Robo Coder Bot. Use `help [command]` or `help [Category]` for more specific help.\n")
+        msg = ""
         for name, cog in sorted(bot.cogs.items()):
-            if not cog.description:
-                description = "No description"
-            else:
-                description = cog.description
-
-            if await run_cog_check(cog.cog_check, ctx):
-                if name in emojis:
-                    em.add_field(name=f"{emojis[name]} {name} ({guild_prefix}help {cog.qualified_name})", value=description, inline=False)
-                else:
-                    em.add_field(name=f"{name} ({guild_prefix}help {cog.qualified_name})", value=description, inline=False)
-
-        em.set_footer(text = f"{bot.user.name}", icon_url=bot.user.avatar_url)
+            if not getattr(cog, "hidden", False):
+                msg += f"\n{getattr(cog, 'emoji', '')} {cog.qualified_name}"
+        em.add_field(name="Categories", value=msg)
+        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
         await ctx.send(embed=em)
 
     async def send_cog_help(self, cog):
         ctx = self.context
         bot = ctx.bot
-        if await run_cog_check(cog.cog_check, ctx):
-            pages = menus.MenuPages(source=CogHelp(cog, ctx), clear_reactions_after=True)
-            await pages.start(ctx)
+
+        if getattr(cog, "hidden", False):
+           return 
+
+        em = bot.build_embed(title=f"{getattr(cog, 'emoji', '')} {cog.qualified_name}", description="\n")
+        for command in cog.get_commands():
+            if not command.hidden:
+                em.description += f"{self.get_command_signature(command)}\n"
+        await ctx.send(embed=em)
 
     async def send_command_help(self, command):
         ctx = self.context
         bot = ctx.bot
 
-        if command.parent != None:
-            if not await run_command_checks(command.parent.checks, ctx):
-                return
-        if command.hidden or not await run_command_checks(command.checks, ctx):
+        if not await command.can_run(ctx):
             return
 
-        guild_prefix = bot.get_cog("Meta").get_guild_prefix(ctx.guild)
+        em = bot.build_embed(title=f"{bot.user.name} Help", description=self.get_command_signature(command))
+        await ctx.send(embed=em)
 
-        if not command.usage:
-            usage = ""
-        else:
-            usage = command.usage
-        embed = bot.build_embed(title=guild_prefix+command.name + " " + usage, description=command.description)
-        if command.help != None:
-            embed.add_field(name="Detailed Help:", value=command.help, inline=False)
-        if command.aliases != []:
-            embed.add_field(name="Aliases:", value=", ".join(command.aliases), inline=False)
-        await ctx.send(embed=embed)
-
-    async def send_group_help(self, command):
+    async def send_group_help(self, group):
         ctx = self.context
         bot = ctx.bot
-        if command.hidden or not await run_command_checks(command.checks, ctx):
+
+        if not await group.can_run(ctx):
             return
 
-        guild_prefix = bot.get_cog("Meta").get_guild_prefix(ctx.guild)
+        em = bot.build_embed(title=f"{bot.user.name} Help", description=f"\n{self.get_command_signature(group)}")
+        for command in group.commands:
+            if await command.can_run(ctx):
+                em.description += f"\n{self.get_command_signature(command)}"
 
-        if not command.usage:
-            usage = ""
-        else:
-            usage = command.usage
-        embed = bot.build_embed(title=guild_prefix+command.name + " " + usage, description=command.description)
-        if command.help != None:
-            embed.add_field(name="Detailed Help:", value=command.help, inline=False)
-        if command.aliases != []:
-            embed.add_field(name="Aliases:", value=", ".join(command.aliases), inline=False)
-        await ctx.send(embed=embed)
-
-    async def command_callback(self, ctx, *, command=None):
-        await self.prepare_help_command(ctx, command)
-        bot = ctx.bot
-
-        if command is None:
-            mapping = self.get_bot_mapping()
-            return await self.send_bot_help(mapping)
-        
-        if not bot.get_command(command.capitalize()) and bot.get_cog(command.capitalize()):
-            command = command.capitalize()
-        
-        # Check if it's a cog
-        cog = bot.get_cog(command)
-        if cog is not None:
-            return await self.send_cog_help(cog)
-
-        #Check if it's a command
-        command_obj = bot.get_command(command)
-        if command_obj != None:
-            if isinstance(command_obj, commands.Group):
-                return await self.send_group_help(command_obj)
-            else:
-                return await self.send_command_help(command_obj)
-
-        await ctx.send(f"Command '{command}' not found")
-
+        await ctx.send(embed=em)
 
 class Meta(commands.Cog):
     """Everything about the bot itself."""
 
     def __init__(self, bot):
         self.bot = bot
+        self.emoji = ":gear:"
 
         self._original_help_command = bot.help_command
         bot.help_command = RoboCoderHelpCommand()
@@ -308,7 +256,7 @@ class Meta(commands.Cog):
         await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))        
 
 
-    @prefix.command(name="add", description="add a prefix", usage="[prefix]")
+    @prefix.command(name="add", description="add a prefix")
     @commands.guild_only()
     @has_manage_guild()
     async def add(self, ctx, *, arg):
@@ -317,7 +265,7 @@ class Meta(commands.Cog):
             json.dump(self.bot.guild_prefixes, f)
         await ctx.send("Added prefix: " + arg)
     
-    @prefix.command(name="remove", description="remove prefix", usage="[prefix]")
+    @prefix.command(name="remove", description="remove prefix")
     @commands.guild_only()
     @has_manage_guild()
     async def remove(self, ctx, *, arg):

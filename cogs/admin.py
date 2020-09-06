@@ -22,11 +22,12 @@ class Admin(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.hidden = True
     
     def cog_check(self, ctx):
         return ctx.author.id == self.bot.owner_id
 
-    @commands.group(name="reload", description="Reload an extension", usage="[cog]", invoke_without_command=True)
+    @commands.group(name="reload", description="Reload an extension", invoke_without_command=True)
     @commands.is_owner()
     async def _reload(self, ctx, cog="all"):
         if cog == "all":
@@ -66,7 +67,7 @@ class Admin(commands.Cog):
             await ctx.send(f"**:warning: `{extension.__name__.lower()}` is not reloaded.**\n```py\n{traceback_data}```")
             print(f"Extension 'cogs.{extension.__name__.lower()}' not reloaded.\n{traceback_data}")
 
-    @commands.command(name="load", description="Load an extension", usage="[cog]")
+    @commands.command(name="load", description="Load an extension")
     @commands.is_owner()
     async def _load(self, ctx, cog):
         try:
@@ -78,7 +79,7 @@ class Admin(commands.Cog):
             await ctx.send(f"**:warning: Extension `{cog.lower()}` not loaded.**\n```py\n{traceback_data}```")
             print(f"Extension 'cogs.{cog.lower()}' not loaded.\n{traceback_data}")
 
-    @commands.command(name="unload", description="Unload an extension", usage="[cog]")
+    @commands.command(name="unload", description="Unload an extension")
     @commands.is_owner()
     async def _unload_cog(self, ctx, cog):
         try:

@@ -23,12 +23,13 @@ class Linker(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
+        self.emoji = ":link:"
         self.linked = {}
         self.dm_sessions = {}
     
     @commands.has_permissions(manage_channels=True)
     @commands.bot_has_permissions(manage_webhooks=True)
-    @commands.group(name="link", description="Links a channel to another channel", usage="[channel id]", invoke_without_command=True)
+    @commands.group(name="link", description="Links a channel to another channel", invoke_without_command=True)
     async def link(self, ctx, channel):
         if len(self.linked) > 1 and ctx.author.id != self.bot.owner_id:
             return await ctx.send("❌ Try again soon")
@@ -74,7 +75,7 @@ class Linker(commands.Cog):
         self.linked.pop(session.channel)
         await self.bot.get_channel(session.channel).send("✅ Unlinked from the channel")
 
-    @commands.group(name="dm", description="Creates a DM session with a user", usage="[user]", invoke_without_command=True)
+    @commands.group(name="dm", description="Creates a DM session with a user", invoke_without_command=True)
     @commands.guild_only()
     @commands.is_owner()
     async def dm_command(self, ctx, *, user: discord.Member):
@@ -98,7 +99,7 @@ class Linker(commands.Cog):
 
         await ctx.send("✅ Created a DM session")
 
-    @dm_command.command(name="stop", description="Stops a DM session with a user", usage="[user]", aliases=["close"])
+    @dm_command.command(name="stop", description="Stops a DM session with a user", aliases=["close"])
     async def dm_stop_command(self, ctx, *, user: discord.Member):
         if user.dm_channel.id not in self.linked:
             return await ctx.send("❌ No DM session with user")
