@@ -68,8 +68,8 @@ class RoboCoder(commands.Bot):
         self.startup_time = datetime.now()
 
     async def load_extensions(self):
-        self.load_extension("debug_cog")
-        self.get_cog("Debug").hidden = True
+        self.load_extension("jishaku")
+        self.get_cog("Jishaku").hidden = True
 
         for cog in extensions:
             self.load_extension(cog)
