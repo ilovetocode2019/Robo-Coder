@@ -46,8 +46,7 @@ extensions = [
 "cogs.internet",
 "cogs.moderation",
 "cogs.fun",
-"cogs.games", 
-"cogs.notes",
+"cogs.games",
 "cogs.reminders",
 "cogs.tasks",
 "cogs.linker"
