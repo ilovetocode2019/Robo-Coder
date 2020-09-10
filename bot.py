@@ -49,7 +49,6 @@ extensions = [
 "cogs.games", 
 "cogs.notes",
 "cogs.reminders",
-"cogs.stats",
 "cogs.tasks",
 "cogs.linker"
 ]
