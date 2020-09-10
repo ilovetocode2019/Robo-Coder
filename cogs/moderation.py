@@ -321,7 +321,7 @@ class Moderation(commands.Cog):
                    WHERE guild_config.guild_id=$1;"""
         guild_config = await self.bot.db.fetchrow(query, member.guild.id)
 
-        if member.id in guild_config["muted"]:
+        if guild_config and member.id in guild_config["muted"]:
             role = member.guild.get_role(guild_config["mute_role_id"])
             await member.add_roles(role, reason="Member was muted when they left")
 
