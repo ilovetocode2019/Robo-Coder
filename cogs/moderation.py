@@ -90,7 +90,7 @@ class Moderation(commands.Cog):
         await self.bot.db.execute(query, "unban", ctx.guild.id, ctx.channel.id, user.id, time)
 
         await user.ban(reason=reason or f"Temporary ban by {ctx.author}")
-        await ctx.send(f":white_check_mark: Temporarily banned {user.display_name}")
+        await ctx.send(f":white_check_mark: Temporarily banned {user.display_name} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}")
 
     @commands.command(name="unban", description="Unban a user")
     @commands.has_permissions(ban_members=True)
