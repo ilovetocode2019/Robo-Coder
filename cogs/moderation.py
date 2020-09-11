@@ -109,7 +109,7 @@ class Moderation(commands.Cog):
                 """
         await self.bot.db.execute(query, ctx.guild.id, user.id, "unban")
 
-        await ctx.send(f":white_check_mark: Unbanned {user}")
+        await ctx.send(f":white_check_mark: Unbanned {user.id}")
 
     @commands.group(name="mute", description="Mute a member", invoke_without_command=True)
     @commands.has_permissions(manage_roles=True)
