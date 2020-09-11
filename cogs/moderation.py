@@ -377,7 +377,7 @@ class Moderation(commands.Cog):
                 """
         guild_config = await self.bot.db.fetchrow(query, role.guild.id)
 
-        if guild_config["mute_role_id"] != role.id:
+        if not guild_config or guild_config["mute_role_id"] != role.id:
             return
 
         query = """UPDATE guild_config
