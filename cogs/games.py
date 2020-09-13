@@ -11,284 +11,195 @@ import time
 import importlib
 import traceback
 
+class Hangman:
+    def __init__(self, ctx, word):
+        self.word = word
+        self.incorrect = []
+        self.correct = []
+        self.bot = ctx.bot
+        self.owner = ctx.author
+
+    @property
+    def guessed(self):
+        word = ""
+        for letter in self.word:
+            if letter in self.correct:
+                word += letter
+            else:
+                word += "_"
+        return word
+
+    @property
+    def won(self):
+        if self.word == self.guessed:
+            return True
+        elif 10-len(self.incorrect) == 0:
+            return False
+        else:
+            return None
+
+    @property
+    def embed(self):
+        em = self.bot.build_embed(title="Hangman")
+        if self.guessed:
+            em.add_field(name="Word", value=discord.utils.escape_markdown(self.guessed.replace("", " ")))
+
+        if self.won:
+            em.description = ":tada: You Won!"
+        elif self.won == False:
+            em.description = "You Lost"
+
+        if self.incorrect:
+            em.add_field(name="Incorrect Guesses", value=", ".join(self.incorrect))
+            em.add_field(name="Guess Remaining", value=10-len(self.incorrect))
+        return em
 
 class TicTacToe:
-    """Represents a tic tac toe game"""
-
-    def __init__(self, ctx, bot, msg, players):
+    def __init__(self, ctx, players):
+        self.bot = ctx.bot
         self.ctx = ctx
-        self.bot = bot
-        self.msg = msg
-        self.board = [":one:", ":two:", ":three:", ":four:", ":five:", ":six:", ":seven:", ":eight:", ":nine:"]
         self.players = players
-        self.playericos = {self.players[0]:"\N{CROSS MARK}", self.players[1]:"\N{HEAVY LARGE CIRCLE}"}
-    
-    async def update(self, bottom):
-        """Returns a discord.Embed with a specified bottom"""
+        self.turn = players[0]
+        self.next = players[1]
+        self.board = [None, None, None, None, None, None, None, None, None]
 
-        board = f"{self.board[0]}{self.board[1]}{self.board[2]}\n{self.board[3]}{self.board[4]}{self.board[5]}\n{self.board[6]}{self.board[7]}{self.board[8]}\n{bottom}"
-        em = self.bot.build_embed(title="Tic Tac Toe", description="Tic Tac Toe game")
-        em.add_field(name="Board", value=str(board), inline=False)
-        em.set_footer(text=" vs ".join([f'{str(x)} ({self.playericos[x]})' for x in self.players]))
-        await self.msg.edit(content=None, embed=em)
+    @property
+    def winner(self):
+        for x in [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]:
+                if self.board[x[0]] == self.board[x[1]] == self.board[x[2]] == True:
+                    return self.players[0]
 
-    async def turn(self, user):
-        """Runs a turn"""
+                if self.board[x[0]] == self.board[x[1]] == self.board[x[2]] == False:
+                    return self.players[1]
 
-        reactions = {"9\N{combining enclosing keycap}":8, "8\N{combining enclosing keycap}":7, "7\N{combining enclosing keycap}":6, "6\N{combining enclosing keycap}":5, "5\N{combining enclosing keycap}":4, "4\N{combining enclosing keycap}":3, "3\N{combining enclosing keycap}":2, "2\N{combining enclosing keycap}":1, "1\N{combining enclosing keycap}":0}
-        await self.update("It's " + str(user) + "'s turn")
-        def check(reaction, author):
-            #Check if it's the reaction we are looking for
-            return author == user and reaction.message.channel == self.ctx.channel and str(reaction.emoji) in reactions and self.board[reactions[str(reaction.emoji)]] not in ["\N{CROSS MARK}", "\N{HEAVY LARGE CIRCLE}"]
-        tasks = [
-                                asyncio.ensure_future(self.bot.wait_for('reaction_add', check=check)),
-                                asyncio.ensure_future(self.bot.wait_for('reaction_remove', check=check))
-                ]
-        #Wait for a reaction
-        done, pending = await asyncio.wait(tasks, timeout=180, return_when=asyncio.FIRST_COMPLETED)
-        for task in pending:
-            task.cancel()
+    @property
+    def tie(self):
+        tie = True
+        for piece in self.board:
+            if piece == None:
+                tie = False
+        return tie
 
-            if len(done) == 0:
-                raise asyncio.TimeoutError()
+    @property
+    def board_string(self):
+        board = ""
+        for counter, piece in enumerate(self.board):
+            if counter%3 == 0:
+                board += "\n"
 
-        #Make the move and update the board embed
-        reaction, reaction_user = done.pop().result()
-        self.board[reactions[str(reaction.emoji)]] = self.playericos[user]
-        await self.update("It's " + str(user) + "'s turn")
+            if piece:
+                board += ":x:"
+            elif piece == False:
+                board += ":o:"
+            else:
+                numbers = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine"}
+                board += f":{numbers[counter+1]}:"
+        return board
 
-    async def checkwin(self, user):
-        """Checks if someone has one the game"""
-
-        win_commbinations = [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]
-        count = 0
-        for a in win_commbinations:
-                if self.board[a[0]] == self.board[a[1]] == self.board[a[2]] == self.playericos[user]:
-                    return True
-
-    async def checktie(self):
-        """Checks if the game was a tie"""
-
-        placed = ["\N{CROSS MARK}", "\N{HEAVY LARGE CIRCLE}"]
-        if self.board[0] in placed and self.board[1] in placed and self.board[2] in placed and self.board[3] in placed and self.board[4] in placed and self.board[5] in placed and self.board[6] in placed and self.board[7] in placed and self.board[8] in placed:
-            return True
-
-class GameTimedOut(Exception):
-    pass
+    @property
+    def embed(self):
+        if self.winner:
+            message = f":tada: {self.winner} won!"
+        elif self.tie:
+            message = "Game tied"
+        else:
+            message = f"It is {self.turn}'s turn"
+        em = self.bot.build_embed(title="Tic Tac Toe", description=f"{self.board_string}\n\n{message}")
+        em.set_footer(text=f"{self.players[0]} (\N{CROSS MARK}) vs {self.players[1]} (\N{HEAVY LARGE CIRCLE})")
+        return em
 
 class Games(commands.Cog):
-    """Games on Discord."""
-
     def __init__(self, bot):
         self.bot = bot
-        self.emoji = ":video_game:"
-        self.uno_games = {}
+        self.hangman_games = {}
+        self.tic_tac_toe_games = {}
 
-    async def wait_for_reaction_update(self, ctx, msg):
-        """Used in the uno game, wait's for a reaction update to add a new player"""
+    @commands.group(name="hangman", description="Play hangman in Discord", invoke_without_command=True)
+    async def hangman(self, ctx):
+        if ctx.channel.id in self.hangman_games:
+            return await ctx.send(":x: A hangman game is already going in this channel")
 
-        def check(reaction, user):
-            if not reaction.message.guild:
-                return False
-            return reaction.message.guild.id == ctx.guild.id and reaction.message.id == msg.id and str(reaction.emoji) == "✅" and user.id != self.bot.user.id
+        await ctx.author.send("What is your hangman word?")
+        try:
+            def check(msg):
+                return msg.channel == ctx.author.dm_channel
+            msg = await self.bot.wait_for("message", check=check, timeout=180)
+            word = msg.content
+        except asyncio.TimeoutError:
+            return await ctx.send(":x: Hangman timed out")
 
-        tasks = [
-                asyncio.ensure_future(self.bot.wait_for('reaction_add', check=check)),
-                asyncio.ensure_future(self.bot.wait_for('reaction_remove', check=check))
-                ]
-    
-        done, pending = await asyncio.wait(tasks, timeout=20, return_when=asyncio.FIRST_COMPLETED)
-        for task in pending:
-            task.cancel()
+        self.hangman_games[ctx.channel.id] = hangman = Hangman(ctx, word)
+        await ctx.send(":white_check_mark: Created hangman game with word")
+        self.hangman_games[ctx.channel.id].message = await ctx.send(embed=self.hangman_games[ctx.channel.id].embed)
 
-            if len(done) == 0:
-                raise asyncio.TimeoutError()
+    @hangman.command(name="guess", description="Guess a word in a hangman game")
+    async def hangman_guess(self, ctx, letter):
+        hangman = self.hangman_games.get(ctx.channel.id)
+        if not hangman:
+            return await ctx.send(":x: No hangman game in this channel")
 
-        return done.pop().result()
+        if len(letter) != 1 or letter in hangman.correct + hangman.incorrect:
+            await ctx.message.add_reaction("\N{HEAVY EXCLAMATION MARK SYMBOL}")
+        elif letter in hangman.word:
+            hangman.correct.append(letter)
+            await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+        else:
+            hangman.incorrect.append(letter)
+            await ctx.message.add_reaction("\N{CROSS MARK}")
+        await hangman.message.edit(embed=hangman.embed)
 
-    @commands.command(name="reload_uno", description="Reload uno.utils", hidden=True)
-    @commands.is_owner()
-    async def reload_uno(self, ctx):
-        importlib.reload(uno)
-        await ctx.send("**🔁 Reloaded** `cogs.utils.uno`")
+        if hangman.won in (True, False):
+            self.hangman_games.pop(ctx.channel.id)
 
-    @commands.guild_only()
-    @commands.max_concurrency(1, commands.BucketType.guild)
-    @commands.command(name="tictactoe", description="A tic tac toe game", aliases=["ttt"])
+    @hangman.command(name="stop", description="Stop the hangman game")
+    async def hangman_stop(self, ctx):
+        hangman = self.hangman_games.get(ctx.channel.id)
+        if not hangman:
+            return await ctx.send(":x: No hangman game in this channel")
+        if hangman.owner.id != ctx.author.id and not ctx.author.guild_permissions.manage_messages:
+            return await ctx.send(":x: You do not own the hangman game in this channel")
+
+        self.hangman_games.pop(ctx.channel.id)
+        await ctx.send(":white_check_mark: Hangman game stopped")
+
+    @commands.command(name="ttt", description="Play a tic tac toe")
     async def ttt(self, ctx, *, opponent: discord.Member):
-        #Creates a message and reacts to it
-        msg = await ctx.send("Setting up the game....")
-        await msg.add_reaction("1\N{combining enclosing keycap}")
-        await msg.add_reaction("2\N{combining enclosing keycap}")
-        await msg.add_reaction("3\N{combining enclosing keycap}")
-        await msg.add_reaction("4\N{combining enclosing keycap}")
-        await msg.add_reaction("5\N{combining enclosing keycap}")
-        await msg.add_reaction("6\N{combining enclosing keycap}")
-        await msg.add_reaction("7\N{combining enclosing keycap}")
-        await msg.add_reaction("8\N{combining enclosing keycap}")
-        await msg.add_reaction("9\N{combining enclosing keycap}")
-        #Sets up the game class
+        if ctx.channel.id in self.tic_tac_toe_games:
+            await ctx.send(":x: A tic tac toe game is already going in this channel")
+
         players = [ctx.author, opponent]
         random.shuffle(players)
-        ctx.tttgame = TicTacToe(ctx, self.bot, msg, players)
-        await ctx.tttgame.update(ctx.author)
-        game = True
-        #Game loop
-        while game:
-            for user in ctx.tttgame.players:
-                try:
-                    #Try doing a turn, return if if times out
-                    await ctx.tttgame.turn(user)
-                except asyncio.TimeoutError:
-                    return await ctx.send("Tic Tac Toe has timed out")
-                won = await ctx.tttgame.checkwin(user)
-                if won == True:
-                    #Announce winner and return if someone won
-                    await ctx.tttgame.update(str(user) + " won 🎉!")
-                    game = False
-                    break
-                if await ctx.tttgame.checktie() == True:
-                    #Announce tie and return if tied
-                    await ctx.tttgame.update("The game was a tie")
-                    game = False
-                    break
-    
-    @commands.guild_only()
-    @commands.max_concurrency(1, commands.BucketType.guild)
-    @commands.command(name="hangman", description="A hangman game")
-    async def hangman(self, ctx):
-        #Create a dict of tries and pictures
-        pictures = {6:"https://upload.wikimedia.org/wikipedia/commons/8/8b/Hangman-0.png",
-            5:"https://upload.wikimedia.org/wikipedia/commons/3/30/Hangman-1.png",
-            4:"https://upload.wikimedia.org/wikipedia/commons/7/70/Hangman-2.png",
-            3:"https://upload.wikimedia.org/wikipedia/commons/9/97/Hangman-3.png",
-            2:"https://upload.wikimedia.org/wikipedia/commons/2/27/Hangman-4.png",
-            1:"https://upload.wikimedia.org/wikipedia/commons/6/6b/Hangman-5.png",
-            0:"https://upload.wikimedia.org/wikipedia/commons/d/d6/Hangman-6.png"}
-        #Get the word
-        await ctx.send("Please configure a word in your DMs")
-        await ctx.author.send("What is your word?")
-        def check(msg):
-            return msg.author == ctx.author and msg.channel.id == ctx.author.dm_channel.id
-        message = await self.bot.wait_for("message", check=check)
-        #Create all the variables
-        word = message.content.lower()
-        lives = 6
-        guessed = ""
-        incorrect = []
-        already_guessed = []
-        for counter in range(len(word)):
-            if word[counter] == " ":
-                guessed += " "
-            else:
-                guessed += "\N{WHITE LARGE SQUARE}"
-        em = self.bot.build_embed(title="Hangman", description="Click the hand reaction to make a guess")
-        em.add_field(name="Tries Remaining", value=str(lives))
-        if len(incorrect) != 0:
-            em.add_field(name="Incorrect guesses", value=", ".join(incorrect))
-        em.add_field(name="Guessing", value=guessed)
-        em.set_thumbnail(url=pictures[lives])
-        game_msg = await ctx.send(embed=em)
-        await game_msg.add_reaction("✋")
+        ctx.game = TicTacToe(ctx, players)
+        ctx.game.message = await ctx.send(embed=ctx.game.embed)
+
+        def check(reaction, user):
+            return user == ctx.game.turn and reaction.message.id == ctx.game.message.id and str(reaction.emoji) in emojis
+
+        emojis = {"1\N{combining enclosing keycap}": 1, "2\N{combining enclosing keycap}": 2, "3\N{combining enclosing keycap}": 3,
+                    "4\N{combining enclosing keycap}": 4, "5\N{combining enclosing keycap}": 5, "6\N{combining enclosing keycap}": 6,
+                    "7\N{combining enclosing keycap}": 7, "8\N{combining enclosing keycap}": 8, "9\N{combining enclosing keycap}": 9
+        }
+        for emoji in emojis:
+            await ctx.game.message.add_reaction(emoji)
+
         while True:
-            def check(reaction, user):
-                return reaction.message.id == game_msg.id and user.id != self.bot.user.id and str(reaction.emoji) == "✋"
-            tasks = [
-                                    asyncio.ensure_future(self.bot.wait_for('reaction_add', check=check)),
-                                    asyncio.ensure_future(self.bot.wait_for('reaction_remove', check=check))
-                    ]
-            done, pending = await asyncio.wait(tasks, timeout=180, return_when=asyncio.FIRST_COMPLETED)
-            try:
-                for task in pending:
-                    task.cancel()
+            while True:
+                reaction, user = await self.bot.wait_for("reaction_add", check=check)
 
-                    if len(done) == 0:
-                        raise asyncio.TimeoutError()
-            except asyncio.TimeoutError:
-                return await ctx.send("Hangman has timed out")
-            
+                index = emojis[str(reaction.emoji)]
+                if ctx.game.players[0] == ctx.game.turn:
+                    icon = True
+                else:
+                    icon = False
 
-            #Get the info on the reaction
-            reaction, reaction_user = done.pop().result()
-            
-            #Get the guess
-            ask = await ctx.send(f"{str(reaction_user)}: What is your guess?")
-            def check(msg):
-                return msg.author.id == reaction_user.id and msg.channel == reaction.message.channel
-            reply = await self.bot.wait_for("message", check=check)
+                if ctx.game.board[index-1] == None:
+                    ctx.game.board[index-1] = icon
+                    ctx.game.turn, ctx.game.next = ctx.game.next, ctx.game.turn
+                    break
 
-            #Check to make sure it's one letter
-            if len(reply.content) != 1:
-                await ctx.send("That not a letter", delete_after=5)
-
-            #Check to make sure it's not already guessed
-            elif reply.content in already_guessed:
-                await ctx.send("You already guessed that", delete_after=5)
-            
-            #Check to make sure the letter is in the word
-            elif reply.content in word: 
-                await ctx.send("Your guess was right", delete_after=5)
-                counter = 0
-                for letter in word:
-                    if letter == reply.content:
-                        guessed = guessed[:counter] + reply.content + guessed[counter+len(reply.content):]
-                    counter += 1
-
-                em = self.bot.build_embed(title="Hangman", description="Click the hand reaction to make a guess")
-                em.add_field(name="Tries Remaining", value=str(lives))
-                if len(incorrect) != 0:
-                    em.add_field(name="Incorrect Guesses", value=", ".join(incorrect))
-                em.add_field(name="Guessing", value=guessed)
-                em.set_thumbnail(url=pictures[lives])
-                await game_msg.edit(embed=em)
-            
-            #If it was a valid guess but not a correct one, announce invalid guess, and subtrac score
-            else:
-                incorrect.append(reply.content)
-                lives -= 1
-                incorrect_msg = await ctx.send("Your guess was incorrect", delete_after=5)
-                em = self.bot.build_embed(title="Hangman", description="Click the hand reaaction to make a guess")
-                em.add_field(name="Tries Remaining", value=str(lives))
-                if len(incorrect) != 0:
-                    em.add_field(name="Incorrect Guesses", value=", ".join(incorrect))
-                em.add_field(name="Guessing", value=guessed)
-                em.set_thumbnail(url=pictures[lives])
-                await game_msg.edit(embed=em)
-
-            already_guessed.append(reply.content)
-
-
-            async def clearup(reply, ask):
-                #Clears up the turn async, so we can continue the game
-                if ctx.guild.me.guild_permissions.manage_messages:
-                    await asyncio.sleep(5)
-                    await reply.delete()
-                    await ask.delete()
-            self.bot.loop.create_task(clearup(reply, ask))
-            
-            #If they guessed the whole, finish the game
-            if word == guessed:
-                em = self.bot.build_embed(title="Hangman", description="You won 🎉!")
-                em.add_field(name="Tries Remaining", value=str(lives))
-                if len(incorrect) != 0:
-                    em.add_field(name="Incorrect Guesses", value=", ".join(incorrect))
-                em.add_field(name="Guessing", value=guessed)
-                em.set_thumbnail(url=pictures[lives])
-                await game_msg.edit(embed=em)
-                return await ctx.send("You won hangman!")
-            
-            #If they lost, finish the game
-            if lives == 0:
-                em = self.bot.build_embed(title="Hangman", description="You lost")
-                em.add_field(name="Tries Remaining", value=str(lives))
-                if len(incorrect) != 0:
-                    em.add_field(name="Incorrect Gusesses", value=", ".join(incorrect))
-                em.add_field(name="Guessing", value=guessed)
-                em.set_thumbnail(url=pictures[lives])
-                await game_msg.edit(embed=em)
-                return await ctx.send(f"You lost hangman. The word was ||{word}||")
-     
-
+            await ctx.game.message.edit(embed=ctx.game.embed)
+            if ctx.game.winner or ctx.game.tie:
+                break
 
 def setup(bot):
     bot.add_cog(Games(bot))
