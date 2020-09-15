@@ -171,7 +171,7 @@ class Meta(commands.Cog):
             self.bot.guild_prefixes[str(ctx.guild.id)].remove(arg)
             await ctx.send("Removed prefix: " + arg)
         else:
-            await ctx.send(f"That prefix does not exist. Try '{self.get_guild_prefix(ctx.guild)}prefixes' to get a list of prefixes")
+            await ctx.send(f"That prefix does not exist. Try '{ctx.prefix}prefixes' to get a list of prefixes")
 
         with open("prefixes.json", "w") as f:
             json.dump(self.bot.guild_prefixes, f)
@@ -184,7 +184,7 @@ class Meta(commands.Cog):
 
     @commands.command(name="ping", description="Check my latency")
     async def ping(self, ctx):
-        await msg.edit(f"My latency is {int(self.bot.latency*1000)}ms")
+        await ctx.send(f"My latency is {int(self.bot.latency*1000)}ms")
 
     @commands.group(name="uptime", description="Get the uptime", aliases=["up"], invoke_without_command=True)
     async def uptime(self, ctx):
