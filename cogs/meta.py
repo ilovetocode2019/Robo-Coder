@@ -18,6 +18,7 @@ import inspect
 
 from .utils import time
 from .utils import custom
+
 def has_manage_guild():
     async def predicate(ctx):
         try:
@@ -30,93 +31,6 @@ def has_manage_guild():
             or permissions
         )
     return commands.check(predicate)
-
-async def run_command_checks(checks, ctx):
-    try:
-        for check in checks:
-            if inspect.iscoroutinefunction(check):
-                if not await check(ctx):
-                    return False
-            else:
-                if not check(ctx):
-                    return False
-        return True
-    except:
-        return False
-
-async def run_cog_check(check, ctx):
-    try:
-        if inspect.iscoroutinefunction(check):
-            if not await check(ctx):
-                return False
-        else:
-            if not check(ctx):
-                return False
-        return True
-    except:
-        return False
-class CogHelp(menus.ListPageSource):
-    def __init__(self, data, ctx):
-        self.cog = data
-        self.bot = ctx.bot
-        self.ctx = ctx
-        super().__init__(data.get_commands(), per_page=12)
-
-    async def format_page(self, menu, entries):
-        offset = menu.current_page * self.per_page
-        
-        guild_prefix = self.bot.get_cog("Meta").get_guild_prefix(self.ctx.guild)
-
-        if not self.cog.description:
-            cogdescription = ""
-        else:
-            cogdescription = self.cog.description
-        em = self.bot.build_embed(title=self.cog.qualified_name, description=cogdescription+"\n")
-
-        for i, command in enumerate(entries, start=offset):
-            if command.hidden != True:
-                if await run_command_checks(command.checks, self.ctx):
-                    if not command.usage:
-                        usage = ""
-                    else:
-                        usage = f"{command.usage}"
-
-                    if not command.description:
-                        description = "No desciption"
-                    else:
-                        description = command.description
-
-                    if not command.aliases:
-                        aliases = ""
-                    else:
-                        aliases = "("+', '.join(command.aliases)+")"
-
-                    em.description += f"\n\n{guild_prefix}{command.name} {usage} - {description} {aliases}"
-
-                    if isinstance(command, commands.Group):
-                            for subcommand in command.commands:
-                                if await run_command_checks(subcommand.checks, self.ctx):
-                                    if not subcommand.usage:
-                                        usage = ""
-                                    else:
-                                        usage = f"{subcommand.usage}"
-
-                                    if not subcommand.description:
-                                        description = "No desciption"
-                                    else:
-                                        description = subcommand.description
-
-                                    if not subcommand.aliases:
-                                        aliases = ""
-                                    else:
-                                        aliases = "("+', '.join(subcommand.aliases)+")"
-
-                                    em.description += f"\n\n{guild_prefix}{command.name} {subcommand.name} {usage} - {description} {aliases}"
-
-
-        em.set_footer(text = f"{self.bot.user.name}", icon_url=self.bot.user.avatar_url)
-        return em
-
 
 class RoboCoderHelpCommand(commands.HelpCommand):
     async def send_bot_help(self, mapping):
@@ -142,7 +56,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         em = bot.build_embed(title=f"{getattr(cog, 'emoji', '')} {cog.qualified_name}", description="\n")
         for command in cog.get_commands():
             if not command.hidden:
-                em.description += f"{self.get_command_signature(command)}\n"
+                em.description += f"{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}\n"
         await ctx.send(embed=em)
 
     async def send_command_help(self, command):
@@ -152,7 +66,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         if not await command.can_run(ctx):
             return
 
-        em = bot.build_embed(title=f"{bot.user.name} Help", description=self.get_command_signature(command))
+        em = bot.build_embed(title=f"{bot.user.name} Help", description=f"{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}")
         await ctx.send(embed=em)
 
     async def send_group_help(self, group):
@@ -162,10 +76,10 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         if not await group.can_run(ctx):
             return
 
-        em = bot.build_embed(title=f"{bot.user.name} Help", description=f"\n{self.get_command_signature(group)}")
+        em = bot.build_embed(title=f"{bot.user.name} Help", description=f"\n{self.get_command_signature(group)} - {command.description}")
         for command in group.commands:
             if await command.can_run(ctx):
-                em.description += f"\n{self.get_command_signature(command)}"
+                em.description += f"\n{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}"
 
         await ctx.send(embed=em)
 
@@ -188,7 +102,6 @@ class Meta(commands.Cog):
                 data = {}
                 json.dump(data, f)
             self.bot.guild_prefixes = {}
-
 
     def cog_unload(self):
         self.bot.help_command = self._original_help_command
@@ -237,20 +150,9 @@ class Meta(commands.Cog):
         em.description = f"```py\n{str(e)}```\n"
         msg = await ctx.send(embed=em)
 
-    @commands.Cog.listener("on_message")
-    async def detect_mention(self, msg):
-        if msg.content == f"<@!{self.bot.user.id}>":
-            await msg.channel.send(f"Hi. For help use {self.get_guild_prefix(msg.guild)}help.")
-
-    def get_guild_prefix(self, guild):
-        if not guild:
-            return "r!"
-        return self.bot.guild_prefixes[str(guild.id)][0]
-
     @commands.group(invoke_without_command=True)
     async def prefix(self, ctx):
-        await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))        
-
+        await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))
 
     @prefix.command(name="add", description="add a prefix")
     @commands.guild_only()
@@ -280,32 +182,9 @@ class Meta(commands.Cog):
         server_prefixes = self.bot.guild_prefixes
         await ctx.send("prefixes: " + ", ".join(server_prefixes))        
 
-        
-    @commands.command(name = "ping", description = "Test the bots's latency")
+    @commands.command(name="ping", description="Check my latency")
     async def ping(self, ctx):
-        start = datetime.timestamp(ctx.message.created_at)
-        msg = await ctx.send("Pinging")
-
-        ping = round((datetime.timestamp(datetime.utcnow()) - start) * 1000, 2)
-        await msg.edit(content=f"Pong!\nOne message round-trip took {ping}ms, my latency is {int(self.bot.latency*1000)}ms")
-
-    async def get_overall_uptime(self):
-        rows = await self.bot.db.fetch("SELECT * FROM status_updates WHERE status_updates.userid=$1", self.bot.user.id)
-        status = {}
-        for x, row in enumerate(rows):
-            if len(rows) == x+1:
-                time = datetime.timestamp(datetime.utcnow())-row[2]
-            else:
-                time = rows[x+1][2]-row[2]
-            
-            if row[1] in status:
-                status[row[1]] += time
-            else:
-                status[row[1]] = time
-        
-        total = sum(status.values())
-        return f"I am online {(status['online']/total)*100}% of the time"
-
+        await msg.edit(f"My latency is {int(self.bot.latency*1000)}ms")
 
     @commands.group(name="uptime", description="Get the uptime", aliases=["up"], invoke_without_command=True)
     async def uptime(self, ctx):
