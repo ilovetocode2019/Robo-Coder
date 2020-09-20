@@ -111,6 +111,7 @@ class TicTacToe:
 class Games(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.emoji = ":video_game:"
         self.hangman_games = {}
         self.tic_tac_toe_games = {}
 
