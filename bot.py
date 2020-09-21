@@ -49,7 +49,7 @@ extensions = [
 "cogs.games",
 "cogs.reminders",
 "cogs.tasks",
-"cogs.linker"
+#"cogs.linker"
 ]
 
 class RoboCoder(commands.Bot):
