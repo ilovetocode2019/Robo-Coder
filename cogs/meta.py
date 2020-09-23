@@ -76,7 +76,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         if not await group.can_run(ctx):
             return
 
-        em = bot.build_embed(title=f"{bot.user.name} Help", description=f"\n{self.get_command_signature(group)} - {command.description}")
+        em = bot.build_embed(title=f"{bot.user.name} Help", description=f"\n{self.get_command_signature(group)} - {group.description}")
         for command in group.commands:
             if await command.can_run(ctx):
                 em.description += f"\n{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}"
