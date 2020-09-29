@@ -61,6 +61,7 @@ class RoboCoder(commands.Bot):
             description = "A discord bot with tools, fun, and coding related stuff.",
             case_insensitive=True,
             owner_id=self.config["dev"],
+            intents=discord.Intents.all()
         )
 
         self.loop.create_task(self.load_extensions())
