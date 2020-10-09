@@ -201,6 +201,8 @@ class Moderation(commands.Cog):
         await ctx.send(f"The muted role for this server is `{role.name}` ({role.id})")
 
     @mute_role.command(name="set", description="Set the mute role")
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
     async def mute_role_set(self, ctx, role: discord.Role):
         query = """UPDATE guild_config
                    SET mute_role_id=$1, muted=$2
