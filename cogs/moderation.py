@@ -213,6 +213,8 @@ class Moderation(commands.Cog):
         await ctx.send(":white_check_mark: Set mute role")
 
     @mute_role.command(name="create", description="Create a mute role")
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_roles=True)
     async def mute_role_create(self, ctx):
         reason = f"Create mute role by {ctx.author}"
         role = await ctx.guild.create_role(name="Muted", reason=reason)
