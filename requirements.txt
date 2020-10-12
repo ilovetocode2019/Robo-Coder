@@ -1,9 +1,9 @@
-git+https://github.com/Rapptz/discord.py
-git+https://github.com/Rapptz/discord-ext-menus
-git+https://github.com/ilovetocode2019/debug-cog
+discord.py
+jishaku
 async_timeout
 asyncpg
 youtube_dl
 Pillow
 dateparser
 bs4
+git+https://github.com/Rapptz/discord-ext-menus
