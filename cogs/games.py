@@ -129,8 +129,10 @@ class Games(commands.Cog):
         except asyncio.TimeoutError:
             return await ctx.send(":x: Hangman timed out")
 
+        if not word.isalpha():
+            return await ctx.send(":x: That is not a valid word")
+
         self.hangman_games[ctx.channel.id] = hangman = Hangman(ctx, word)
-        await ctx.send(":white_check_mark: Created hangman game with word")
         self.hangman_games[ctx.channel.id].message = await ctx.send(embed=self.hangman_games[ctx.channel.id].embed)
 
     @hangman.command(name="guess", description="Guess a word in a hangman game")
@@ -138,6 +140,8 @@ class Games(commands.Cog):
         hangman = self.hangman_games.get(ctx.channel.id)
         if not hangman:
             return await ctx.send(":x: No hangman game in this channel")
+        if hangman.owner == ctx.author:
+            return await ctx.send(":x: You cannot guess in your own game")
 
         if len(letter) != 1 or letter in hangman.correct + hangman.incorrect:
             await ctx.message.add_reaction("\N{HEAVY EXCLAMATION MARK SYMBOL}")
