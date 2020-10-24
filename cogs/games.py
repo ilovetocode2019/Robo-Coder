@@ -127,10 +127,10 @@ class Games(commands.Cog):
             msg = await self.bot.wait_for("message", check=check, timeout=180)
             word = msg.content
         except asyncio.TimeoutError:
-            return await ctx.send(":x: Hangman timed out")
+            return await ctx.send(":x: Hangman creation timed out")
 
         if not word.isalpha():
-            return await ctx.send(":x: That is not a valid word")
+            return await ctx.author.send(":x: That is not a valid word")
 
         self.hangman_games[ctx.channel.id] = hangman = Hangman(ctx, word)
         self.hangman_games[ctx.channel.id].message = await ctx.send(embed=self.hangman_games[ctx.channel.id].embed)
