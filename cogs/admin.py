@@ -8,6 +8,8 @@ import re
 import os
 import asyncio
 import subprocess
+import time
+import traceback
 
 class Confirm(menus.Menu):
     def __init__(self, msg):
@@ -64,6 +66,26 @@ class Admin(commands.Cog):
         em.add_field(name="Disk", value=f"{humanize.naturalsize(disk.used)}/{humanize.naturalsize(disk.total)} ({disk.percent}% used)")
 
         await ctx.send(embed=em)
+
+    @commands.command(name="sql", description="Run some sql")
+    async def sql(self, ctx, *, query):
+        if query.count(";") > 1:
+            method = self.bot.db.execute
+        else:
+            method = self.bot.db.fetch
+
+        try:
+            start = time.time()
+            result = await method(query)
+            end = time.time()
+        except Exception as e:
+            full = "".join(traceback.format_exception(type(e), e, e.__traceback__, 0))
+            return await ctx.send(f"```py{full}```")
+
+        await ctx.send(f"`{result}`")
+
+        
+        
 
     @commands.command(name="update", description="Update the bot")
     async def update(self, ctx):
