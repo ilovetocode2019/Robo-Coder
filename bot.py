@@ -47,9 +47,7 @@ extensions = [
 "cogs.moderation",
 "cogs.fun",
 "cogs.games",
-"cogs.reminders",
-"cogs.tasks",
-#"cogs.linker"
+"cogs.timers"
 ]
 
 class RoboCoder(commands.Bot):
@@ -65,7 +63,7 @@ class RoboCoder(commands.Bot):
         )
 
         self.loop.create_task(self.load_extensions())
-        self.loop.create_task(self.setup_bot())    
+        self.loop.create_task(self.setup_bot())
         self.startup_time = datetime.now()
 
     async def load_extensions(self):
@@ -85,14 +83,32 @@ class RoboCoder(commands.Bot):
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.status_webhook = Webhook.from_url(self.config["webhook"], adapter=AsyncWebhookAdapter(self.session))
 
-        self.db = await asyncpg.create_pool(self.config["sqllogin"])
-        await self.db.execute("CREATE TABLE IF NOT EXISTS notes(id serial PRIMARY KEY, userid bigint, title text, content text)")
-        await self.db.execute("CREATE TABLE IF NOT EXISTS todo(id serial PRIMARY KEY, userid bigint, content text, status text)")
-        await self.db.execute("CREATE TABLE IF NOT EXISTS reminders(id serial PRIMARY KEY, userid bigint, guildid bigint, channid bigint, msgid bigint, time int, content text)")
-        await self.db.execute("CREATE TABLE IF NOT EXISTS commands(userid bigint, guildid bigint, command text, time int)")
-        await self.db.execute("CREATE TABLE IF NOT EXISTS status_updates(userid bigint, status text, time int)")
-        await self.db.execute("CREATE TABLE IF NOT EXISTS tasks (id serial PRIMARY KEY, task text, guild_id bigint, channel_id bigint, user_id bigint, time timestamp);")
-        await self.db.execute("CREATE TABLE IF NOT EXISTS guild_config (guild_id bigint, mute_role_id bigint, muted bigint ARRAY);")
+        async def init(conn):
+            await conn.set_type_codec(
+                "jsonb",
+                schema="pg_catalog",
+                encoder=json.dumps,
+                decoder=json.loads,
+                format="text",
+            )
+        self.db = await asyncpg.create_pool(self.config["sqllogin"], init=init)
+
+        query = """CREATE TABLE IF NOT EXISTS guild_config (
+                   ID SERIAL PRIMARY KEY,
+                   guild_id BIGINT,
+                   mute_role_id BIGINT,
+                   muted bigint ARRAY
+                   );
+
+                   CREATE TABLE IF NOT EXISTS timers (
+                   id SERIAL PRIMARY KEY,
+                   event TEXT,
+                   time TIMESTAMP,
+                   extra jsonb DEFAULT ('{}'::jsonb),
+                   created_at TIMESTAMP DEFAULT (now() at time zone 'utc')
+                   );
+                """
+        await self.db.execute(query)
 
     async def on_connect(self):
         await self.status_webhook.send("Connected to Discord")
