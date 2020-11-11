@@ -203,7 +203,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def mute_role_set(self, ctx, *, role: discord.Role):
-        config = await self.create_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild)
         await config.set_mute_role(role)
 
         await ctx.send(f":white_check_mark: Set mute role to {role.name} ({role.id})")
