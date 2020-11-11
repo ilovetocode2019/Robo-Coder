@@ -4,13 +4,16 @@ import discord
 
 import io
 import os
-
 import re
 import zlib
-from bs4 import BeautifulSoup
 import aiohttp
-
+import datetime
 import dateparser
+import json
+import base64
+import functools
+from PIL import Image
+from bs4 import BeautifulSoup
 
 class DocsPages(menus.ListPageSource):
     def __init__(self, data, search, ctx):
@@ -240,6 +243,60 @@ class Internet(commands.Cog):
         em.set_footer(text="Created at")
         await ctx.send(embed=em)
 
+    @commands.command(name="minecraft", description="Get info on a minecraft user", aliases=["mc"])
+    async def minecraft(self, ctx, *, username):
+        async with self.bot.session.get(f"https://api.mojang.com/users/profiles/minecraft/{username}") as resp:
+            if resp.status != 200:
+                return await ctx.send(":x: Could not fetch Minecraft user")
+
+            data = await resp.json()
+        name = data["name"]
+        uuid = data["id"]
+
+        async with self.bot.session.get(f"https://api.mojang.com/user/profiles/{uuid}/names") as resp:
+            name_history = await resp.json()
+        names = []
+        for name_data in reversed(name_history):
+            timestamp = name_data.get("changedToAt")
+            old_name = name_data["name"]
+            if timestamp:
+                seconds = timestamp / 1000
+                time = datetime.datetime.fromtimestamp(seconds + (timestamp % 1000.0) / 1000.0)
+                time = time.strftime("%m/%d/%y")
+                names.append(f"{old_name} ({time})")
+            else:
+                names.append(old_name)
+
+        async with self.bot.session.get(f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid}") as resp:
+            data = await resp.json()
+        data = data["properties"][0]["value"]
+        data = json.loads(base64.b64decode(data))
+        url = data["textures"]["SKIN"]["url"]
+
+        async with self.bot.session.get(url) as resp:
+            data = await resp.read()
+            image = io.BytesIO(data)
+
+        partial = functools.partial(Image.open, image)
+        image = await self.bot.loop.run_in_executor(None, partial)
+
+        partial = functools.partial(image.crop, (8, 8, 16, 16))
+        image = await self.bot.loop.run_in_executor(None, partial)
+
+        partial = functools.partial(image.resize, (500, 500), resample=Image.NEAREST)
+        image = await self.bot.loop.run_in_executor(None, partial)
+
+        output = io.BytesIO()
+        image.save(output, format="png")
+        output.seek(0)
+
+        em = discord.Embed(title=name)
+        em.set_thumbnail(url="attachment://face.png")
+        em.add_field(name="Names", value="\n".join(names))
+        em.set_footer(text=f"ID: {uuid}")
+
+        await ctx.send(embed=em, file=discord.File(output, filename="face.png"))
+
     @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
     async def github(self, ctx, *, item):
         if "/" in item:
@@ -274,6 +331,28 @@ class Internet(commands.Cog):
             em.set_footer(text="Created")
 
         await ctx.send(embed=em)
+
+    @commands.command(name="strawpoll", description="Create a strawpoll")
+    async def strawpoll(self, ctx, title=None, *options):
+        if not title:
+            options = []
+            check = lambda message: message.channel == ctx.channel and message.author == ctx.author
+            await ctx.send("What is the title of the poll?")
+            message = await self.bot.wait_for("message", check=check)
+            title = message.content
+
+            await ctx.send("Send me a list of poll options. Type `done` to send the poll")
+            while True:
+                message = await self.bot.wait_for("message", check=check)
+                if message.content == "done":
+                    break
+                options.append(message.content)
+                await message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+
+        data = {"poll": {"title": title, "answers": list(options)}}
+        async with self.bot.session.post("https://strawpoll.com/api/poll", json=data, headers={"Content Type": "application/json"}) as resp:
+            data = await resp.json()
+        await ctx.send(f"https://strawpoll.com/{data['content_id']}")
 
 def setup(bot):
     bot.add_cog(Internet(bot))
