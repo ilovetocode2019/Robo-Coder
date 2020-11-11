@@ -86,7 +86,7 @@ class Admin(commands.Cog):
             return await ctx.send("No cogs to update")
 
         cogs_text = "\n".join(cogs)
-        result = await Confirm(f"Are you sure you want to update the following modules:{cogs_text}").prompt(ctx)
+        result = await Confirm(f"Are you sure you want to update the following modules:\n{cogs_text}").prompt(ctx)
         if not result:
             return await ctx.send(":x: Aborting")
 
@@ -94,9 +94,9 @@ class Admin(commands.Cog):
         for cog in cogs:
             try:
                 self.bot.reload_extension(cog)
-                text.append(f":white_check_mark: {cog}")
+                text += f":white_check_mark: {cog}"
             except:
-                text.append(f":x: {cog}")
+                text += f":x: {cog}"
 
         await ctx.send(text)
 
