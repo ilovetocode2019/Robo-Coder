@@ -36,7 +36,8 @@ extensions = [
 "cogs.moderation",
 "cogs.fun",
 "cogs.games",
-"cogs.timers"
+"cogs.timers",
+"cogs.music"
 ]
 
 class RoboCoder(commands.Bot):
@@ -44,6 +45,7 @@ class RoboCoder(commands.Bot):
         super().__init__(command_prefix=get_prefix, description="A multipurpose Discord bot.", case_insensitive=True, owner_id=config.owner_id, intents=discord.Intents.all())
         self.loop.create_task(self.prepare_bot())
         self.startup_time = datetime.datetime.utcnow()
+        self.players = {}
 
         self.load_extension("jishaku")
         self.get_cog("Jishaku").hidden = True

@@ -8,4 +8,5 @@ dateparser
 bs4
 psutil
 humanize
+youtube-dl
 git+https://github.com/Rapptz/discord-ext-menus
