@@ -10,6 +10,7 @@ import asyncio
 import subprocess
 import time
 import traceback
+import io
 
 class Confirm(menus.Menu):
     def __init__(self, msg):
@@ -82,10 +83,10 @@ class Admin(commands.Cog):
             full = "".join(traceback.format_exception(type(e), e, e.__traceback__, 0))
             return await ctx.send(f"```py{full}```")
 
-        await ctx.send(f"`{result}`")
-
-        
-        
+        try:
+            await ctx.send(f"`{result}`")
+        except discord.HTTPException:
+            await ctx.send(file=discord.File(io.BytesIO(result.encode("utf-8")), filename="result.txt"))
 
     @commands.command(name="update", description="Update the bot")
     async def update(self, ctx):
