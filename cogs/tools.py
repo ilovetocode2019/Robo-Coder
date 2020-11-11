@@ -8,6 +8,7 @@ import functools
 import io
 import re
 import zlib
+import unicodedata
 from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
@@ -185,6 +186,58 @@ class Tools(commands.Cog):
         em.set_author(name=user.display_name, icon_url=user.avatar_url)
         em.set_image(url=user.avatar_url)
         await ctx.send(embed=em)
+
+    @commands.command(name="charinfo", decription="Get info on a charecter")
+    async def charinfo(self, ctx, charecter):
+        digit = f'{ord(charecter):x}'
+        name = unicodedata.name(charecter, "Name not found")
+        await ctx.send(f'`\\U{digit:>08}`: {name} - {charecter} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>')
+
+    @commands.command(name="poll", description="Create a poll")
+    async def poll(self, ctx, title=None, *options):
+        emojis = [
+            "\N{REGIONAL INDICATOR SYMBOL LETTER A}",
+            "\N{REGIONAL INDICATOR SYMBOL LETTER B}",
+            "\N{REGIONAL INDICATOR SYMBOL LETTER C}",
+            "\N{REGIONAL INDICATOR SYMBOL LETTER D}",
+            "\N{REGIONAL INDICATOR SYMBOL LETTER E}",
+            "\N{REGIONAL INDICATOR SYMBOL LETTER F}",
+            "\N{REGIONAL INDICATOR SYMBOL LETTER G}",
+            "\N{REGIONAL INDICATOR SYMBOL LETTER H}",
+            "\N{REGIONAL INDICATOR SYMBOL LETTER I}",
+            "\N{REGIONAL INDICATOR SYMBOL LETTER J}",
+        ]
+
+        if not title:
+            options = []
+            check = lambda message: message.channel == ctx.channel and message.author == ctx.author
+            await ctx.send("What is the title of the poll?")
+            message = await self.bot.wait_for("message", check=check)
+            title = message.content
+
+            await ctx.send("Send me a list of poll options. Type `done` to send the poll")
+            while True:
+                message = await self.bot.wait_for("message", check=check)
+                if message.content == "done":
+                    break
+                options.append(message.content)
+                await message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+
+        if len(options) > len(emojis):
+            raise commands.BadArgument(f"You cannot have more then {len(emojis)} options")
+
+        description = ""
+        reactions = []
+        for counter, option in enumerate(options):
+            description += f"\n{emojis[counter]} {option}"
+            reactions.append(emojis[counter])
+
+        em = discord.Embed(title=title, description=description)
+        em.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        message = await ctx.send(embed=em)
+
+        for reaction in reactions:
+            await message.add_reaction(reaction)
 
 def setup(bot):
     bot.add_cog(Tools(bot))
