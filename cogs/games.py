@@ -1,15 +1,8 @@
-from discord.ext import commands
 import discord
+from discord.ext import commands
+
 import asyncio
-
 import random
-import copy
-
-from .utils import uno
-import time
-
-import importlib
-import traceback
 
 class Hangman:
     def __init__(self, ctx, word):
@@ -40,7 +33,7 @@ class Hangman:
 
     @property
     def embed(self):
-        em = self.bot.build_embed(title="Hangman")
+        em = discord.Embed(title="Hangman", color=0x96c8da)
         if self.guessed:
             em.add_field(name="Word", value=discord.utils.escape_markdown(self.guessed.replace("", " ")))
 
@@ -104,7 +97,7 @@ class TicTacToe:
             message = "Game tied"
         else:
             message = f"It is {self.turn}'s turn"
-        em = self.bot.build_embed(title="Tic Tac Toe", description=f"{self.board_string}\n\n{message}")
+        em = discord.Embed(title="Tic Tac Toe", description=f"{self.board_string}\n\n{message}", color=0x96c8da)
         em.set_footer(text=f"{self.players[0]} (\N{CROSS MARK}) vs {self.players[1]} (\N{HEAVY LARGE CIRCLE})")
         return em
 

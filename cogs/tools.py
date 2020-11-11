@@ -1,33 +1,17 @@
-from discord.ext import commands
-from discord.ext import menus
 import discord
+from discord.ext import commands
 
-from datetime import datetime as d
 import humanize
-import dateparser
-
 import inspect
 import os
-import asyncio
 import functools
-import aiohttp
-
-from PIL import Image
-from io import BytesIO
-
 import io
 import re
 import zlib
 from bs4 import BeautifulSoup
+from PIL import Image
+from io import BytesIO
 
-from .utils import custom
-
-def snowstamp(snowflake):
-    timestamp = (int(snowflake) >> 22) + 1420070400000
-    timestamp /= 1000
-
-    return d.utcfromtimestamp(timestamp).strftime('%b %d, %Y at %#I:%M %p')    
-    
 async def average_image_color(avatar_url, loop, session=None):
     session = session or aiohttp.ClientSession()
     async with session.get(str(avatar_url)) as resp:
@@ -98,7 +82,7 @@ class Tools(commands.Cog):
             color = await average_image_color(guild.icon_url, self.bot.loop, self.bot.session)
         except:
             color = discord.Embed.Empty
-        em = self.bot.build_embed(title=f"{guild.name} ({guild.id})", description="", color=color)
+        em = discord.Embed(title=f"{guild.name} ({guild.id})", description="", color=color)
         
         em.set_thumbnail(url=guild.icon_url)
 
@@ -163,7 +147,7 @@ class Tools(commands.Cog):
         if user.nick != None:
             title += f" ({user.nick})"
         title += f" - {user.id}"
-        em = self.bot.build_embed(title=title, description=badges, color=color)
+        em = discord.Embed(title=title, description=badges, color=color)
         
         em.set_thumbnail(url=user.avatar_url)
 
@@ -197,35 +181,10 @@ class Tools(commands.Cog):
             color = await average_image_color(user.avatar_url, self.bot.loop, self.bot.session)
         except:
             color = discord.Embed.Empty
-        em = self.bot.build_embed(color=color)
+        em = discord.Embed(color=color)
         em.set_author(name=user.display_name, icon_url=user.avatar_url)
         em.set_image(url=user.avatar_url)
         await ctx.send(embed=em)
-
-    @commands.command(name="copy", description="Copies messages from the current channel to another")
-    @commands.cooldown(1, 60)
-    @commands.has_permissions(manage_channels=True, manage_messages=True)
-    @commands.bot_has_permissions(manage_webhooks=True)
-    async def copy(self, ctx, channel: discord.TextChannel, limit: int):
-        if limit > 50:
-            return await ctx.send("❌ You cannot copy over 50 messages")
-        history = await ctx.channel.history(limit=limit+1).flatten()
-        history = history[:-1]
-
-        await ctx.send("Copying, This make take a moment")
-
-        webhook = discord.utils.get((await channel.webhooks()), name="Copied Messages")
-        if not webhook:
-            webhook = await channel.create_webhook(name="Copied Messages")
-
-        for message in history:
-            try:
-                await webhook.send(f"{discord.utils.escape_mentions(message.content)}\n{', '.join([x.url for x in message.attachments])}", embeds=message.embeds, username=message.author.display_name, avatar_url=message.author.avatar_url)
-            except discord.HTTPException:
-                pass
-
-        await ctx.send(f"Finish copying messages into {channel.mention}")
-
 
 def setup(bot):
     bot.add_cog(Tools(bot))

@@ -6,4 +6,6 @@ youtube_dl
 Pillow
 dateparser
 bs4
+psutil
+humanize
 git+https://github.com/Rapptz/discord-ext-menus

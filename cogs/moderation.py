@@ -104,7 +104,7 @@ class Moderation(commands.Cog):
         await self.bot.db.execute(query, guild.id, None, [])
 
         return {
-            "guild_id": ctx.guild.id,
+            "guild_id": guild.id,
             "mute_role_id": None,
             "muted": []
         }

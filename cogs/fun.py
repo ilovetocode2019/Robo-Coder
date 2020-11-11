@@ -1,10 +1,7 @@
 import discord
-from discord.ext import menus
 from discord.ext import commands
 
 import random
-
-from .utils import custom
 
 class Fun(commands.Cog):
     """Fun commands."""

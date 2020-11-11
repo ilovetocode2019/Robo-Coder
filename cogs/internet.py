@@ -12,11 +12,7 @@ import aiohttp
 
 import dateparser
 
-from .utils import custom
-
 class DocsPages(menus.ListPageSource):
-    """Pages for showing documentation results"""
-
     def __init__(self, data, search, ctx):
         self.search = search
         self.data = data
@@ -26,7 +22,7 @@ class DocsPages(menus.ListPageSource):
 
     async def format_page(self, menu, entries):
         offset = menu.current_page * self.per_page
-        em = self.bot.build_embed(title=f"Results for search '{self.search}'", description="", color=custom.Color.discord)
+        em = discord.Embed(title=f"Results for search '{self.search}'", description="", color=0x96c8da)
         for i, v in enumerate(entries, start=offset):
             em.description += "\n[`"+v[0]+"`]("+v[1]+")"
         em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{int(len(self.data)/10)+1}")
@@ -222,7 +218,7 @@ class Internet(commands.Cog):
             if data.get("message") == "Not Found":
                 return await ctx.send("Repository not found")
 
-            em = self.bot.build_embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=custom.Color.github)
+            em = discord.Embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=0x96c8da)
             em.add_field(name="Language", value=data.get("language"))
             em.add_field(name="Branch", value=data.get("default_branch"))
             em.add_field(name="Stars", value=data.get("stargazers_count"))
@@ -236,7 +232,7 @@ class Internet(commands.Cog):
             if data.get("message") == "Not Found":
                 return await ctx.send(":x: User not found")
 
-            em = self.bot.build_embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=custom.Color.github)
+            em = discord.Embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=0x96c8da)
             em.add_field(name="Repositories", value=data.get("public_repos"))
             em.add_field(name="Gists", value=data.get("public_gists"))
             em.add_field(name="Followers", value=data.get("followers"))
@@ -274,7 +270,7 @@ class Internet(commands.Cog):
             links = soup.find_all("img")
             avatar_url = links[0].get("src")         
 
-        em = self.bot.build_embed(title=data["displayName"], description=data["description"], url=f"https://roblox.com/users/{userid}", timestamp=dateparser.parse(data["created"]))
+        em = discord.Embed(title=data["displayName"], description=data["description"], url=f"https://roblox.com/users/{userid}", timestamp=dateparser.parse(data["created"]), color=0x96c8da)
         if status["status"]:
             em.add_field(name="Status", value=status["status"]) 
         em.add_field(name="Friends Count", value=friends["count"])

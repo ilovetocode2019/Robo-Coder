@@ -1,32 +1,21 @@
-import json
-import logging
-from datetime import datetime
-
 import discord
 from discord.ext import commands
 from discord import Webhook, AsyncWebhookAdapter
 
-import os
-import pathlib
 import asyncpg
 import aiohttp
+import datetime
+import logging
+import json
 
-from cogs.utils import custom
-from cogs.utils import context
+import config
 
-logger = logging.getLogger("discord")
-logger.setLevel(logging.INFO)
-handler = logging.FileHandler(filename="coder.log", encoding="utf-8", mode="w")
-handler.setFormatter(
-    logging.Formatter("%(asctime)s:%(levelname)s:%(name)s: %(message)s")
-)
-logger.addHandler(handler)
+log = logging.getLogger("robo_coder")
 
 logging.basicConfig(
-
-    level = logging.INFO,
-    format = "(%(asctime)s) %(levelname)s %(message)s",
-    datefmt="%m/%d/%y - %H:%M:%S %Z" 
+    level=logging.INFO,
+    format="(%(asctime)s) %(levelname)s %(message)s",
+    datefmt="%m/%d/%y - %H:%M:%S %Z"
 )
 
 def get_prefix(client, message):
@@ -52,36 +41,19 @@ extensions = [
 
 class RoboCoder(commands.Bot):
     def __init__(self):
-        with open("config.json", "r") as f:
-            self.config = json.load(f)
-        super().__init__(
-            command_prefix = get_prefix,
-            description = "A discord bot with tools, fun, and coding related stuff.",
-            case_insensitive=True,
-            owner_id=self.config["dev"],
-            intents=discord.Intents.all()
-        )
+        super().__init__(command_prefix=get_prefix, description="A multipurpose Discord bot.", case_insensitive=True, owner_id=config.owner_id, intents=discord.Intents.all())
+        self.loop.create_task(self.prepare_bot())
+        self.startup_time = datetime.datetime.utcnow()
 
-        self.loop.create_task(self.load_extensions())
-        self.loop.create_task(self.setup_bot())
-        self.startup_time = datetime.now()
-
-    async def load_extensions(self):
         self.load_extension("jishaku")
         self.get_cog("Jishaku").hidden = True
 
         for cog in extensions:
             self.load_extension(cog)
 
-    def run(self, token):
-        super().run(token)
-
-    async def on_ready(self):
-        logging.info(f"Logged in as {self.user.name} - {self.user.id}")
-
-    async def setup_bot(self):
+    async def prepare_bot(self):
         self.session = aiohttp.ClientSession(loop=self.loop)
-        self.status_webhook = Webhook.from_url(self.config["webhook"], adapter=AsyncWebhookAdapter(self.session))
+        self.status_webhook = Webhook.from_url(config.status_hook, adapter=AsyncWebhookAdapter(self.session))
 
         async def init(conn):
             await conn.set_type_codec(
@@ -91,7 +63,7 @@ class RoboCoder(commands.Bot):
                 decoder=json.loads,
                 format="text",
             )
-        self.db = await asyncpg.create_pool(self.config["sqllogin"], init=init)
+        self.db = await asyncpg.create_pool(config.database_uri, init=init)
 
         query = """CREATE TABLE IF NOT EXISTS guild_config (
                    ID SERIAL PRIMARY KEY,
@@ -110,6 +82,10 @@ class RoboCoder(commands.Bot):
                 """
         await self.db.execute(query)
 
+    async def on_ready(self):
+        logging.info(f"Logged in as {self.user.name} - {self.user.id}")
+        await self.status_webhook("Logged into Discord")
+
     async def on_connect(self):
         await self.status_webhook.send("Connected to Discord")
 
@@ -119,12 +95,18 @@ class RoboCoder(commands.Bot):
     async def on_resumed(self):
         await self.status_webhook.send("Resumed connection with to Discord")
 
-    def build_embed(self, **embed_kwargs):
-        if "color" not in embed_kwargs:
-            embed_kwargs["color"] = custom.Color.default
-        
-        em = discord.Embed(**embed_kwargs)
-        return em
+    async def on_ready(self):
+        log.info(f"Logged in as {self.user.name} - {self.user.id}")
+        await self.status_webhook.send("Recevied READY event")
+
+    def run(self):
+        super().run(config.token)
+
+    async def logout(self):
+        await super().logout()
+        await self.status_webhook.send("Logging out of Discord")
+        await self.db.close()
+        await self.session.close()
 
 bot = RoboCoder()
-bot.run(bot.config["token"])
+bot.run()

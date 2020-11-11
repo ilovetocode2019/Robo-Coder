@@ -1,11 +1,6 @@
-cogs/__pycache__/meta.cpython-38.pyc
-*.pyc
-ffmpeg.exe
-ffplay.exe
-ffprobe.exe
-*.pkl
-*.json
-*.db
-env/*
 
-coder.log
+*.pyc
+*.json
+env/*
+ffmpeg.exe
+config.py

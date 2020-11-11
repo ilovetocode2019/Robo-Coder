@@ -56,7 +56,7 @@ class Timers(commands.Cog):
         if len(timers) == 0:
             return await ctx.send(":x: No running timers")
 
-        em = discord.Embed(title="Timers", description="\n")
+        em = discord.Embed(title="Timers", description="\n", color=0x96c8da)
         for timer in timers:
             em.description += f"\n{timer['extra'][3]} `({timer['id']})` in {humanize.naturaldelta(timer['time']-datetime.datetime.utcnow())}"
         await ctx.send(embed=em)
@@ -73,7 +73,7 @@ class Timers(commands.Cog):
         if len(timers) == 0:
             return await ctx.send(":x: No running timers here")
 
-        em = discord.Embed(title="Timers Here", description="\n")
+        em = discord.Embed(title="Timers Here", description="\n", color=0x96c8da)
         for timer in timers:
             em.description += f"\n{timer['extra'][3]} `({timer['id']})` in {humanize.naturaldelta(timer['time']-datetime.datetime.utcnow())}"
         await ctx.send(embed=em)
@@ -102,7 +102,7 @@ class Timers(commands.Cog):
         content = timer["extra"][3]
         created_at = timer["created_at"]
 
-        em = discord.Embed(title=content)
+        em = discord.Embed(title=content, color=0x96c8da)
         em.add_field(name="When", value=f"{humanize.naturaldelta(datetime.datetime.utcnow()-created_at)} ago")
         await channel.send(content=user.mention, embed=em)
 

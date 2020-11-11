@@ -1,23 +1,14 @@
-from discord.ext import commands
-from discord.ext import tasks
-from discord.ext import menus
 import discord
+from discord.ext import commands
 
 import asyncio
 
-from datetime import datetime
+import datetime
 import traceback
 import os
-from datetime import datetime as d
-import random
-import pickle
 import json
 import sys
-import importlib
-import inspect
-
-from .utils import time
-from .utils import custom
+import humanize
 
 def has_manage_guild():
     async def predicate(ctx):
@@ -37,7 +28,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         ctx = self.context
         bot = ctx.bot
 
-        em = bot.build_embed(title=f"{bot.user.name} Help", description="Help for Robo Coder Bot. Use `help [command]` or `help [Category]` for more specific help.\n")
+        em = discord.Embed(title=f"{bot.user.name} Help", description="Help for Robo Coder Bot. Use `help [command]` or `help [Category]` for more specific help.\n", color=0x96c8da)
         msg = ""
         for name, cog in sorted(bot.cogs.items()):
             if not getattr(cog, "hidden", False):
@@ -53,7 +44,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         if getattr(cog, "hidden", False):
            return 
 
-        em = bot.build_embed(title=f"{getattr(cog, 'emoji', '')} {cog.qualified_name}", description="\n")
+        em = discord.Embed(title=f"{getattr(cog, 'emoji', '')} {cog.qualified_name}", description="\n", color=0x96c8da)
         for command in cog.get_commands():
             if not command.hidden:
                 em.description += f"{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}\n"
@@ -66,7 +57,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         if not await command.can_run(ctx):
             return
 
-        em = bot.build_embed(title=f"{bot.user.name} Help", description=f"{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}")
+        em = discord.Embed(title=f"{bot.user.name} Help", description=f"{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}", color=0x96c8da)
         await ctx.send(embed=em)
 
     async def send_group_help(self, group):
@@ -76,7 +67,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         if not await group.can_run(ctx):
             return
 
-        em = bot.build_embed(title=f"{bot.user.name} Help", description=f"\n{self.get_command_signature(group)} - {group.description}")
+        em = discord.Embed(title=f"{bot.user.name} Help", description=f"\n{self.get_command_signature(group)} - {group.description}", color=0x96c8da)
         for command in group.commands:
             if await command.can_run(ctx):
                 em.description += f"\n{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}"
@@ -98,9 +89,6 @@ class Meta(commands.Cog):
             with open("prefixes.json", "r") as f:
                 self.bot.guild_prefixes = json.load(f)
         else:
-            with open("prefixes.json", "w") as f:
-                data = {}
-                json.dump(data, f)
             self.bot.guild_prefixes = {}
 
     def cog_unload(self):
@@ -146,7 +134,7 @@ class Meta(commands.Cog):
 
         em = discord.Embed(title=":warning:",
                            color=0xff0000,
-                           timestamp=d.utcnow())
+                           timestamp=datetime.datetime.utcnow())
         em.description = f"```py\n{str(e)}```\n"
         msg = await ctx.send(embed=em)
 
@@ -188,8 +176,8 @@ class Meta(commands.Cog):
 
     @commands.group(name="uptime", description="Get the uptime", aliases=["up"], invoke_without_command=True)
     async def uptime(self, ctx):
-        uptime = datetime.now()-self.bot.startup_time
-        await ctx.send(f"I started up {time.readable(uptime)} ago")  
+        uptime = datetime.datetime.utcnow()-self.bot.startup_time
+        await ctx.send(f"I started up {humanize.naturaldelta(uptime)} ago")
     
     @commands.command(name="invite", description="Get a invite to add me to your server")
     async def invite(self, ctx):
