@@ -11,6 +11,7 @@ import subprocess
 import time
 import traceback
 import io
+from jishaku.codeblocks import codeblock_converter
 
 class Confirm(menus.Menu):
     def __init__(self, msg):
@@ -69,7 +70,9 @@ class Admin(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="sql", description="Run some sql")
-    async def sql(self, ctx, *, query):
+    async def sql(self, ctx, *, code: codeblock_converter):
+        _, query = code
+
         if query.count(";") > 1:
             method = self.bot.db.execute
         else:
@@ -82,6 +85,8 @@ class Admin(commands.Cog):
         except Exception as e:
             full = "".join(traceback.format_exception(type(e), e, e.__traceback__, 0))
             return await ctx.send(f"```py{full}```")
+
+        results = "\n".join([str(record) for record in results])
 
         try:
             await ctx.send(f"`{results}`")
