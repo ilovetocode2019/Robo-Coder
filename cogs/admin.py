@@ -88,8 +88,11 @@ class Admin(commands.Cog):
 
         results = "\n".join([str(record) for record in results])
 
+        if not results:
+            return await ctx.send("No results to display")
+
         try:
-            await ctx.send(f"`{results}`")
+            await ctx.send(f"```{results}```")
         except discord.HTTPException:
             await ctx.send(file=discord.File(io.BytesIO(str(results).encode("utf-8")), filename="result.txt"))
 
