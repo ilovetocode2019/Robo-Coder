@@ -122,7 +122,7 @@ class Admin(commands.Cog):
             return await ctx.send("No cogs to update")
 
         cogs_text = "\n".join(cogs)
-        result = await Confirm(f"Are you sure you want to update the following modules:\n{cogs_text}").prompt(ctx)
+        result = await Confirm(f"Are you sure you want to update the following cogs:\n{cogs_text}").prompt(ctx)
         if not result:
             return await ctx.send(":x: Aborting")
 
