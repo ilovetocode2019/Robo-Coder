@@ -349,10 +349,6 @@ class Music(commands.Cog):
         else:
             await ctx.send(f":mag Searching {query}")
 
-        if "list=" in query:
-            await self.playlist(ctx, query)
-            return
-
         filename, info = await YTDLSource.create_source(ctx, query, loop=self.bot.loop)
 
         if player.voice.is_playing():
