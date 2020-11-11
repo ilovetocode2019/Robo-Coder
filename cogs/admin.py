@@ -27,8 +27,8 @@ class Admin(commands.Cog):
 
     @commands.command(name="process", description="Get info about the memory and CPU usage")
     async def process(self, ctx):
-        em = discord.Embed(title="Process")
-        em.add_field(name="CPU", value=f"{psutil.cpu_percent()}% used with {psutil.cpu_count()} CPUs")
+        em = discord.Embed(title="Process", color=0x96c8da)
+        em.add_field(name="CPU", value=f"{psutil.cpu_percent()}% used with {psutil.cpu_count()} CPUs", color=0x96c8da)
 
         mem = psutil.virtual_memory()
         em.add_field(name="Memory", value=f"{humanize.naturalsize(mem.used)}/{humanize.naturalsize(mem.total)} ({mem.percent}% used)")

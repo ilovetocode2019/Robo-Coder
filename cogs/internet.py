@@ -205,44 +205,6 @@ class Internet(commands.Cog):
     async def py_docs(self, ctx, obj=None):
         await self.do_docs(ctx, "python", obj)
 
-    @commands.cooldown(1, 20, commands.BucketType.user)
-    @commands.command(name="github", description="Get a GitHub user or repository")
-    async def github_user(self, ctx, item):
-        #Trigger typing, this takes a little
-        await ctx.channel.trigger_typing()
-        session = self.bot.session
-
-        if "/" in item:
-            async with session.get(f"https://api.github.com/repos/{item}") as response:
-                data = await response.json()
-            if data.get("message") == "Not Found":
-                return await ctx.send("Repository not found")
-
-            em = discord.Embed(title=data.get("name"), description=data.get("description"), url=data.get("html_url"), color=0x96c8da)
-            em.add_field(name="Language", value=data.get("language"))
-            em.add_field(name="Branch", value=data.get("default_branch"))
-            em.add_field(name="Stars", value=data.get("stargazers_count"))
-            em.add_field(name="Watching", value=data.get("watchers_count"))
-            em.add_field(name="Forks", value=data.get("forks"))
-            em.set_thumbnail(url=data.get("owner").get("avatar_url"))
-
-        else:
-            async with session.get(f"https://api.github.com/users/{item}") as response:
-                data = await response.json()
-            if data.get("message") == "Not Found":
-                return await ctx.send(":x: User not found")
-
-            em = discord.Embed(title=data.get("login"), description=data.get("bio"), url=data.get("html_url"), color=0x96c8da)
-            em.add_field(name="Repositories", value=data.get("public_repos"))
-            em.add_field(name="Gists", value=data.get("public_gists"))
-            em.add_field(name="Followers", value=data.get("followers"))
-            em.add_field(name="Following", value=data.get("following"))
-            if data.get("blog"):
-                em.add_field(name="Blog", value=data.get("blog"))
-            em.set_thumbnail(url=data.get("avatar_url"))
-
-        await ctx.send(embed=em)
-
     @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.command(name="roblox", description="Get a Roblox user")
     async def roblox(self, ctx, username):
@@ -276,6 +238,41 @@ class Internet(commands.Cog):
         em.add_field(name="Friends Count", value=friends["count"])
         em.set_thumbnail(url=avatar_url)
         em.set_footer(text="Created at")
+        await ctx.send(embed=em)
+
+    @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
+    async def github(self, ctx, *, item):
+        if "/" in item:
+            async with self.bot.session.get(f"https://api.github.com/repos/{item}") as resp:
+                if resp.status != 200:
+                    return await ctx.send(":x: Could not fetch GitHub repository")
+                data = await resp.json()
+                owner = data["owner"]
+
+            em = discord.Embed(title=data["full_name"], description=f"{data['description'] or ''}\n{data['homepage'] or ''}", url=data["html_url"], timestamp=dateparser.parse(data["created_at"]), color=0x96c8da)
+            em.set_author(name=owner["login"], url=owner["html_url"], icon_url=owner["avatar_url"])
+            em.set_thumbnail(url=owner["avatar_url"])
+            em.add_field(name="Language", value=data["language"])
+            em.add_field(name="Stars", value=data["stargazers_count"])
+            em.add_field(name="Watching", value=data["watchers_count"])
+            em.add_field(name="Forks", value=data["forks_count"])
+            em.set_footer(text="Created")
+        else:
+            async with self.bot.session.get(f"https://api.github.com/users/{item}") as resp:
+                if resp.status != 200:
+                    return await ctx.send(":x: Could not fetch GitHub user")
+                data = await resp.json()
+
+            em = discord.Embed(title=data["login"], description=data['bio'], url=data["html_url"], timestamp=dateparser.parse(data["created_at"]), color=0x96c8da)
+            em.set_thumbnail(url=data["avatar_url"])
+            em.add_field(name="Repositories", value=data["public_repos"])
+            em.add_field(name="Gists", value=data["public_gists"])
+            em.add_field(name="Followers", value=data["followers"])
+            em.add_field(name="Following", value=data["following"])
+            if data["blog"]:
+                em.add_field(name="Website", value=data["blog"])
+            em.set_footer(text="Created")
+
         await ctx.send(embed=em)
 
 def setup(bot):
