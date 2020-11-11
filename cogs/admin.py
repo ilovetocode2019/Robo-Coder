@@ -73,7 +73,9 @@ class Admin(commands.Cog):
     async def sql(self, ctx, *, code: codeblock_converter):
         _, query = code
 
-        if query.count(";") > 1:
+        execute = query.count(";") > 1
+
+        if execute:
             method = self.bot.db.execute
         else:
             method = self.bot.db.fetch
@@ -86,15 +88,19 @@ class Admin(commands.Cog):
             full = "".join(traceback.format_exception(type(e), e, e.__traceback__, 0))
             return await ctx.send(f"```py{full}```")
 
-        results = "\n".join([str(record) for record in results])
+        if execute:
+            await ctx.send(str(results))
 
-        if not results:
-            return await ctx.send("No results to display")
+        else:
+            results = "\n".join([str(record) for record in results])
 
-        try:
-            await ctx.send(f"```{results}```")
-        except discord.HTTPException:
-            await ctx.send(file=discord.File(io.BytesIO(str(results).encode("utf-8")), filename="result.txt"))
+            if not results:
+                return await ctx.send("No results to display")
+
+            try:
+                await ctx.send(f"```{results}```")
+            except discord.HTTPException:
+                await ctx.send(file=discord.File(io.BytesIO(str(results).encode("utf-8")), filename="result.txt"))
 
     @commands.command(name="update", description="Update the bot")
     async def update(self, ctx):
