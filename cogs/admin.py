@@ -116,7 +116,7 @@ class Admin(commands.Cog):
         cogs = []
         for file in files:
             root, ext = os.path.splitext(file)
-            if root.startswith("cogs/") and ext == ".py":
+            if root.startswith("cogs/") and root.count("/") == 1 and ext == ".py":
                 cogs.append(root.replace("/", "."))
 
         if not cogs:
