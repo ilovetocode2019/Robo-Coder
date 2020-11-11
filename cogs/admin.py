@@ -77,16 +77,16 @@ class Admin(commands.Cog):
 
         try:
             start = time.time()
-            result = await method(query)
+            results = await method(query)
             end = time.time()
         except Exception as e:
             full = "".join(traceback.format_exception(type(e), e, e.__traceback__, 0))
             return await ctx.send(f"```py{full}```")
 
         try:
-            await ctx.send(f"`{result}`")
+            await ctx.send(f"`{results}`")
         except discord.HTTPException:
-            await ctx.send(file=discord.File(io.BytesIO(result.encode("utf-8")), filename="result.txt"))
+            await ctx.send(file=discord.File(io.BytesIO(str(results).encode("utf-8")), filename="result.txt"))
 
     @commands.command(name="update", description="Update the bot")
     async def update(self, ctx):
