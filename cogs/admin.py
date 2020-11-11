@@ -89,18 +89,17 @@ class Admin(commands.Cog):
             return await ctx.send(f"```py{full}```")
 
         if execute:
-            await ctx.send(str(results))
+            return await ctx.send(f"Executed in {int((end-start)*1000)}ms seconds: {str(results)}")
 
-        else:
-            results = "\n".join([str(record) for record in results])
+        results = "\n".join([str(record) for record in results])
 
-            if not results:
-                return await ctx.send("No results to display")
+        if not results:
+            return await ctx.send("No results to display")
 
-            try:
-                await ctx.send(f"```{results}```")
-            except discord.HTTPException:
-                await ctx.send(file=discord.File(io.BytesIO(str(results).encode("utf-8")), filename="result.txt"))
+        try:
+            await ctx.send(f"Executed in {int((end-start)*1000)}ms seconds\n```{results}```")
+        except discord.HTTPException:
+            await ctx.send(file=discord.File(io.BytesIO(str(results).encode("utf-8")), filename="result.txt"))
 
     @commands.command(name="update", description="Update the bot")
     async def update(self, ctx):
