@@ -86,14 +86,17 @@ class Moderation(commands.Cog):
         self.bot = bot
         self.emoji = ":police_car:"
 
-    async def get_guild_config(self, guild):
+    async def get_guild_config(self, guild, create_if_not_exists=True):
         query = """SELECT *
                    FROM guild_config
                    WHERE guild_config.guild_id=$1;
                 """
         record = await self.bot.db.fetchrow(query, guild.id)
         if not record:
-            await self.create_guild_config(guild)
+            if create_if_not_exists:
+                record = await self.create_guild_config(guild)
+            else:
+                return
 
         return GuildConfig.from_record(record, self.bot)
 
@@ -323,7 +326,9 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        config = await self.get_guild_config(after.guild)
+        config = await self.get_guild_config(after.guild, create_if_not_exists=False)
+        if not config:
+            return
 
         if config.mute_role_id in [role.id for role in after.roles] and after.id not in config.muted:
             await config.mute_member(after)
@@ -332,14 +337,18 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        config = await self.get_guild_config(member.guild)
+        config = await self.get_guild_config(member.guild, create_if_not_exists=False)
+        if not config:
+            return
 
         if member.id in config.muted and config.mute_role:
             await member.add_roles(config.mute_role, reason=f"User was muted when they left")
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role):
-        config = await self.get_guild_config(role.guild)
+        config = await self.get_guild_config(role.guild, create_if_not_exists=False)
+        if not config:
+            return
 
         if role.id == config.mute_role.id:
             await config.set_mute_role(None)
