@@ -1,9 +1,36 @@
-from discord.ext import commands
+from discord.ext import commands, menus
 import discord
 
 import traceback
 import psutil
 import humanize
+import re
+import os
+import asyncio
+import subprocess
+
+class Confirm(menus.Menu):
+    def __init__(self, msg):
+        super().__init__(timeout=30.0, delete_message_after=True)
+        self.msg = msg
+        self.result = None
+
+    async def send_initial_message(self, ctx, channel):
+        return await channel.send(self.msg)
+
+    @menus.button('\N{WHITE HEAVY CHECK MARK}')
+    async def do_confirm(self, payload):
+        self.result = True
+        self.stop()
+
+    @menus.button('\N{CROSS MARK}')
+    async def do_deny(self, payload):
+        self.result = False
+        self.stop()
+
+    async def prompt(self, ctx):
+        await self.start(ctx, wait=True)
+        return self.result
 
 class Admin(commands.Cog):
     def __init__(self, bot):
@@ -38,7 +65,42 @@ class Admin(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.command(name="logout", description="Logout command")
+    @commands.command(name="update", description="Update the bot")
+    async def update(self, ctx):
+        await ctx.trigger_typing()
+
+        regex = re.compile(r"\s*(?P<filename>.+?)\s*\|\s*[0-9]+\s*[+-]+")
+
+        process = await asyncio.create_subprocess_shell("git pull", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = await process.communicate()
+        text = stdout.decode()
+
+        files = regex.findall(text)
+        cogs = []
+        for file in files:
+            root, ext = os.path.splitext(file)
+            if root.startswith("cogs/") and ext == ".py":
+                cogs.append(root.replace("/", "."))
+
+        if not cogs:
+            return await ctx.send("No cogs to update")
+
+        cogs_text = "\n".join(cogs)
+        result = await Confirm(f"Are you sure you want to update the following modules:{cogs_text}").prompt(ctx)
+        if not result:
+            return await ctx.send(":x: Aborting")
+
+        text = ""
+        for cog in cogs:
+            try:
+                self.bot.reload_extension(cog)
+                text.append(f":white_check_mark: {cog}")
+            except:
+                text.append(f":x: {cog}")
+
+        await ctx.send(text)
+
+    @commands.command(name="logout", description="Logout the bot")
     @commands.is_owner()
     async def logout(self, ctx):
         await ctx.send(":wave: Logging out")
