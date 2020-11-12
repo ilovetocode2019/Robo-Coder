@@ -164,6 +164,9 @@ class Internet(commands.Cog):
     async def do_docs(self, ctx, key, obj):
         page_types = {
             "latest": "https://discordpy.readthedocs.io/en/latest",
+            "asyncpg": "https://magicstack.github.io/asyncpg/current/",
+            "pillow": "https://pillow.readthedocs.io/en/latest",
+            "tpy": "https://telegrampy.readthedocs.io/en/latest",
             "python": "https://docs.python.org/3"
         }
 
@@ -195,18 +198,30 @@ class Internet(commands.Cog):
         matches = finder(obj, cache, key=lambda t: t[0], lazy=False)
 
         if len(matches) == 0:
-            return await ctx.send("Could not find anything. Sorry.")
+            return await ctx.send("Could not find anything")
         
         pages = menus.MenuPages(source=DocsPages(matches, obj, ctx), clear_reactions_after=True)
         await pages.start(ctx)
 
-    @commands.group(name="docs", description="Get a link for docs on discord.py", invoke_without_command=True)
+    @commands.group(name="docs", description="Search Discord.py docs", invoke_without_command=True)
     async def docs(self, ctx, obj=None):
         await self.do_docs(ctx, "latest", obj)
 
-    @docs.command(name="py", description="Get a link for docs on python")
-    async def py_docs(self, ctx, obj=None):
+    @docs.command(name="python", description="Search Python docs", aliases=["py"])
+    async def docs_python(self, ctx, obj=None):
         await self.do_docs(ctx, "python", obj)
+
+    @docs.command(name="asyncpg", description="Search Asyncpg docs")
+    async def docs_asyncpg(self, ctx, obj=None):
+        await self.do_docs(ctx, "asyncpg", obj)
+
+    @docs.command(name="pillow", descrption="Search Pillow docs", aliases=["pil"])
+    async def docs_pillow(self, ctx, obj=None):
+        await self.do_docs(ctx, "pillow", obj)
+
+    @docs.command(name="telegram", description="Search Telegram.py docs", aliases=["telegrampy", "telegram.py", "tpy"])
+    async def docs_telegram(self, ctx, obj=None):
+        await self.do_docs(ctx, "tpy", obj)
 
     @commands.command(name="roblox", description="Get a Roblox user")
     @commands.cooldown(1, 30, commands.BucketType.user)
