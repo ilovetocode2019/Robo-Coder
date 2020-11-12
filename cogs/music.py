@@ -347,7 +347,7 @@ class Music(commands.Cog):
         if query.startswith("https:"):
             await ctx.send(f":mag: Searching <{query}>")
         else:
-            await ctx.send(f":mag Searching {query}")
+            await ctx.send(f":mag: Searching {query}")
 
         filename, info = await YTDLSource.create_source(ctx, query, loop=self.bot.loop)
 
