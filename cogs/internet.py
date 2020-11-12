@@ -208,8 +208,8 @@ class Internet(commands.Cog):
     async def py_docs(self, ctx, obj=None):
         await self.do_docs(ctx, "python", obj)
 
-    @commands.cooldown(1, 30, commands.BucketType.user)
     @commands.command(name="roblox", description="Get a Roblox user")
+    @commands.cooldown(1, 30, commands.BucketType.user)
     async def roblox(self, ctx, username):
         await ctx.channel.trigger_typing()
         session = self.bot.session
@@ -244,6 +244,7 @@ class Internet(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="minecraft", description="Get info on a minecraft user", aliases=["mc"])
+    @commands.cooldown(2, 30, commands.BucketType.user)
     async def minecraft(self, ctx, *, username):
         async with self.bot.session.get(f"https://api.mojang.com/users/profiles/minecraft/{username}") as resp:
             if resp.status != 200:
@@ -298,6 +299,7 @@ class Internet(commands.Cog):
         await ctx.send(embed=em, file=discord.File(output, filename="face.png"))
 
     @commands.command(name="wikipedia", descrption="Search wikipedia", aliases=["wiki"])
+    @commands.cooldown(2, 30, commands.BucketType.user)
     async def wikipedia(self, ctx, *, search):
         url = "http://en.wikipedia.org/w/api.php"
 
@@ -324,6 +326,7 @@ class Internet(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
+    @commands.cooldown(3, 30, commands.BucketType.user)
     async def github(self, ctx, *, item):
         if "/" in item:
             async with self.bot.session.get(f"https://api.github.com/repos/{item}") as resp:
@@ -359,10 +362,11 @@ class Internet(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="strawpoll", description="Create a strawpoll")
+    @commands.cooldown(3, 30, commands.BucketType.user)
     async def strawpoll(self, ctx, title=None, *options):
         if not title:
             options = []
-            check = lambda message: message.channel == ctx.channel and message.author == ctx.author
+            check = lambda message: message.channel == ctx.channel and message.author == ctx.authorG
             await ctx.send("What is the title of the poll?")
             message = await self.bot.wait_for("message", check=check)
             title = message.content
