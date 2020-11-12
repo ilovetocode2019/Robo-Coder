@@ -85,8 +85,8 @@ class Admin(commands.Cog):
             results = await method(query)
             end = time.time()
         except Exception as e:
-            full = "".join(traceback.format_exception(type(e), e, e.__traceback__, 0))
-            return await ctx.send(f"```py{full}```")
+            full = "".join(traceback.format_exception(type(e), e, e.__traceback__))
+            return await ctx.send(f"```py\n{full}```")
 
         if execute:
             return await ctx.send(f"Executed in {int((end-start)*1000)}ms seconds: {str(results)}")
