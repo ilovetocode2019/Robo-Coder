@@ -297,6 +297,32 @@ class Internet(commands.Cog):
 
         await ctx.send(embed=em, file=discord.File(output, filename="face.png"))
 
+    @commands.command(name="wikipedia", descrption="Search wikipedia", aliases=["wiki"])
+    async def wikipedia(self, ctx, *, search):
+        url = "http://en.wikipedia.org/w/api.php"
+
+        data = {"prop": "info|pageprops", "inprop": "url", "ppprop": "disambiguation", "redirects": "", "titles": search, "format": "json", "action": "query"}
+        async with self.bot.session.get(url, params=data) as resp:
+            if resp.status != 200:
+                return await ctx.send(f":x: Failed to fetch page data (error code {resp.status})")
+            page_data = await resp.json()
+            pages = page_data["query"]["pages"]
+            page_id = list(page_data["query"]["pages"].keys())[0]
+            page = pages[page_id]
+            if "pageid" not in page:
+                return await ctx.send(f":x: Could not find a page with the name '{search}'")
+
+        data = {"prop": "extracts", "explaintext": "", "pageids": page_id, "format": "json", "action": "query"}
+        async with self.bot.session.get(url, params=data) as resp:
+            if resp.status != 200:
+                return await ctx.send(f":x: Failed to fetch page data (error code {resp.status})")
+            summary_data = await resp.json()
+            summary = summary_data["query"]["pages"][page_id]["extract"]
+
+        summary_text = f"{summary[:1000]}{'...' if len(summary) > 1000 else ''}"
+        em = discord.Embed(title=f"{page['title']} ({page_id})", description=f"{summary_text}\n\n[Edit]({page['editurl']})", url=page["fullurl"])
+        await ctx.send(embed=em)
+
     @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
     async def github(self, ctx, *, item):
         if "/" in item:
