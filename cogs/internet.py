@@ -319,8 +319,8 @@ class Internet(commands.Cog):
             summary_data = await resp.json()
             summary = summary_data["query"]["pages"][page_id]["extract"]
 
-        summary_text = f"{summary[:1000]}{'...' if len(summary) > 1000 else ''}"
-        em = discord.Embed(title=f"{page['title']} ({page_id})", description=f"{summary_text}\n\n[Edit]({page['editurl']})", url=page["fullurl"])
+        description = f"{summary[:1000]}{'...' if len(summary) > 1000 else ''}"
+        em = discord.Embed(title=f"{page['title']} ({page_id})", description=description, url=page["fullurl"])
         await ctx.send(embed=em)
 
     @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
