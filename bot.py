@@ -46,6 +46,7 @@ class RoboCoder(commands.Bot):
         self.loop.create_task(self.prepare_bot())
         self.startup_time = datetime.datetime.utcnow()
         self.players = {}
+        self.config = config
 
         self.load_extension("jishaku")
         self.get_cog("Jishaku").hidden = True

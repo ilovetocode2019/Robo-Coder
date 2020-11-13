@@ -1,6 +1,5 @@
-from discord.ext import commands
-from discord.ext import menus
 import discord
+from discord.ext import commands, menus
 
 import io
 import os
@@ -16,21 +15,41 @@ from PIL import Image
 from bs4 import BeautifulSoup
 
 class DocsPages(menus.ListPageSource):
-    def __init__(self, data, search, ctx):
+    def __init__(self, data, search):
         self.search = search
         self.data = data
-        self.ctx = ctx
-        self.bot = ctx.bot
         super().__init__(data, per_page=10)
 
     async def format_page(self, menu, entries):
         offset = menu.current_page * self.per_page
-        em = discord.Embed(title=f"Results for search '{self.search}'", description="", color=0x96c8da)
+        em = discord.Embed(title=f"Results for '{self.search}'", description="", color=0x96c8da)
         for i, v in enumerate(entries, start=offset):
             em.description += "\n[`"+v[0]+"`]("+v[1]+")"
         em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{int(len(self.data)/10)+1}")
 
         return em
+
+class GoogleResultPages(menus.ListPageSource):
+    def __init__(self, data, search):
+        self.search = search
+        self.data = data
+        super().__init__(data, per_page=1)
+
+    async def format_page(self, menu, entry):
+        em = discord.Embed(title=entry["title"], color=0x96c8da)
+        if entry.get("snippet"):
+           em.description = entry["snippet"]
+
+        try:
+            em.set_thumbnail(url=entry["pagemap"]["metatags"][0]["og:image"])
+        except KeyError:
+            pass
+
+        em.set_author(name=f"Results for '{self.search}'")
+        em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{len(self.data)}")
+
+        return em
+
 class SphinxObjectFileReader:
     # Inspired by Sphinx's InventoryFileReader
     BUFSIZE = 16 * 1024
@@ -200,7 +219,7 @@ class Internet(commands.Cog):
         if len(matches) == 0:
             return await ctx.send("Could not find anything")
         
-        pages = menus.MenuPages(source=DocsPages(matches, obj, ctx), clear_reactions_after=True)
+        pages = menus.MenuPages(source=DocsPages(matches, obj), clear_reactions_after=True)
         await pages.start(ctx)
 
     @commands.group(name="docs", description="Search Discord.py docs", invoke_without_command=True)
@@ -339,6 +358,18 @@ class Internet(commands.Cog):
         description = f"{summary[:1000]}{'...' if len(summary) > 1000 else ''}"
         em = discord.Embed(title=f"{page['title']} ({page_id})", description=description, url=page["fullurl"])
         await ctx.send(embed=em)
+
+    @commands.command(name="google", description="Search google")
+    @commands.cooldown(1, 60)
+    async def google(self, ctx, *, search):
+        results = await self.search_google(search)
+        pages = menus.MenuPages(GoogleResultPages(results, search), clear_reactions_after=True)
+        await pages.start(ctx)
+
+    async def search_google(self, query):
+        async with self.bot.session.get(f"{self.bot.config.google_url}&q={query}") as resp:
+            data = await resp.json()
+            return data["items"]
 
     @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
     @commands.cooldown(3, 30, commands.BucketType.user)
