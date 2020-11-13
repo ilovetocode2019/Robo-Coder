@@ -36,7 +36,7 @@ class GoogleResultPages(menus.ListPageSource):
         super().__init__(data, per_page=1)
 
     async def format_page(self, menu, entry):
-        em = discord.Embed(title=entry["title"], color=0x96c8da)
+        em = discord.Embed(title=entry["title"], url=entry["link"], color=0x96c8da)
         if entry.get("snippet"):
            em.description = entry["snippet"]
 
@@ -360,7 +360,7 @@ class Internet(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="google", description="Search google")
-    @commands.cooldown(1, 60)
+    @commands.cooldown(1, 60, commands.BucketType.user)
     async def google(self, ctx, *, search):
         results = await self.search_google(search)
         pages = menus.MenuPages(GoogleResultPages(results, search), clear_reactions_after=True)
