@@ -355,7 +355,7 @@ class Internet(commands.Cog):
             summary_data = await resp.json()
             summary = summary_data["query"]["pages"][page_id]["extract"]
 
-        description = f"{summary[:1000]}{'...' if len(summary) > 1000 else ''}"
+        description = f"{summary[:1000]}{'...' if len(summary) > 1000 else ''}\n\n[Read more]({page['fullurl']})"
         em = discord.Embed(title=f"{page['title']} ({page_id})", description=description, url=page["fullurl"])
         await ctx.send(embed=em)
 
