@@ -142,6 +142,10 @@ class Meta(commands.Cog):
     async def prefix(self, ctx):
         await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))
 
+    @commands.command(name="hello", aliases=["hi"])
+    async def hi(self, ctx):
+        await ctx.send(f":wave: Hello, I am Robo Coder!\nTo get more info use {ctx.prefix}help")
+
     @prefix.command(name="add", description="add a prefix")
     @commands.guild_only()
     @has_manage_guild()
