@@ -198,6 +198,7 @@ class Internet(commands.Cog):
             await self.build_docs_lookup_table(page_types)
 
         obj = re.sub(r"^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)", r"\1", obj)
+        obj = re.sub(r"^(?:telegrampy\.(?:ext\.)?)?(?:commands\.)?(.+)", r"\1", obj)
 
         if key.startswith("latest") or key.startswith("stable"):
             # point the abc.Messageable types properly:
