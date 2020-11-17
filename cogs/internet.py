@@ -333,7 +333,7 @@ class Internet(commands.Cog):
 
         await ctx.send(embed=em, file=discord.File(output, filename="face.png"))
 
-    @commands.command(name="wikipedia", descrption="Search wikipedia", aliases=["wiki"])
+    @commands.command(name="wikipedia", descroption="Search wikipedia", aliases=["wiki"])
     @commands.cooldown(2, 30, commands.BucketType.user)
     async def wikipedia(self, ctx, *, search):
         url = "http://en.wikipedia.org/w/api.php"
