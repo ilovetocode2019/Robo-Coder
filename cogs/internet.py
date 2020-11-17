@@ -356,6 +356,7 @@ class Internet(commands.Cog):
             summary_data = await resp.json()
             summary = summary_data["query"]["pages"][page_id]["extract"]
 
+        summary = summary.replace("===", "__")
         summary = summary.replace("==", "**")
         description = f"{summary[:1000]}{'...' if len(summary) > 1000 else ''}\n\n[Read more]({page['fullurl']})"
 
