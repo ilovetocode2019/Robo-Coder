@@ -56,7 +56,8 @@ class RoboCoder(commands.Bot):
 
     async def prepare_bot(self):
         self.session = aiohttp.ClientSession(loop=self.loop)
-        self.status_webhook = Webhook.from_url(config.status_hook, adapter=AsyncWebhookAdapter(self.session))
+        if config.status_hook:
+            self.status_webhook = Webhook.from_url(config.status_hook, adapter=AsyncWebhookAdapter(self.session))
 
         async def init(conn):
             await conn.set_type_codec(
@@ -90,17 +91,21 @@ class RoboCoder(commands.Bot):
         await self.status_webhook("Logged into Discord")
 
     async def on_connect(self):
-        await self.status_webhook.send("Connected to Discord")
+        if config.status_hook:
+            await self.status_webhook.send("Connected to Discord")
 
     async def on_disconnect(self):
-        await self.status_webhook.send("Disconnected from Discord")
+        if config.status_hook:
+            await self.status_webhook.send("Disconnected from Discord")
 
     async def on_resumed(self):
-        await self.status_webhook.send("Resumed connection with to Discord")
+        if config.status_hook:
+            await self.status_webhook.send("Resumed connection with to Discord")
 
     async def on_ready(self):
         log.info(f"Logged in as {self.user.name} - {self.user.id}")
-        await self.status_webhook.send("Recevied READY event")
+        if config.status_hook:
+            await self.status_webhook.send("Recevied READY event")
 
     def run(self):
         super().run(config.token)
