@@ -45,7 +45,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         commands = await self.filter_commands(cog.get_commands())
         for command in commands:
             if not command.hidden:
-                em.description += f"{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}"
+                em.description += f"\n{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}"
 
         em.description += "\n\nKey: <required> [optional]. Remove <> and [] when using the command."
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
@@ -74,9 +74,9 @@ class RoboCoderHelpCommand(commands.HelpCommand):
 
         commands = await self.filter_commands(group.commands)
         for command in commands:
-            em.description += f"\n\n{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}"
+            em.description += f"\n{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}"
 
-        em.description += "\nKey: <required> [optional]. Remove <> and [] when using the command."
+        em.description += "\n\nKey: <required> [optional]. Remove <> and [] when using the command."
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
 
         await ctx.send(embed=em)
