@@ -41,12 +41,7 @@ class GoogleResultPages(menus.ListPageSource):
            em.description = entry["snippet"]
 
         try:
-            image = entry["pagemap"]["metatags"][0]["og:image"]
-            if not image.startswith("https://") and not image.startswith("http://"):
-                if not image.startswith("//"):
-                    image = f"http://{image}"
-                else:
-                    image = f"http:{image}"
+            image = entry["pagemap"]["cse_thumbnail"][0]["src"]
             em.set_thumbnail(url=image)
         except KeyError:
             pass
