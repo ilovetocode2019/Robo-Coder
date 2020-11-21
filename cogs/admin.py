@@ -130,9 +130,9 @@ class Admin(commands.Cog):
         for cog in cogs:
             try:
                 self.bot.reload_extension(cog)
-                text += f":white_check_mark: {cog}"
+                text += f"\n:white_check_mark: {cog}"
             except:
-                text += f":x: {cog}"
+                text += f"\n:x: {cog}"
 
         await ctx.send(text)
 
