@@ -43,7 +43,10 @@ class GoogleResultPages(menus.ListPageSource):
         try:
             image = entry["pagemap"]["metatags"][0]["og:image"]
             if not image.startswith("https://") and not image.startswith("http://"):
-                image = f"http://{image}"
+                if not image.startswith("//"):
+                    image = f"http://{image}"
+                else:
+                    image = f"http:{image}"
             em.set_thumbnail(url=image)
         except KeyError:
             pass
