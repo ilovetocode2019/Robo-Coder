@@ -412,12 +412,46 @@ class Internet(commands.Cog):
 
         await ctx.send(embed=em)
 
+    @commands.command(name="pypi", description="Search for a project on PyPI", aliases=["pip", "project"])
+    @commands.cooldown(3, 30, commands.BucketType.user)
+    async def pypi(self, ctx, project):
+        async with self.bot.session.get(f"https://pypi.org/pypi/{project}/json") as resp:
+            data = await resp.json()
+            info = data["info"]
+            releases = data["releases"]
+
+        em = discord.Embed(title=info["name"], description=info["summary"], url=info["package_url"], color=0x96c8da)
+        em.set_thumbnail(url="https://i.imgur.com/6WHMGed.png")
+        em.set_author(name=info["author"] + " " + f"({info['author_email']})" if info['author_email'] else "")
+
+        if info["home_page"]:
+            em.add_field(name="Home Page", value=info["home_page"])
+        if info["license"]:
+            em.add_field(name="License", value=info["license"])
+        if info["requires_python"]:
+            em.add_field(name="Required Python", value=info["requires_python"])
+        if releases:
+            print(list(releases.keys())[:5])
+            em.add_field(name=f"Releases ({len(releases)} total)",
+            value="\n".join([f"[{release}]({info['package_url']}{release})" for release in list(releases.keys())[:5]]) +
+            (f"\n... and {len(releases)-5} more" if len(releases) > 5 else ""))
+        if info["project_urls"]:
+            em.add_field(name=f"Project Links ({len(info['project_urls'])} total)",
+            value="\n".join([f"[{item[0]}]({item[1]})" for item in list(info["project_urls"].items())[:5]]) +
+            (f"\n... and {len(releases)-5} more" if len(info["project_urls"]) > 5 else ""))
+        if info["classifiers"]:
+            em.add_field(name=f"Classifiers ({len(info['classifiers'])} total)",
+            value="\n".join(info["classifiers"][:5]) +
+            (f"\n... and {len(releases)-5} more" if len(info["classifiers"]) > 5 else ""))
+
+        await ctx.send(embed=em)
+
     @commands.command(name="strawpoll", description="Create a strawpoll")
     @commands.cooldown(3, 30, commands.BucketType.user)
     async def strawpoll(self, ctx, title=None, *options):
         if not title:
             options = []
-            check = lambda message: message.channel == ctx.channel and message.author == ctx.authorG
+            check = lambda message: message.channel == ctx.channel and message.author == ctx.author
             await ctx.send("What is the title of the poll?")
             message = await self.bot.wait_for("message", check=check)
             title = message.content
