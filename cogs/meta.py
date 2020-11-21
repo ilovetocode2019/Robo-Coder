@@ -46,6 +46,8 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         for command in commands:
             if not command.hidden:
                 em.description += f"{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}\n"
+
+        em.description += "\nKey: <required> [optional]. Remove <> and [] when using the command."
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
 
         await ctx.send(embed=em)
@@ -54,12 +56,10 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         ctx = self.context
         bot = ctx.bot
 
-        if not await command.can_run(ctx):
-            return
-
         em = discord.Embed(title=f"{command.name} {command.signature}", description=command.description or "", color=0x96c8da)
         if command.aliases:
             em.description += f"\nAliases: {', '.join(command.aliases)}"
+        em.description += "\nKey: <required> [optional]. Remove <> and [] when using the command."
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
 
         await ctx.send(embed=em)
@@ -68,9 +68,6 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         ctx = self.context
         bot = ctx.bot
 
-        if not await group.can_run(ctx):
-            return
-
         em = discord.Embed(title=f"{group.name} {group.signature}", description=group.description or "", color=0x96c8da)
         if group.aliases:
             em.description += f"\nAliases: {', '.join(group.aliases)} \n"
@@ -78,6 +75,8 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         commands = await self.filter_commands(group.commands)
         for command in commands:
             em.description += f"\n{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}"
+
+        em.description += "\nKey: <required> [optional]. Remove <> and [] when using the command."
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
 
         await ctx.send(embed=em)
