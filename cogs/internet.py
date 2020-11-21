@@ -431,18 +431,21 @@ class Internet(commands.Cog):
         if info["requires_python"]:
             em.add_field(name="Required Python", value=info["requires_python"])
         if releases:
-            print(list(releases.keys())[:5])
             em.add_field(name=f"Releases ({len(releases)} total)",
             value="\n".join([f"[{release}]({info['package_url']}{release})" for release in list(releases.keys())[:5]]) +
             (f"\n... and {len(releases)-5} more" if len(releases) > 5 else ""))
         if info["project_urls"]:
             em.add_field(name=f"Project Links ({len(info['project_urls'])} total)",
             value="\n".join([f"[{item[0]}]({item[1]})" for item in list(info["project_urls"].items())[:5]]) +
-            (f"\n... and {len(releases)-5} more" if len(info["project_urls"]) > 5 else ""))
+            (f"\n... and {len(info['project_urls'])-5} more" if len(info["project_urls"]) > 5 else ""))
         if info["classifiers"]:
             em.add_field(name=f"Classifiers ({len(info['classifiers'])} total)",
             value="\n".join(info["classifiers"][:5]) +
-            (f"\n... and {len(releases)-5} more" if len(info["classifiers"]) > 5 else ""))
+            (f"\n... and {len(info['classifiers'])-5} more" if len(info["classifiers"]) > 5 else ""))
+        if info["requires_dist"]:
+            em.add_field(name=f"Requirements ({len(info['requires_dist'])} total)",
+            value="\n".join(info["requires_dist"][:5]) +
+            (f"\n... and {len(info['requires_dist'])-5} more" if len(info["requires_dist"]) > 5 else ""))
 
         await ctx.send(embed=em)
 
