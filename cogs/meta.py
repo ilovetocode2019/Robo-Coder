@@ -45,9 +45,9 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         commands = await self.filter_commands(cog.get_commands())
         for command in commands:
             if not command.hidden:
-                em.description += f"\n{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}"
+                em.description += f"\n`{self.get_command_signature(command)}` {'-' if command.description else ''} {command.description}"
 
-        em.description += "\n\nKey: <required> [optional]. Remove <> and [] when using the command."
+        em.description += "\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**."
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
 
         await ctx.send(embed=em)
@@ -59,7 +59,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         em = discord.Embed(title=f"{command.name} {command.signature}", description=command.description or "", color=0x96c8da)
         if command.aliases:
             em.description += f"\nAliases: {', '.join(command.aliases)}"
-        em.description += "\n\nKey: <required> [optional]. Remove <> and [] when using the command."
+        em.description += "\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**."
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
 
         await ctx.send(embed=em)
@@ -74,9 +74,9 @@ class RoboCoderHelpCommand(commands.HelpCommand):
 
         commands = await self.filter_commands(group.commands)
         for command in commands:
-            em.description += f"\n{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}"
+            em.description += f"\n`{self.get_command_signature(command)}` {'-' if command.description else ''} {command.description}"
 
-        em.description += "\n\nKey: <required> [optional]. Remove <> and [] when using the command."
+        em.description += "\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**."
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
 
         await ctx.send(embed=em)
