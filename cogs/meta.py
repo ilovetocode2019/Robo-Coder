@@ -41,13 +41,13 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         ctx = self.context
         bot = ctx.bot
 
-        if getattr(cog, "hidden", False):
-           return 
-
         em = discord.Embed(title=f"{getattr(cog, 'emoji', '')} {cog.qualified_name}", description="\n", color=0x96c8da)
-        for command in cog.get_commands():
+        commands = await self.filter_commands(cog.get_commands())
+        for command in commands:
             if not command.hidden:
                 em.description += f"{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}\n"
+        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
+
         await ctx.send(embed=em)
 
     async def send_command_help(self, command):
@@ -57,7 +57,11 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         if not await command.can_run(ctx):
             return
 
-        em = discord.Embed(title=f"{bot.user.name} Help", description=f"{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}", color=0x96c8da)
+        em = discord.Embed(title=f"{command.name} {command.signature}", description=command.description or "", color=0x96c8da)
+        if command.aliases:
+            em.description += "\nAliases: " + "\n".join(command.aliases)
+        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
+
         await ctx.send(embed=em)
 
     async def send_group_help(self, group):
@@ -67,10 +71,14 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         if not await group.can_run(ctx):
             return
 
-        em = discord.Embed(title=f"{bot.user.name} Help", description=f"\n{self.get_command_signature(group)} - {group.description}", color=0x96c8da)
-        for command in group.commands:
-            if await command.can_run(ctx):
-                em.description += f"\n{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}"
+        em = discord.Embed(title=f"{group.name} {group.signature}", description=group.description or "", color=0x96c8da)
+        if group.aliases:
+            em.description += "\nAliases: " + "\n".join(group.aliases) + "\n"
+
+        commands = await self.filter_commands(group.commands)
+        for command in commands:
+            em.description += f"\n{self.get_command_signature(command)} {'-' if command.description else ''} {command.description}"
+        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
 
         await ctx.send(embed=em)
 
