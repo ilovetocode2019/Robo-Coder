@@ -59,7 +59,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
 
         em = discord.Embed(title=f"{command.name} {command.signature}", description=command.description or "", color=0x96c8da)
         if command.aliases:
-            em.description += "\nAliases: " + "\n".join(command.aliases)
+            em.description += f"\nAliases: {', '.join(command.aliases)}"
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
 
         await ctx.send(embed=em)
@@ -73,7 +73,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
 
         em = discord.Embed(title=f"{group.name} {group.signature}", description=group.description or "", color=0x96c8da)
         if group.aliases:
-            em.description += "\nAliases: " + "\n".join(group.aliases) + "\n"
+            em.description += f"\nAliases: {', '.join(group.aliases)} \n"
 
         commands = await self.filter_commands(group.commands)
         for command in commands:
