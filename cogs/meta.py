@@ -124,7 +124,7 @@ class Meta(commands.Cog):
         self.bot.help_command = self._original_help_command
 
     @commands.Cog.listener("on_command_error")
-    async def _send_error(self, ctx, e: commands.CommandError):
+    async def on_command_error(self, ctx, e: commands.CommandError):
         error = "".join(traceback.format_exception(type(e), e, e.__traceback__, 1))
         print("Ignoring exception in command {}:".format(ctx.command), file=sys.stderr)
         traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
@@ -161,11 +161,17 @@ class Meta(commands.Cog):
         elif isinstance(e, discord.ext.commands.errors.CommandNotFound):
             return
 
-        em = discord.Embed(title=":warning:",
-                           color=0xff0000,
-                           timestamp=datetime.datetime.utcnow())
-        em.description = f"```py\n{str(e)}```\n"
+        em = discord.Embed(title=":warning: Error", color=discord.Color.gold(), timestamp=datetime.datetime.utcnow())
+        em.description = f"```py\n{e}```\n"
         msg = await ctx.send(embed=em)
+
+        if isinstance(e, commands.CommandInvokeError):
+            em = discord.Embed(title=":warning: Error", description="", color=discord.Color.gold(), timestamp=datetime.datetime.utcnow())
+            em.description += f"\nCommand: `{ctx.command}`"
+            em.description += f"\nLink: [Jump]({ctx.message.jump_url})"
+            em.description += f"\n\n```py\n{e}```\n"
+
+            await self.bot.console.send(embed=em)
 
     @commands.group(invoke_without_command=True)
     async def prefix(self, ctx):

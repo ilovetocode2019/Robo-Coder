@@ -104,6 +104,8 @@ class RoboCoder(commands.Bot):
 
     async def on_ready(self):
         log.info(f"Logged in as {self.user.name} - {self.user.id}")
+
+        self.console = bot.get_channel(config.console)
         if config.status_hook:
             await self.status_webhook.send("Recevied READY event")
 

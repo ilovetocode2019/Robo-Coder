@@ -1,4 +1,4 @@
-from discord.ext import commands, menus
+from discord.ext import commands, menus, tasks
 import discord
 
 import traceback
@@ -11,6 +11,7 @@ import subprocess
 import time
 import traceback
 import io
+import pkg_resources
 from jishaku.codeblocks import codeblock_converter
 
 class Confirm(menus.Menu):
@@ -39,8 +40,12 @@ class Confirm(menus.Menu):
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.update_loop.start()
         self.hidden = True
-    
+
+    def cog_unload(self):
+        self.update_loop.cancel()
+
     def cog_check(self, ctx):
         return ctx.author.id == self.bot.owner_id
 
@@ -141,6 +146,36 @@ class Admin(commands.Cog):
     async def logout(self, ctx):
         await ctx.send(":wave: Logging out")
         await self.bot.logout()
+
+    @tasks.loop(hours=10)
+    async def update_loop(self):
+        with open("requirements.txt") as file:
+            lines = file.read()
+            installed = lines.split("\n")
+
+        outdated = []
+        for package in installed:
+            try:
+                current_version = pkg_resources.get_distribution(package).version
+                async with self.bot.session.get(f"https://pypi.org/pypi/{package}/json") as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        pypi_version = data["info"]["version"]
+                        if current_version != pypi_version:
+                            outdated.append((package, current_version, pypi_version))
+            except:
+                pass
+
+        if outdated:
+            em = discord.Embed(title="Outdated Packages", description="", color=0x96c8da)
+            for package in outdated:
+                em.description += f"\n{package[0]} (Local: {package[1]} | PyPI: {package[2]})"
+
+            await self.bot.console.send(embed=em)
+
+    @update_loop.before_loop
+    async def before_update_loop(self):
+        await self.bot.wait_until_ready()
 
 def setup(bot):
     bot.add_cog(Admin(bot))
