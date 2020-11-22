@@ -416,6 +416,8 @@ class Internet(commands.Cog):
     @commands.cooldown(3, 30, commands.BucketType.user)
     async def pypi(self, ctx, project):
         async with self.bot.session.get(f"https://pypi.org/pypi/{project}/json") as resp:
+            if resp.status != 200:
+                return await ctx.send(f":x: Could not fetch package")
             data = await resp.json()
             info = data["info"]
             releases = data["releases"]
