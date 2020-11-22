@@ -303,7 +303,7 @@ class Moderation(commands.Cog):
         delta = time-datetime.datetime.utcnow()
         if delta > datetime.timedelta(days=1):
             return await ctx.send(":x: You cannot mute yourself for more than a day")
-        if delta <= datetime.timedelta(minutes=5):
+        if delta < datetime.timedelta(minutes=5):
             return await ctx.send(":x: You must mute yourself for at least 5 minutes")
 
         if not config.mute_role:
