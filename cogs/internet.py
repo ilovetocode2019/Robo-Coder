@@ -429,7 +429,7 @@ class Internet(commands.Cog):
 
         em = discord.Embed(title=info["name"], description=info["summary"], url=info["package_url"], color=0x96c8da)
         em.set_thumbnail(url="https://i.imgur.com/6WHMGed.png")
-        em.set_author(name=info["author"] + " " + f"({info['author_email']})" if info['author_email'] else "")
+        em.set_author(name=info["author"] + " " + (f"({info['author_email']})" if info['author_email'] else ""))
 
         if info["home_page"]:
             em.add_field(name="Home Page", value=info["home_page"])
