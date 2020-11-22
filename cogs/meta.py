@@ -9,6 +9,28 @@ import os
 import json
 import sys
 import humanize
+import os
+import codecs
+import pathlib
+
+def get_lines_of_code():
+    total = 0
+    file_amount = 0
+    for path, subdirs, files in os.walk("."):
+        if "venv" in subdirs:
+            subdirs.remove("venv")
+        if "env" in subdirs:
+            subdirs.remove("env")
+        for name in files:
+            if name.endswith(".py"):
+                file_amount += 1
+                with codecs.open(
+                    "./" + str(pathlib.PurePath(path, name)), "r", "utf-8"
+                ) as f:
+                    for i, l in enumerate(f):
+                        total += 1
+
+    return f"I have {total:,} lines of code, spread across {file_amount:,} files"
 
 def has_manage_guild():
     async def predicate(ctx):
@@ -201,6 +223,11 @@ class Meta(commands.Cog):
         perms.manage_webhooks = True
         invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms, guild=None, redirect_uri=None)
         await ctx.send(f"<{invite}>")
+
+    @commands.command(name="code", description="Find out how much code I have")
+    async def code(self, ctx):
+        code = get_lines_of_code()
+        await ctx.send(code)
 
 def setup(bot):
     bot.add_cog(Meta(bot))
