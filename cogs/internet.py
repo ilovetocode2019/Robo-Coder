@@ -439,7 +439,7 @@ class Internet(commands.Cog):
             em.add_field(name="Required Python", value=info["requires_python"])
         if releases:
             em.add_field(name=f"Releases ({len(releases)} total)",
-            value="\n".join([f"[{release}]({info['package_url']}{release})" for release in list(releases.keys())[:5]]) +
+            value="\n".join([f"[{release}]({info['package_url']}{release})" for release in list(reversed(list(releases.keys())))[:5]]) +
             (f"\n... and {len(releases)-5} more" if len(releases) > 5 else ""))
         if info["project_urls"]:
             em.add_field(name=f"Project Links ({len(info['project_urls'])} total)",
