@@ -95,11 +95,7 @@ class Tools(commands.Cog):
 
         em.add_field(name="🗣️ Channels", value=f"<:textchannel:725730867644858518> {str(len(guild.text_channels))} \N{BULLET} <:voicechannel:725730883872751666> {str(len(guild.voice_channels))}")
 
-        status = {"online":0, "idle":0, "dnd":0, "offline":0}
-        for member in guild.members:
-            status[str(member.status)] += 1
-        em.add_field(name="👪 Members", value=f" {len(guild.members)} total \n<:online:723954455292411974> {status['online']}\n<:idle:723954480957358142> {status['idle']}\n<:dnd:723954508396494878> {status['dnd']}\n<:offline:723954530072658010> {status['offline']}")
-
+        em.add_field(name="👪 Members", value=str(len(guild.members)))
         await ctx.send(embed=em)
 
     @commands.command(name="userinfo", description="Get info on a user", aliases=["ui", "whois"])
