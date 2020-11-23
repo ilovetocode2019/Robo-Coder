@@ -448,7 +448,8 @@ class Internet(commands.Cog):
         if info["requires_dist"]:
             em.add_field(name=f"Requirements ({len(info['requires_dist'])} total)",
             value="\n".join(info["requires_dist"][:5]) +
-            (f"\n... and {len(info['requires_dist'])-5} more" if len(info["requires_dist"]) > 5 else ""))
+            (f"\n... and {len(info['requires_dist'])-5} more" if len(info["requires_dist"]) > 5 else ""),
+            inline=False)
 
         await ctx.send(embed=em)
 
