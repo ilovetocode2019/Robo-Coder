@@ -427,7 +427,7 @@ class Internet(commands.Cog):
             info = data["info"]
             releases = data["releases"]
 
-        em = discord.Embed(title=info["name"], description=info["summary"], url=info["package_url"], color=0x96c8da)
+        em = discord.Embed(title=f"{info['name']} {info['version']}", description=info["summary"], url=info["package_url"], color=0x96c8da)
         em.set_thumbnail(url="https://i.imgur.com/6WHMGed.png")
         em.set_author(name=info["author"] + " " + (f"({info['author_email']})" if info['author_email'] else ""))
 
@@ -445,10 +445,6 @@ class Internet(commands.Cog):
             em.add_field(name=f"Project Links ({len(info['project_urls'])} total)",
             value="\n".join([f"[{item[0]}]({item[1]})" for item in list(info["project_urls"].items())[:5]]) +
             (f"\n... and {len(info['project_urls'])-5} more" if len(info["project_urls"]) > 5 else ""))
-        if info["classifiers"]:
-            em.add_field(name=f"Classifiers ({len(info['classifiers'])} total)",
-            value="\n".join(info["classifiers"][:5]) +
-            (f"\n... and {len(info['classifiers'])-5} more" if len(info["classifiers"]) > 5 else ""))
         if info["requires_dist"]:
             em.add_field(name=f"Requirements ({len(info['requires_dist'])} total)",
             value="\n".join(info["requires_dist"][:5]) +
