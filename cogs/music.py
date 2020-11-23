@@ -97,12 +97,10 @@ class Player:
                 self.now = None
 
     def after_song(self, e):
-        if e:
-            # If there is an error wait 10 seconds and hope the problem will fix itself
-            # We can use time.sleep because the function is threaded
-            logger.warning(f"Received error ({e}) while playing song. Waiting 10 seconds and attempting to continue")
-            time.sleep(10)
-        self.event.set()
+        if not e:
+            self.event.set()
+        else:
+            raise e
 
     def cleanup(self):
         self.voice.stop()
