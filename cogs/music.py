@@ -491,7 +491,7 @@ class Music(commands.Cog):
 
         if player.notifications:
             player.notifications = False
-            await ctx.send(":x::bell: Notifications disabled")
+            await ctx.send(":no_bell: Notifications disabled")
         else:
             player.notifications = True
             await ctx.send(":bell: Notifications enabled")
