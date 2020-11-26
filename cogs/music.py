@@ -234,7 +234,7 @@ class Song:
 
         filename = cls.ytdl.prepare_filename(info)
         info["filename"] = filename
-        return filename, cls(ctx, data=info)
+        return cls(ctx, data=info)
 
     @classmethod
     async def playlist(cls, ctx, search, *, loop = None):
@@ -377,17 +377,17 @@ class Music(commands.Cog):
             await ctx.send(":globe_with_meridians: Fetching playlist")
             songs = await Song.playlist(ctx, query, loop=self.bot.loop)
             for song in songs:
-                filename, info = await Song.from_youtube(ctx, song["id"], loop=self.bot.loop)
-                await player.queue.put(info)
-                player.downloaded.append(filename)
+                song = await Song.from_youtube(ctx, song["id"], loop=self.bot.loop)
+                await player.queue.put(song)
+                player.downloaded.append(song.filename)
         else:
-            filename, info = await Song.from_youtube(ctx, query, loop=self.bot.loop)
+            song = await Song.from_youtube(ctx, query, loop=self.bot.loop)
 
             if player.voice.is_playing():
                 await ctx.send(f":page_facing_up: Enqueued {info.title}")
 
-        await player.queue.put(info)
-        player.downloaded.append(filename)
+        await player.queue.put(song)
+        player.downloaded.append(song.filename)
 
     @commands.command(name="playbin", description="Play a list of songs", usage="[url]", aliases=["pb"])
     async def playbin(self, ctx, url):
@@ -405,9 +405,9 @@ class Music(commands.Cog):
         await ctx.send(":globe_with_meridians: Fetching playlist")
         songs = await self.get_bin(url=url)
         for url in songs:
-            filename, info = await Song.from_youtube(ctx, url, loop=self.bot.loop)
-            await player.queue.put(info)
-            player.downloaded.append(filename)
+            song = await Song.from_youtube(ctx, url, loop=self.bot.loop)
+            await player.queue.put(song)
+            player.downloaded.append(song.filename)
 
     @commands.command(name="pause", description="Pause the music")
     async def pause(self, ctx):
@@ -648,32 +648,25 @@ class Music(commands.Cog):
     async def disconnect(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
 
-        if player:
-            if not ctx.author in player.voice.channel.members:
-                return
+        if not player:
+            return
+        if not ctx.author in player.voice.channel.members:
+            return
 
-            if len(player.queue._queue) != 0:
-                queue = [x.url for x in player.queue._queue]
-                if player.looping_queue:
-                    queue = [player.now.url] + queue
-                url = await self.post_bin(str("\n".join(queue)))
-                await ctx.send(f"Playlist saved to {url}")
+        if len(player.queue._queue) != 0:
+            queue = [x.url for x in player.queue._queue]
+            if player.looping_queue:
+                queue = [player.now.url] + queue
+            url = await self.post_bin(str("\n".join(queue)))
+            await ctx.send(f"Playlist saved to {url}")
 
-            player.loop.cancel()
-            await player.voice.disconnect()
-            try:
-                self.bot.players.pop(ctx.guild.id)
-            except:
-                pass
-            player.cleanup()
-        else:
-            client = None
-            for voice in self.bot.voice_clients:
-                if voice.guild.id == ctx.guild.id:
-                    client = voice
-                    break
-            if client:
-                await client.disconnect()
+        player.loop.cancel()
+        await player.voice.disconnect()
+        try:
+            self.bot.players.pop(ctx.guild.id)
+        except:
+            pass
+        player.cleanup()
 
         await ctx.send("Disconnected from voice")
 
