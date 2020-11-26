@@ -637,25 +637,33 @@ class Music(commands.Cog):
     async def disconnect(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
 
-        if not player:
-            return
-        if not ctx.author in player.voice.channel.members:
-            return
+        if player:
+            if not ctx.author in player.voice.channel.members:
+                return
 
-        if len(player.queue._queue) != 0:
-            queue = [x.url for x in player.queue._queue]
-            if player.looping_queue:
-                queue = [player.now.url] + queue
-            url = await self.post_bin(str("\n".join(queue)))
-            await ctx.send(f"Playlist saved to {url}")
+            if len(player.queue._queue) != 0:
+                queue = [x.url for x in player.queue._queue]
+                if player.looping_queue:
+                    queue = [player.now.url] + queue
+                url = await self.post_bin(str("\n".join(queue)))
+                await ctx.send(f"Playlist saved to {url}")
 
-        player.loop.cancel()
-        await player.voice.disconnect()
-        try:
-            self.bot.players.pop(ctx.guild.id)
-        except:
-            pass
-        player.cleanup()
+            player.loop.cancel()
+            await player.voice.disconnect()
+            try:
+                self.bot.players.pop(ctx.guild.id)
+            except:
+                pass
+            player.cleanup()
+        else:
+            client = None
+            for voice in self.bot.voice_clients:
+                if voice.guild.id == ctx.guild.id:
+                    client = voice
+                    break
+            if client:
+                await client.disconnect()
+
         await ctx.send("Disconnected from voice")
 
     @commands.command(name="allplayers", description="View all players")
