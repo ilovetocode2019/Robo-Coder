@@ -316,9 +316,24 @@ class Music(commands.Cog):
     @commands.command(name="connect", description="Connect the bot to a voice channel", aliases=["join"])
     async def connect(self, ctx):
         if not ctx.author.voice:
-            return await ctx.send("You are not in any voice channel")
+            return await ctx.send(":x: You are not in any voice channel")
+        if ctx.guild.id in self.bot.players:
+            return await ctx.send(":x: Already connected to a voice channel")
 
-        self.bot.players[ctx.guild.id] = Player(ctx, await ctx.author.voice.channel.connect())
+        try:
+            voice_client = await ctx.author.voice.channel.connect()
+        except:
+            client = None
+            for voice in self.bot.voice_clients:
+                if voice.guild.id == ctx.guild.id:
+                    client = voice
+                    break
+            if client:
+                await client.disconnect()
+
+            return await ctx.send(":x: Failed to connect to voice")
+
+        self.bot.players[ctx.guild.id] = Player(ctx, voice_client)
         player = self.bot.players[ctx.guild.id]
         await ctx.send(f"Connected to `{player.voice.channel.name}`")
 
