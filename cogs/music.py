@@ -39,7 +39,7 @@ class Pages(menus.ListPageSource):
         for song in player.queue._queue:
             total_duration+=song.total_seconds
 
-        em.description += f"\n\n{YTDLSource.parse_duration(total_duration)} total"
+        em.description += f"\n\n{Song.parse_duration(total_duration)} total"
 
         em.set_footer(text=f"{len(list(self.player.queue._queue))} songs | Page {menu.current_page+1}/{(int(len(list(self.player.queue._queue))/10))+1}")  
 
@@ -135,7 +135,7 @@ class Player:
             playing = "⏸️"
 
         em = discord.Embed(title=f"{playing} {self.now.title} {looping}", color=0x66FFCC)
-        em.add_field(name="Duration", value=f"{YTDLSource.timestamp_duration(int(time.time()-self.song_started))}/{self.now.timestamp_duration} `{self.get_bar(self.now.total_seconds)}`")
+        em.add_field(name="Duration", value=f"{Song.timestamp_duration(int(time.time()-self.song_started))}/{self.now.timestamp_duration} `{self.get_bar(self.now.total_seconds)}`")
         em.add_field(name="Url", value=f"[Click]({self.now.url})")
         em.add_field(name="Requester", value=f"{self.now.requester.mention}")
         em.set_thumbnail(url=self.now.thumbnail)
@@ -144,7 +144,7 @@ class Player:
 class YTDLError(commands.CommandError):
     pass
 
-class YTDLSource:
+class Song:
     YTDL_OPTIONS = {
         "format": "bestaudio/best",
         "extractaudio": True,
@@ -190,7 +190,7 @@ class YTDLSource:
         return "**{0.title}** by **{0.uploader}**".format(self)
 
     @classmethod
-    async def create_source(cls, ctx, search, *, loop = None):
+    async def from_youtube(cls, ctx, search, *, loop = None):
         loop = loop or asyncio.get_event_loop()
 
         partial = functools.partial(cls.ytdl.extract_info, search, download=False, process=False)
@@ -233,7 +233,7 @@ class YTDLSource:
         return filename, cls(ctx, data=info)
 
     @classmethod
-    async def create_playlist(cls, ctx, search, *, loop = None):
+    async def playlist(cls, ctx, search, *, loop = None):
         loop = loop or asyncio.get_event_loop()
 
         partial = functools.partial(cls.ytdl.extract_info, search, download=False, process=False)
@@ -369,10 +369,18 @@ class Music(commands.Cog):
         else:
             await ctx.send(f":mag: Searching {query}")
 
-        filename, info = await YTDLSource.create_source(ctx, query, loop=self.bot.loop)
+        if "list=" in query:
+            await ctx.send(":globe_with_meridians: Fetching playlist")
+            songs = await Song.playlist(ctx, query, loop=self.bot.loop)
+            for song in songs:
+                filename, info = await Song.from_youtube(ctx, song["id"], loop=self.bot.loop)
+                await player.queue.put(info)
+                player.downloaded.append(filename)
+        else:
+            filename, info = await Song.from_youtube(ctx, query, loop=self.bot.loop)
 
-        if player.voice.is_playing():
-            await ctx.send(f":page_facing_up: Enqueued {info.title}")
+            if player.voice.is_playing():
+                await ctx.send(f":page_facing_up: Enqueued {info.title}")
 
         await player.queue.put(info)
         player.downloaded.append(filename)
@@ -393,7 +401,7 @@ class Music(commands.Cog):
         await ctx.send(":globe_with_meridians: Fetching playlist")
         songs = await self.get_bin(url=url)
         for url in songs:
-            filename, info = await YTDLSource.create_source(ctx, url, loop=self.bot.loop)
+            filename, info = await Song.from_youtube(ctx, url, loop=self.bot.loop)
             await player.queue.put(info)
             player.downloaded.append(filename)
 
