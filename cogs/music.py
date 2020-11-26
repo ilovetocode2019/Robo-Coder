@@ -466,7 +466,6 @@ class Music(commands.Cog):
 
         for x in range(position):
             current = await player.queue.get()
-            print(current)
             if player.looping_queue:
                 await player.queue.put(current)
 
