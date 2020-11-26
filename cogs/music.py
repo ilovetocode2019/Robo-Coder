@@ -662,7 +662,7 @@ class Music(commands.Cog):
                     queue = [player.now.url] + queue
                 url = await self.post_bin(str("\n".join(queue)))
                 await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{ctx.prefix}{url}`.")
-            if player.now:
+            elif player.now:
                 await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
 
             player.loop.cancel()
@@ -686,7 +686,7 @@ class Music(commands.Cog):
                 queue = [player.now.url] + queue
             url = await self.post_bin(str("\n".join(queue)))
             await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{ctx.prefix}{url}`.")
-        if player.now:
+        elif player.now:
             await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
 
         player.loop.cancel()
