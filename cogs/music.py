@@ -365,7 +365,6 @@ class Song:
 
             if process_info is None:
                 raise YTDLError("Couldn't find anything that matches `{}`".format(search))
-
         try:
             webpage_url = process_info["webpage_url"]
         except:
@@ -548,7 +547,7 @@ class Music(commands.Cog):
                 return
 
             if player.voice.is_playing():
-                await ctx.send(f":page_facing_up: Enqueued {info.title}")
+                await ctx.send(f":page_facing_up: Enqueued {song.title}")
 
             await player.queue.put(song)
 
@@ -597,7 +596,7 @@ class Music(commands.Cog):
         song = await Song.from_youtube(ctx, result.data["id"], loop=self.bot.loop)
 
         if player.voice.is_playing():
-            await ctx.send(f":page_facing_up: Enqueued {info.title}")
+            await ctx.send(f":page_facing_up: Enqueued {song.title}")
 
         await player.queue.put(song)
         player.downloaded.append(song.filename)
