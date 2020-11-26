@@ -211,7 +211,11 @@ class Song:
             if process_info is None:
                 raise YTDLError("Couldn't find anything that matches `{}`".format(search))
 
-        webpage_url = process_info["webpage_url"]
+        try:
+            webpage_url = process_info["webpage_url"]
+        except:
+            webpage_url = search
+
         partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=True)
         processed_info = await loop.run_in_executor(None, partial)
 
