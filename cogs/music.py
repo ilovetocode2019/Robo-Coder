@@ -90,8 +90,7 @@ class Player:
             self.song_started = time.time()
             await self.event.wait()
             self.event.clear()
-
-            del source
+            source.cleanup()
 
             if self.looping_queue and not self.looping and not self.restart:
                 await self.queue.put(self.now)
