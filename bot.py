@@ -85,6 +85,13 @@ class RoboCoder(commands.Bot):
                    extra jsonb DEFAULT ('{}'::jsonb),
                    created_at TIMESTAMP DEFAULT (now() at time zone 'utc')
                    );
+
+                   CREATE TABLE IF NOT exists songs (
+                   id TEXT,
+                   filename TEXT,
+                   extractor TEXT,
+                   data jsonb DEFAULT ('{}'::jsonb)
+                   );
                 """
         await self.db.execute(query)
 
@@ -126,7 +133,6 @@ class RoboCoder(commands.Bot):
                 await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
 
             player.loop.cancel()
-            player.cleanup()
             await player.voice.disconnect()
 
         self.players = {}

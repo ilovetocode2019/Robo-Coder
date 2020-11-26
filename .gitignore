@@ -2,5 +2,6 @@
 *.pyc
 *.json
 env/*
+songs/*
 ffmpeg.exe
 config.py

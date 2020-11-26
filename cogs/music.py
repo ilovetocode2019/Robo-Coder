@@ -11,6 +11,7 @@ import os
 import random
 import time
 import logging
+import re
 
 logger = logging.getLogger("robo_coder.music")
 
@@ -205,7 +206,6 @@ class Player:
         self.ctx = ctx
         self.bot = ctx.bot
         self.voice = vc
-        self.downloaded = []
 
         self.queue = asyncio.Queue()
         self.event = asyncio.Event()
@@ -231,7 +231,6 @@ class Player:
                         self.bot.players.pop(self.ctx.guild.id)
                     except:
                         pass
-                    self.cleanup()
                     return
 
             source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.now.filename))
@@ -245,7 +244,6 @@ class Player:
             self.song_started = time.time()
             await self.event.wait()
             self.event.clear()
-            source.cleanup()
 
             if self.looping_queue and not self.looping and not self.restart:
                 await self.queue.put(self.now)
@@ -258,14 +256,6 @@ class Player:
             self.event.set()
         else:
             raise e
-
-    def cleanup(self):
-        self.voice.stop()
-        for song in self.downloaded:
-            try:
-                os.remove(song)
-            except OSError as exc:
-                pass
 
     def get_bar(self, seconds):
         bar = ""
@@ -304,7 +294,7 @@ class Song:
         "format": "bestaudio/best",
         "extractaudio": True,
         "audioformat": "mp3",
-        "outtmpl": "%(extractor)s-%(id)s-%(title)s.%(ext)s",
+        "outtmpl": "songs/%(extractor)s-%(id)s-%(title)s.%(ext)s",
         "restrictfilenames": True,
         "noplaylist": False,
         "nocheckcertificate": True,
@@ -316,6 +306,7 @@ class Song:
         "source_address": "0.0.0.0",
     }
     ytdl = youtube_dl.YoutubeDL(YTDL_OPTIONS)
+    regex = re.compile("(?:https?://)?(?:www.)?(?:youtube.com|youtu.be)/(?:watch\\?v=)?([^\\s]+)")
 
     def __init__(self, ctx, *, data, volume=0.5):
         self.data = data
@@ -348,27 +339,47 @@ class Song:
     async def from_youtube(cls, ctx, search, *, loop, download=True):
         loop = loop or asyncio.get_event_loop()
 
-        partial = functools.partial(cls.ytdl.extract_info, search, download=False, process=False)
-        data = await loop.run_in_executor(None, partial)
+        youtube_id = cls.regex.findall(search)
 
-        if data is None:
-            raise YTDLError("Couldn't find anything that matches `{}`".format(search))
+        if not youtube_id:
+            partial = functools.partial(cls.ytdl.extract_info, search, download=False, process=False)
+            data = await loop.run_in_executor(None, partial)
 
-        if "entries" not in data:
-            process_info = data
-        else:
-            process_info = None
-            for entry in data["entries"]:
-                if entry:
-                    process_info = entry
-                    break
-
-            if process_info is None:
+            if data is None:
                 raise YTDLError("Couldn't find anything that matches `{}`".format(search))
-        try:
-            webpage_url = process_info["webpage_url"]
-        except:
-            webpage_url = search
+
+            if "entries" not in data:
+                process_info = data
+            else:
+                process_info = None
+                for entry in data["entries"]:
+                    if entry:
+                        process_info = entry
+                        break
+
+                if process_info is None:
+                    raise YTDLError("Couldn't find anything that matches `{}`".format(search))
+
+            try:
+                webpage_url = process_info["webpage_url"]
+            except:
+                webpage_url = search
+            extractor = process_info["extractor"]
+            song_id = process_info["id"]
+
+        else:
+            webpage_url = youtube_id[0]
+            extractor = "youtube"
+            song_id = youtube_id[0]
+
+        query = """SELECT *
+                   FROM songs
+                   WHERE songs.id=$1 AND songs.extractor=$2;
+                """
+        song = await ctx.bot.db.fetchrow(query, song_id, extractor)
+
+        if song:
+            return cls(ctx, data=song["data"])
 
         partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=download)
         processed_info = await loop.run_in_executor(None, partial)
@@ -388,6 +399,12 @@ class Song:
 
         filename = cls.ytdl.prepare_filename(info)
         info["filename"] = filename
+
+        query = """INSERT INTO songs (id, filename, extractor, data)
+                   VALUES ($1, $2, $3, $4);
+                """
+        await ctx.bot.db.execute(query, info["id"], filename, info["extractor"], info)
+
         return cls(ctx, data=info)
 
     @classmethod
@@ -395,10 +412,10 @@ class Song:
         return cls(ctx, record["data"])
 
     @classmethod
-    async def playlist(cls, ctx, search, *, loop, download=True):
+    async def playlist(cls, ctx, search, *, loop, download=True, process=False):
         loop = loop or asyncio.get_event_loop()
 
-        partial = functools.partial(cls.ytdl.extract_info, search, download=download, process=True)
+        partial = functools.partial(cls.ytdl.extract_info, search, download=download, process=process)
         data = await loop.run_in_executor(None, partial)
 
         if data is None:
@@ -540,7 +557,6 @@ class Music(commands.Cog):
             songs = await Song.playlist(ctx, query, loop=self.bot.loop)
             for song in songs:
                 await player.queue.put(song)
-                player.downloaded.append(song.filename)
         else:
             song = await Song.from_youtube(ctx, query, loop=self.bot.loop)
             if not song:
@@ -550,8 +566,6 @@ class Music(commands.Cog):
                 await ctx.send(f":page_facing_up: Enqueued {song.title}")
 
             await player.queue.put(song)
-
-        player.downloaded.append(song.filename)
 
     @commands.command(name="playbin", description="Play a list of songs", usage="[url]", aliases=["pb"])
     async def playbin(self, ctx, url):
@@ -571,7 +585,6 @@ class Music(commands.Cog):
         for url in songs:
             song = await Song.from_youtube(ctx, url, loop=self.bot.loop)
             await player.queue.put(song)
-            player.downloaded.append(song.filename)
 
     @commands.command(name="search", description="Search for a song on youtube")
     async def search(self, ctx, *, query):
@@ -586,7 +599,7 @@ class Music(commands.Cog):
         if not ctx.author in player.voice.channel.members:
             return
 
-        songs = await Song.playlist(ctx, f"ytsearch3:{query}", loop=self.bot.loop, download=False)
+        songs = await Song.playlist(ctx, f"ytsearch3:{query}", loop=self.bot.loop, download=False, process=True)
 
         pages = SongSelectorMenuPages(songs, clear_reactions_after=True)
         result = await pages.prompt(ctx)
@@ -599,7 +612,6 @@ class Music(commands.Cog):
             await ctx.send(f":page_facing_up: Enqueued {song.title}")
 
         await player.queue.put(song)
-        player.downloaded.append(song.filename)
 
     @commands.command(name="pause", description="Pause the music")
     async def pause(self, ctx):
@@ -858,7 +870,6 @@ class Music(commands.Cog):
             self.bot.players.pop(ctx.guild.id)
         except:
             pass
-        player.cleanup()
 
         await ctx.send("Disconnected from voice")
 
@@ -884,7 +895,6 @@ class Music(commands.Cog):
                 await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
 
             player.loop.cancel()
-            player.cleanup()
             await player.voice.disconnect()
 
         self.bot.players = {}
@@ -913,7 +923,6 @@ class Music(commands.Cog):
             self.bot.players.pop(ctx.guild.id)
         except:
             pass
-        player.cleanup()
 
         await ctx.send("Player has been stopped")
 
