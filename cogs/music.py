@@ -60,6 +60,7 @@ class Player:
         self.looping_queue = False
         self.notifications = True
         self.volume = .5
+        self.restart = False
 
         self.loop = self.bot.loop.create_task(self.player_loop())
 
@@ -81,16 +82,18 @@ class Player:
             source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.now.filename))
             self.voice.play(source, after=self.after_song)
             self.voice.source.volume = self.volume
-            if self.notifications:
+
+            if self.notifications and not self.restart:
                 await self.ctx.send(f":notes: Now playing {discord.utils.escape_mentions(self.now.title)}")
 
+            self.restart = False
             self.song_started = time.time()
             await self.event.wait()
             self.event.clear()
 
             del source
 
-            if self.looping_queue and not self.looping:
+            if self.looping_queue and not self.looping and not self.restart:
                 await self.queue.put(self.now)
 
             if not self.looping:
@@ -403,6 +406,27 @@ class Music(commands.Cog):
 
         player.voice.resume()
         await ctx.send(":pause_button: Resumed")
+
+    @commands.command(name="startover", description="Restart the current song", aliases=["restart"])
+    async def restart(self, ctx):
+        player = self.bot.players.get(ctx.guild.id)
+
+        if not player:
+            return
+        if not ctx.author in player.voice.channel.members:
+            return
+
+        if not player.now:
+            return
+
+        player.restart = True
+
+        if not player.looping:
+            player.queue._queue.appendleft(player.now)
+
+        player.voice.stop()
+
+        await ctx.send(":rewind: Starting over")
 
     @commands.command(name="skip", description="Skip the music")
     async def skip(self, ctx):
