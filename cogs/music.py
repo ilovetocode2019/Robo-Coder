@@ -644,5 +644,13 @@ class Music(commands.Cog):
         player.cleanup()
         await ctx.send("Disconnected from voice")
 
+    @commands.command(name="allplayers", description="View all players")
+    @commands.is_owner()
+    async def allplayers(self, ctx):
+        if not self.bot.players:
+            return await ctx.send("No players")
+
+        await ctx.send("\n".join([f"{player.voice.guild} - `{player.voice.channel} | {player.ctx.channel}` ({player.voice.latency*1000}ms)" for player in self.bot.players.values()]))
+
 def setup(bot):
     bot.add_cog(Music(bot))
