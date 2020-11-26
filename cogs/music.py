@@ -408,7 +408,7 @@ class Music(commands.Cog):
         await ctx.send(":pause_button: Resumed")
 
     @commands.command(name="startover", description="Restart the current song", aliases=["restart"])
-    async def restart(self, ctx):
+    async def startover(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
 
         if not player:
@@ -427,6 +427,30 @@ class Music(commands.Cog):
         player.voice.stop()
 
         await ctx.send(":rewind: Starting over")
+
+    @commands.command(name="jump", description="Jump to a song in the queue")
+    async def jump(self, ctx, position: int):
+        player = self.bot.players.get(ctx.guild.id)
+
+        if not player:
+            return
+        if not ctx.author in player.voice.channel.members:
+            return
+
+        if not player.now:
+            return
+
+        position = position - 1
+
+        for x in range(position):
+            current = await player.queue.get()
+            print(current)
+            if player.looping_queue:
+                await player.queue.put(current)
+
+        player.voice.stop()
+        song = player.queue._queue[0]
+        await ctx.send(f":track_next: Jumped to {discord.utils.escape_mentions(song.title)}")
 
     @commands.command(name="skip", description="Skip the music")
     async def skip(self, ctx):
