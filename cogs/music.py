@@ -500,7 +500,7 @@ class Music(commands.Cog):
     async def connect(self, ctx):
         if not ctx.author.voice:
             return await ctx.send(":x: You are not in any voice channel")
-        if ctx.guild.id in self.bot.players:
+        if ctx.guild.id in self.bot.players or ctx.guild.id in [voice.id for voice in self.bot.voice_clients]:
             return await ctx.send(":x: Already connected to a voice channel")
 
         try:
