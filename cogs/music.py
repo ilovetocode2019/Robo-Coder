@@ -652,5 +652,52 @@ class Music(commands.Cog):
 
         await ctx.send("\n".join([f"{player.voice.guild} - `{player.voice.channel} | {player.ctx.channel}` ({player.voice.latency*1000}ms)" for player in self.bot.players.values()]))
 
+    @commands.command(name="stopall", descrition="Stop all players")
+    @commands.is_owner()
+    async def stopall(self, ctx):
+        for player in self.bot.players.values():
+            if len(player.queue._queue) != 0:
+                queue = [x.url for x in player.queue._queue]
+                if player.looping_queue:
+                    queue = [player.now.url] + queue
+                url = await self.post_bin(str("\n".join(queue)))
+                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{ctx.prefix}{url}`.")
+            if player.now:
+                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
+
+            player.loop.cancel()
+            player.cleanup()
+            await player.voice.disconnect()
+
+        self.bot.players = {}
+        await ctx.send("All Players have been stopped")
+
+    @commands.command(name="endplayer", description="Stops a single player")
+    @commands.is_owner()
+    async def endplayer(self, ctx, player: int):
+        if player not in self.bot.players:
+            return await ctx.send(":x: Could not find a player with that guild ID")
+
+        player = self.bot.players[player]
+
+        if len(player.queue._queue) != 0:
+            queue = [x.url for x in player.queue._queue]
+            if player.looping_queue:
+                queue = [player.now.url] + queue
+            url = await self.post_bin(str("\n".join(queue)))
+            await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{ctx.prefix}{url}`.")
+        if player.now:
+            await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
+
+        player.loop.cancel()
+        await player.voice.disconnect()
+        try:
+            self.bot.players.pop(ctx.guild.id)
+        except:
+            pass
+        player.cleanup()
+
+        await ctx.send("Player has been stopped")
+
 def setup(bot):
     bot.add_cog(Music(bot))
