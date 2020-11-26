@@ -14,6 +14,161 @@ import logging
 
 logger = logging.getLogger("robo_coder.music")
 
+class SongPages(menus.ListPageSource):
+    def __init__(self, songs):
+        self.songs = songs
+        super().__init__(songs, per_page=1)
+
+    async def format_page(self, menu, song):
+
+        em = discord.Embed(title=song.title, color=0x66FFCC)
+        em.add_field(name="Duration", value=f"{song.timestamp_duration}")
+        em.add_field(name="Url", value=f"[Click]({song.url})")
+        em.set_thumbnail(url=song.thumbnail)
+        em.set_footer(text=f"{len(self.songs)} results | Page {menu.current_page+1}/{len(self.songs)}")
+
+        return em
+
+class SongSelectorMenuPages(menus.Menu):
+    """A special type of Menu dedicated to pagination.
+
+    Attributes
+    ------------
+    current_page: :class:`int`
+        The current page that we are in. Zero-indexed
+        between [0, :attr:`PageSource.max_pages`).
+    """
+    def __init__(self, songs, **kwargs):
+        self._source = SongPages(songs)
+        self.songs = songs
+        kwargs.setdefault("delete_message_after", True)
+
+        self.current_page = 0
+        self.result = None
+        super().__init__(**kwargs)
+
+    @property
+    def source(self):
+        """:class:`PageSource`: The source where the data comes from."""
+        return self._source
+
+    async def change_source(self, source):
+        """|coro|
+
+        Changes the :class:`PageSource` to a different one at runtime.
+
+        Once the change has been set, the menu is moved to the first
+        page of the new source if it was started. This effectively
+        changes the :attr:`current_page` to 0.
+
+        Raises
+        --------
+        TypeError
+            A :class:`PageSource` was not passed.
+        """
+
+        if not isinstance(source, PageSource):
+            raise TypeError('Expected {0!r} not {1.__class__!r}.'.format(PageSource, source))
+
+        self._source = source
+        self.current_page = 0
+        if self.message is not None:
+            await source._prepare_once()
+            await self.show_page(0)
+
+    def should_add_reactions(self):
+        return self._source.is_paginating()
+
+    async def _get_kwargs_from_page(self, page):
+        value = await discord.utils.maybe_coroutine(self._source.format_page, self, page)
+        if isinstance(value, dict):
+            return value
+        elif isinstance(value, str):
+            return { 'content': value, 'embed': None }
+        elif isinstance(value, discord.Embed):
+            return { 'embed': value, 'content': None }
+
+    async def show_page(self, page_number):
+        page = await self._source.get_page(page_number)
+        self.current_page = page_number
+        kwargs = await self._get_kwargs_from_page(page)
+        await self.message.edit(**kwargs)
+
+    async def send_initial_message(self, ctx, channel):
+        """|coro|
+
+        The default implementation of :meth:`Menu.send_initial_message`
+        for the interactive pagination session.
+
+        This implementation shows the first page of the source.
+        """
+        page = await self._source.get_page(0)
+        kwargs = await self._get_kwargs_from_page(page)
+        return await channel.send(**kwargs)
+
+    async def start(self, ctx, *, channel=None, wait=False):
+        await self._source._prepare_once()
+        await super().start(ctx, channel=channel, wait=wait)
+
+    async def prompt(self, ctx):
+        await self.start(ctx, wait=True)
+        return self.result
+
+    async def show_checked_page(self, page_number):
+        max_pages = self._source.get_max_pages()
+        try:
+            if max_pages is None:
+                # If it doesn't give maximum pages, it cannot be checked
+                await self.show_page(page_number)
+            elif max_pages > page_number >= 0:
+                await self.show_page(page_number)
+        except IndexError:
+            # An error happened that can be handled, so ignore it.
+            pass
+
+    async def show_current_page(self):
+        if self._source.is_paginating():
+            await self.show_page(self.current_page)
+
+    def _skip_double_triangle_buttons(self):
+        max_pages = self._source.get_max_pages()
+        if max_pages is None:
+            return True
+        return max_pages <= 2
+
+    @menus.button('\N{WHITE HEAVY CHECK MARK}', position=menus.First(0))
+    async def select_page(self, payload):
+        self.result = self.songs[self.current_page]
+        self.stop()
+
+    @menus.button('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}\ufe0f',
+            position=menus.First(1), skip_if=_skip_double_triangle_buttons)
+    async def go_to_first_page(self, payload):
+        """go to the first page"""
+        await self.show_page(0)
+
+    @menus.button('\N{BLACK LEFT-POINTING TRIANGLE}\ufe0f', position=menus.First(2))
+    async def go_to_previous_page(self, payload):
+        """go to the previous page"""
+        await self.show_checked_page(self.current_page - 1)
+
+    @menus.button('\N{BLACK RIGHT-POINTING TRIANGLE}\ufe0f', position=menus.Last(0))
+    async def go_to_next_page(self, payload):
+        """go to the next page"""
+        await self.show_checked_page(self.current_page + 1)
+
+    @menus.button('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}\ufe0f',
+            position=menus.Last(1), skip_if=_skip_double_triangle_buttons)
+    async def go_to_last_page(self, payload):
+        """go to the last page"""
+        # The call here is safe because it's guarded by skip_if
+        await self.show_page(self._source.get_max_pages() - 1)
+
+    @menus.button('\N{BLACK SQUARE FOR STOP}\ufe0f', position=menus.Last(2))
+    async def stop_pages(self, payload):
+        """stops the pagination session."""
+        self.stop()
+
 class Pages(menus.ListPageSource):
     def __init__(self, data):
         self.player = data
@@ -190,7 +345,7 @@ class Song:
         return "**{0.title}** by **{0.uploader}**".format(self)
 
     @classmethod
-    async def from_youtube(cls, ctx, search, *, loop = None):
+    async def from_youtube(cls, ctx, search, *, loop, download=True):
         loop = loop or asyncio.get_event_loop()
 
         partial = functools.partial(cls.ytdl.extract_info, search, download=False, process=False)
@@ -216,7 +371,7 @@ class Song:
         except:
             webpage_url = search
 
-        partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=True)
+        partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=download)
         processed_info = await loop.run_in_executor(None, partial)
 
         if processed_info is None:
@@ -237,10 +392,14 @@ class Song:
         return cls(ctx, data=info)
 
     @classmethod
-    async def playlist(cls, ctx, search, *, loop = None):
+    async def from_record(cls, ctx, record):
+        return cls(ctx, record["data"])
+
+    @classmethod
+    async def playlist(cls, ctx, search, *, loop, download=True):
         loop = loop or asyncio.get_event_loop()
 
-        partial = functools.partial(cls.ytdl.extract_info, search, download=False, process=False)
+        partial = functools.partial(cls.ytdl.extract_info, search, download=download, process=True)
         data = await loop.run_in_executor(None, partial)
 
         if data is None:
@@ -257,7 +416,11 @@ class Song:
             if len(data_list) == 0:
                 raise YTDLError("Playlist is empty")
 
-        return data_list
+        songs = []
+        for song in data_list:
+            song["filename"] = cls.ytdl.prepare_filename(song)
+            songs.append(Song(ctx, data=song))
+        return songs
 
     @staticmethod
     def parse_duration(duration: int):
@@ -377,16 +540,18 @@ class Music(commands.Cog):
             await ctx.send(":globe_with_meridians: Fetching playlist")
             songs = await Song.playlist(ctx, query, loop=self.bot.loop)
             for song in songs:
-                song = await Song.from_youtube(ctx, song["id"], loop=self.bot.loop)
                 await player.queue.put(song)
                 player.downloaded.append(song.filename)
         else:
             song = await Song.from_youtube(ctx, query, loop=self.bot.loop)
+            if not song:
+                return
 
             if player.voice.is_playing():
                 await ctx.send(f":page_facing_up: Enqueued {info.title}")
 
-        await player.queue.put(song)
+            await player.queue.put(song)
+
         player.downloaded.append(song.filename)
 
     @commands.command(name="playbin", description="Play a list of songs", usage="[url]", aliases=["pb"])
@@ -408,6 +573,34 @@ class Music(commands.Cog):
             song = await Song.from_youtube(ctx, url, loop=self.bot.loop)
             await player.queue.put(song)
             player.downloaded.append(song.filename)
+
+    @commands.command(name="search", description="Search for a song on youtube")
+    async def search(self, ctx, *, query):
+        player = self.bot.players.get(ctx.guild.id)
+
+        if not player:
+            await ctx.invoke(self.connect)
+            player = self.bot.players.get(ctx.guild.id)
+            if not player:
+                return
+
+        if not ctx.author in player.voice.channel.members:
+            return
+
+        songs = await Song.playlist(ctx, f"ytsearch3:{query}", loop=self.bot.loop, download=False)
+
+        pages = SongSelectorMenuPages(songs, clear_reactions_after=True)
+        result = await pages.prompt(ctx)
+        if not result:
+            return await ctx.send("Not playing anything")
+
+        song = await Song.from_youtube(ctx, result.data["id"], loop=self.bot.loop)
+
+        if player.voice.is_playing():
+            await ctx.send(f":page_facing_up: Enqueued {info.title}")
+
+        await player.queue.put(song)
+        player.downloaded.append(song.filename)
 
     @commands.command(name="pause", description="Pause the music")
     async def pause(self, ctx):
