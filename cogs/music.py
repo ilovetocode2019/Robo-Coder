@@ -336,7 +336,7 @@ class Song:
         return "**{0.title}** by **{0.uploader}**".format(self)
 
     @classmethod
-    async def from_youtube(cls, ctx, search, *, loop, download=True):
+    async def from_query(cls, ctx, search, *, loop, download=True):
         loop = loop or asyncio.get_event_loop()
 
         youtube_id = cls.regex.findall(search)
@@ -558,7 +558,7 @@ class Music(commands.Cog):
             for song in songs:
                 await player.queue.put(song)
         else:
-            song = await Song.from_youtube(ctx, query, loop=self.bot.loop)
+            song = await Song.from_query(ctx, query, loop=self.bot.loop)
             if not song:
                 return
 
@@ -583,7 +583,7 @@ class Music(commands.Cog):
         await ctx.send(":globe_with_meridians: Fetching playlist")
         songs = await self.get_bin(url=url)
         for url in songs:
-            song = await Song.from_youtube(ctx, url, loop=self.bot.loop)
+            song = await Song.from_query(ctx, url, loop=self.bot.loop)
             await player.queue.put(song)
 
     @commands.command(name="search", description="Search for a song on youtube")
@@ -606,7 +606,7 @@ class Music(commands.Cog):
         if not result:
             return await ctx.send("Not playing anything")
 
-        song = await Song.from_youtube(ctx, result.data["id"], loop=self.bot.loop)
+        song = await Song.from_query(ctx, result.data["id"], loop=self.bot.loop)
 
         if player.voice.is_playing():
             await ctx.send(f":page_facing_up: Enqueued {song.title}")
