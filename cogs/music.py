@@ -202,10 +202,10 @@ class Pages(menus.ListPageSource):
         return em
 
 class Player:
-    def __init__(self, ctx, vc):
+    def __init__(self, ctx, voice):
         self.ctx = ctx
         self.bot = ctx.bot
-        self.voice = vc
+        self.voice = voice
 
         self.queue = asyncio.Queue()
         self.event = asyncio.Event()
