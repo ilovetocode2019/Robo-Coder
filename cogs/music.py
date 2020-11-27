@@ -926,5 +926,22 @@ class Music(commands.Cog):
 
         await ctx.send("Player has been stopped")
 
+    @commands.Cog.listener("on_voice_state_update")
+    async def delete_player_on_kick(self, member, before, after):
+        player = self.bot.players.get(member.guild.id)
+
+        if not player:
+            return
+        if member.id != self.bot.user.id:
+            return
+
+        if before.channel and not after.channel:
+            player.loop.cancel()
+            await player.voice.disconnect()
+            try:
+                self.bot.players.pop(member.guild.id)
+            except:
+                pass
+
 def setup(bot):
     bot.add_cog(Music(bot))
