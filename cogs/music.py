@@ -943,5 +943,39 @@ class Music(commands.Cog):
             except:
                 pass
 
+    @commands.Cog.listener("on_voice_state_update")
+    async def leave_on_inactivity(self, member, before, after):
+        player = self.bot.players.get(member.guild.id)
+
+        if not player:
+            return
+
+        members = [x for x in player.voice.channel.members if not x.bot]
+        if len(members) > 0:
+            return
+
+        player.voice.pause()
+
+        def check(member, before, after):
+            return not member.bot and after.channel and after.channel.id == player.voice.channel.id
+
+        try:
+            await self.bot.wait_for("voice_state_update", timeout=180, check=check)
+        except asyncio.TimeoutError:
+            if len(player.queue._queue) != 0:
+                queue = [x.url for x in player.queue._queue]
+                if player.looping_queue:
+                    queue = [player.now.url] + queue
+                url = await self.post_bin(str("\n".join(queue)))
+                await player.ctx.send(f"Playlist saved to {url}")
+
+            player.loop.cancel()
+            await player.voice.disconnect()
+            try:
+                self.bot.players.pop(player.guild.id)
+            except:
+                pass
+
+
 def setup(bot):
     bot.add_cog(Music(bot))
