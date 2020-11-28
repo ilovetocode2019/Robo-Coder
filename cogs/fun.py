@@ -25,7 +25,7 @@ class Fun(commands.Cog):
             dice_str = str(numbers[0])
         else:
             dice_str = f"{', '.join(numbers[:-1])} and a {numbers[-1]}"
-        await ctx.send(f"You roled a {dice_str}")
+        await ctx.send(f"You rolled a {dice_str}")
 
     @commands.command(name="question", description="Ask me a question", aliases=["yesno", "8ball"])
     async def question(self, ctx, *, question):
