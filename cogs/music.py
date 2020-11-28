@@ -365,18 +365,16 @@ class Song:
             except:
                 webpage_url = search
             extractor = process_info["extractor"]
-            song_id = process_info["id"]
 
         else:
             webpage_url = youtube_id[0]
             extractor = "youtube"
-            song_id = youtube_id[0]
 
         query = """SELECT *
                    FROM songs
                    WHERE songs.id=$1 AND songs.extractor=$2;
                 """
-        song = await ctx.bot.db.fetchrow(query, song_id, extractor)
+        song = await ctx.bot.db.fetchrow(query, webpage_url, extractor)
 
         if song:
             return cls(ctx, data=song["data"])
@@ -500,7 +498,7 @@ class Music(commands.Cog):
     async def connect(self, ctx):
         if not ctx.author.voice:
             return await ctx.send(":x: You are not in any voice channel")
-        if ctx.guild.id in self.bot.players or ctx.guild.id in [voice.id for voice in self.bot.voice_clients]:
+        if ctx.guild.id in self.bot.players or ctx.guild.id in [voice.guild.id for voice in self.bot.voice_clients]:
             return await ctx.send(":x: Already connected to a voice channel")
 
         try:
