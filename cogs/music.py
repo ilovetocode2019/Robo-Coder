@@ -656,7 +656,7 @@ class Music(commands.Cog):
 
         await ctx.send(":rewind: Starting over")
 
-    @commands.command(name="jump", description="Jump to a song in the queue")
+    @commands.command(name="jump", description="Jump to a song in the queue", aliasess=["goto", "skipto", "jumpto"])
     async def jump(self, ctx, position: int):
         player = self.bot.players.get(ctx.guild.id)
 
