@@ -421,10 +421,10 @@ class Song:
         return cls(ctx, data=info)
 
     @classmethod
-    async def playlist(cls, ctx, search, *, loop, download=True, process=False):
+    async def playlist(cls, ctx, search, *, loop, download=True):
         loop = loop or asyncio.get_event_loop()
 
-        partial = functools.partial(cls.ytdl.extract_info, search, download=download, process=process)
+        partial = functools.partial(cls.ytdl.extract_info, search, download=download, process=True)
         data = await loop.run_in_executor(None, partial)
 
         if data is None:
@@ -613,7 +613,7 @@ class Music(commands.Cog):
         if not ctx.author in player.voice.channel.members:
             return
 
-        songs = await Song.playlist(ctx, f"ytsearch3:{query}", loop=self.bot.loop, download=False, process=True)
+        songs = await Song.playlist(ctx, f"ytsearch3:{query}", loop=self.bot.loop, download=False)
 
         pages = SongSelectorMenuPages(songs, clear_reactions_after=True)
         result = await pages.prompt(ctx)
