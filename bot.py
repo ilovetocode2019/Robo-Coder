@@ -87,8 +87,10 @@ class RoboCoder(commands.Bot):
                    );
 
                    CREATE TABLE IF NOT exists songs (
-                   id TEXT,
+                   id SERIAL PRIMARY KEY,
+                   title TEXT,
                    filename TEXT,
+                   song_id TEXT,
                    extractor TEXT,
                    data jsonb DEFAULT ('{}'::jsonb)
                    );

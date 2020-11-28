@@ -339,6 +339,14 @@ class Song:
     async def from_query(cls, ctx, search, *, loop, download=True):
         loop = loop or asyncio.get_event_loop()
 
+        query = """SELECT *
+                   FROM songs
+                   WHERE songs.title=$1;
+                """
+        song = await ctx.bot.db.fetchrow(query, search)
+        if song:
+            return cls(ctx, data=song["data"])
+
         youtube_id = cls.regex.findall(search)
 
         if not youtube_id:
@@ -375,10 +383,11 @@ class Song:
         else:
             webpage_url = youtube_id[0]
             extractor = "youtube"
+            song_id = youtube_id[0]
 
         query = """SELECT *
                    FROM songs
-                   WHERE songs.id=$1 AND songs.extractor=$2;
+                   WHERE songs.song_id=$1 AND songs.extractor=$2;
                 """
         song = await ctx.bot.db.fetchrow(query, song_id, extractor)
 
@@ -404,10 +413,10 @@ class Song:
         filename = cls.ytdl.prepare_filename(info)
         info["filename"] = filename
 
-        query = """INSERT INTO songs (id, filename, extractor, data)
-                   VALUES ($1, $2, $3, $4);
+        query = """INSERT INTO songs (title, filename, song_id, extractor, data)
+                   VALUES ($1, $2, $3, $4, $5);
                 """
-        await ctx.bot.db.execute(query, info["id"], filename, info["extractor"], info)
+        await ctx.bot.db.execute(query, info["title"], filename, info["id"], info["extractor"], info)
 
         return cls(ctx, data=info)
 
