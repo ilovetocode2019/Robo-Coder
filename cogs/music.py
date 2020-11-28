@@ -364,7 +364,13 @@ class Song:
                 webpage_url = process_info["webpage_url"]
             except:
                 webpage_url = search
-            extractor = process_info["extractor"]
+
+            try:
+                song_id = process_info["song_id"]
+                extractor = process_info["extractor"]
+            except:
+                song_id = None
+                extractor = None
 
         else:
             webpage_url = youtube_id[0]
@@ -374,7 +380,7 @@ class Song:
                    FROM songs
                    WHERE songs.id=$1 AND songs.extractor=$2;
                 """
-        song = await ctx.bot.db.fetchrow(query, webpage_url, extractor)
+        song = await ctx.bot.db.fetchrow(query, song_id, extractor)
 
         if song:
             return cls(ctx, data=song["data"])
@@ -404,10 +410,6 @@ class Song:
         await ctx.bot.db.execute(query, info["id"], filename, info["extractor"], info)
 
         return cls(ctx, data=info)
-
-    @classmethod
-    async def from_record(cls, ctx, record):
-        return cls(ctx, record["data"])
 
     @classmethod
     async def playlist(cls, ctx, search, *, loop, download=True, process=False):
