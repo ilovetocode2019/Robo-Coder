@@ -581,7 +581,12 @@ class Music(commands.Cog):
             return
 
         await ctx.send(":globe_with_meridians: Fetching playlist")
-        songs = await self.get_bin(url=url)
+
+        try:
+            songs = await self.get_bin(url=url)
+        except Exception as exc:
+            return await ctx.send(":x: I couldn't fetch that bin. Make sure the url is valid.")
+
         for url in songs:
             song = await Song.from_query(ctx, url, loop=self.bot.loop)
             await player.queue.put(song)
