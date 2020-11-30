@@ -421,7 +421,7 @@ class Song:
         return cls(ctx, data=info)
 
     @classmethod
-    async def playlist(cls, ctx, search, *, loop, download=True):
+    async def from_list(cls, ctx, search, *, loop, download=True):
         loop = loop or asyncio.get_event_loop()
 
         partial = functools.partial(cls.ytdl.extract_info, search, download=download, process=True)
@@ -563,7 +563,7 @@ class Music(commands.Cog):
 
         if "list=" in query:
             await ctx.send(":globe_with_meridians: Fetching playlist")
-            songs = await Song.playlist(ctx, query, loop=self.bot.loop)
+            songs = await Song.from_list(ctx, query, loop=self.bot.loop)
             for song in songs:
                 await player.queue.put(song)
         else:
@@ -613,7 +613,7 @@ class Music(commands.Cog):
         if not ctx.author in player.voice.channel.members:
             return
 
-        songs = await Song.playlist(ctx, f"ytsearch3:{query}", loop=self.bot.loop, download=False)
+        songs = await Song.from_list(ctx, f"ytsearch3:{query}", loop=self.bot.loop, download=False)
 
         pages = SongSelectorMenuPages(songs, clear_reactions_after=True)
         result = await pages.prompt(ctx)
