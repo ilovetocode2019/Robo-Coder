@@ -95,7 +95,7 @@ class Tools(commands.Cog):
 
         em.add_field(name="🗣️ Channels", value=f"<:textchannel:725730867644858518> {str(len(guild.text_channels))} \N{BULLET} <:voicechannel:725730883872751666> {str(len(guild.voice_channels))}")
 
-        em.add_field(name="👪 Members", value=str(len(guild.members)))
+        em.add_field(name="👪 Members", value=f"{len(guild.members)} ({len([x for x in guild.members if x.bot])} bots)")
         await ctx.send(embed=em)
 
     @commands.command(name="userinfo", description="Get info on a user", aliases=["ui", "whois"])
