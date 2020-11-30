@@ -862,6 +862,20 @@ class Music(commands.Cog):
         player.queue._queue.remove(to_remove)
         await ctx.send(f":wastebasket: Removed {to_remove.title} from queue")
 
+    @queue.command(name="clear", description="Clear the queue")
+    async def queue_clear(self, ctx):
+        player = self.bot.players.get(ctx.guild.id)
+
+        if not player:
+            return
+        if not ctx.author in player.voice.channel.members:
+            return
+        if len(player.queue._queue) == 0:
+            return await ctx.send(":x: Queue is empty")
+
+        player.queue._queue.clear()
+        await ctx.send(":wastebasket: Cleared queue")
+
     @commands.command(name="disconnect", description="Disconnect the bot from a voice channel", aliases=["leave"])
     async def disconnect(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
