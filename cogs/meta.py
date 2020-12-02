@@ -138,7 +138,7 @@ class Meta(commands.Cog):
             return
         elif isinstance(e, discord.ext.commands.errors.MissingRequiredArgument):
             return await ctx.send(f":x: You are missing a argument: `{e.param}`")
-        elif isinstance(e, discord.ext.commands.errors.BadArgument):
+        elif isinstance(e, discord.ext.commands.errors.BadArgument) or isinstance(e, discord.ext.commands.errors.BadUnionArgument):
             return await ctx.send(f":x: {e}")
         elif isinstance(e, discord.ext.commands.MaxConcurrencyReached):
             if e.per == commands.BucketType.default:
