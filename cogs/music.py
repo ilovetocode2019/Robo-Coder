@@ -1003,6 +1003,8 @@ class Music(commands.Cog):
                 self.bot.players.pop(player.guild.id)
             except:
                 pass
+        else:
+            player.voice.resume()
 
 
 def setup(bot):
