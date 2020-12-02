@@ -591,6 +591,7 @@ class Music(commands.Cog):
 
         await ctx.send(":globe_with_meridians: Fetching playlist")
 
+        url = url.strip("<>")
         try:
             songs = await self.get_bin(url=url)
         except Exception as exc:
