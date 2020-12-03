@@ -522,7 +522,7 @@ class Moderation(commands.Cog):
         else:
             await ctx.send(f"Spam prevention is disabled")
 
-    @spam.command(name="enable", description="Enable spam prevention")
+    @spam.command(name="enable", description="Enable spam prevention", aliases=["on"])
     @commands.has_permissions(manage_guild=True)
     async def spam_enable(self, ctx):
         config = await self.get_guild_config(ctx.guild)
@@ -533,7 +533,7 @@ class Moderation(commands.Cog):
         await config.enable_spam_prevention()
         await ctx.send(":white_check_mark: Spam prevention now enabled")
 
-    @spam.command(name="disable", description="Disable spam prevention")
+    @spam.command(name="disable", description="Disable spam prevention", aliases=["off"])
     @commands.has_permissions(manage_guild=True)
     async def spam_disable(self, ctx):
         config = await self.get_guild_config(ctx.guild)
