@@ -46,7 +46,7 @@ def cache(max_legnth = 100):
                 return
 
             try:
-                key = _get_key(*args)
+                key = _get_key(*args, **kwargs)
                 del cache[key]
                 return True
             except KeyError:
@@ -203,6 +203,7 @@ class GuildConfig:
 
     def invalidate(self):
         self.cog.get_guild_config.invalidate(self.cog, self.guild)
+        self.cog.get_guild_config.invalidate(self.cog, self.guild, create_if_not_exists=False)
 
 class CooldownByContent(commands.CooldownMapping):
     def _bucket_key(self, message):
