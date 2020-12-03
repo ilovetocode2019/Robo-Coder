@@ -542,23 +542,29 @@ class Moderation(commands.Cog):
 
     @spam.command(name="ignore", description="Add a channel to the ignore list for spam detection")
     @commands.has_permissions(manage_guild=True)
-    async def spam_ignore(self, ctx, *, channel: discord.TextChannel):
+    async def spam_ignore(self, ctx, *, channel: discord.TextChannel = None):
+        if not channel:
+            channel = ctx.channel
+
         config = await self.get_guild_config(ctx.guild)
         if channel.id in config.ignore_spam_channels:
             return await ctx.send(":x: Channel is already being ignored")
 
         await config.add_ignore_spam_channel(channel)
-        await ctx.send(":white_check_mark: Spam prevention is now disabled in this channel")
+        await ctx.send(f":white_check_mark: Spam prevention is disabled for {channel.mention}")
 
     @spam.command(name="unignore", description="Remove a channel from the ignore list for spam detection")
     @commands.has_permissions(manage_guild=True)
-    async def spam_unignore(self, ctx, *, channel: [discord.TextChannel, int]):
+    async def spam_unignore(self, ctx, *, channel: discord.TextChannel = None):
+        if not channel:
+            channel = ctx.channel
+
         config = await self.get_guild_config(ctx.guild)
         if channel.id not in config.ignore_spam_channels:
             return await ctx.send(":x: Channel is not ignored")
 
         await config.remove_ignore_spam_channel(channel)
-        await ctx.send(":white_check_mark: Spam prevention is now enabled in this channel")
+        await ctx.send(f":white_check_mark: Spam prevention is disabled for {channel.mention}")
 
     @spam.command(name="reset", description="Reset a member's automatic mute time")
     @commands.has_permissions(manage_guild=True)
