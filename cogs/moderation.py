@@ -37,10 +37,10 @@ def cache(max_legnth = 100):
         def __len__():
             return len(cache)
 
-        def _get_key(*args):
-            return ":".join([repr(arg) for arg in args])
+        def _get_key(*args, **kwargs):
+            return f"{':'.join([repr(arg) for arg in args])}{':'.join([f'{repr(kwarg)}:{repr(value)}' for kwarg, value in kwargs.items()])}"
 
-        def invalidate(*args):
+        def invalidate(*args, **kwargs):
             if not args:
                 cache.clear()
                 return
@@ -54,7 +54,7 @@ def cache(max_legnth = 100):
 
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
-            key = _get_key(*args)
+            key = _get_key(*args, **kwargs)
 
             try:
                 value = cache[key]
