@@ -225,21 +225,25 @@ class SpamDetector:
 
         by_content = self.by_content.get_bucket(message)
         if by_content.update_rate_limit(time):
+            by_content._window = 0
+            return True
+
+        by_member = self.by_member.get_bucket(message)
+        if by_member.update_rate_limit(time):
+            by_member._window = 0
             return True
 
         if message.attachments:
             by_attachment = self.by_attachment.get_bucket(message)
             if by_attachment.update_rate_limit(time):
+                by_attachment._window = 0
                 return True
 
         if [mention for mention in message.mentions if not mention.bot and mention.id != message.author.id]:
             by_mention = self.by_mention.get_bucket(message)
             if by_mention.update_rate_limit(time):
+                by_mention._window = 0
                 return True
-
-        by_member = self.by_member.get_bucket(message)
-        if by_member.update_rate_limit(time):
-            return True
 
         return False
 
