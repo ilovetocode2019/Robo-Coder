@@ -364,9 +364,9 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_messages=True)
     async def mute(self, ctx, user: discord.Member, *, reason=None):
-        config = await self.get_guild_config(ctx.guild, create_if_not_exists=False)
+        config = await self.get_guild_config(ctx.guild)
 
-        if not config or not config.mute_role:
+        if not config.mute_role:
             return await ctx.send(":x: Muted role is not set")
         if user.id in config.muted:
             return await ctx.send(":x: This member is already muted")
