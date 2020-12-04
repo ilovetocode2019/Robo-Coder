@@ -562,8 +562,8 @@ class Moderation(commands.Cog):
     @cache()
     async def get_guild_config(self, guild, create_if_not_exists=True):
         query = """SELECT *
-                FROM guild_config
-                WHERE guild_config.guild_id=$1;
+                   FROM guild_config
+                   WHERE guild_config.guild_id=$1;
                 """
         record = await self.bot.db.fetchrow(query, guild.id)
         if not record:
@@ -576,7 +576,7 @@ class Moderation(commands.Cog):
 
     async def create_guild_config(self, guild):
         query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id)
-                VALUES ($1, $2, $3, $4, $5, $6);
+                   VALUES ($1, $2, $3, $4, $5, $6);
                 """
         await self.bot.db.execute(query, guild.id, None, [], False, [], None)
 
