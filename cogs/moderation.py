@@ -340,6 +340,13 @@ class Moderation(commands.Cog):
         else:
             reason = f"Unban by {ctx.author}"
 
+        query = """DELETE FROM timers
+                    WHERE event = 'tempmute'
+                    AND extra #>> '{0}' = $1
+                    AND extra #>> '{1}' = $2;
+                """
+        await self.bot.db.execute(query, str(ctx.guild.id), str(user.id))
+
         await ctx.guild.unban(user, reason=reason)
         await ctx.send(f":white_check_mark: Unbanned {user}")
 
@@ -415,9 +422,19 @@ class Moderation(commands.Cog):
         else:
             reason = f"Unmute by {ctx.author}"
 
+        query = """DELETE FROM timers
+                    WHERE event = 'tempmute'
+                    AND extra #>> '{0}' = $1
+                    AND extra #>> '{1}' = $2;
+                """
+
         if isinstance(user, int):
+            await self.bot.db.execute(query, str(ctx.guild.id), str(user))
+
             await config.unmute_member(discord.Object(id=user))
             return await ctx.send(f":white_check_mark: Unmuted user with ID of {user}")
+
+        await self.bot.db.execute(query, str(ctx.guild.id), str(user.id))
 
         if user.id not in config.muted:
             return await ctx.send(":x: This member is not muted")
