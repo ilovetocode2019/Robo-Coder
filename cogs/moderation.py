@@ -214,8 +214,10 @@ class SpamAction(enum.Enum):
     BAN = 2
 
 class Spammer:
-    def __init__(self, mute_time):
+    def __init__(self, member, mute_time, infractions):
+        self.members = member
         self.mute_time = mute_time
+        self.infractions = infractions
 
 class SpamDetector:
     def __init__(self):
@@ -255,7 +257,7 @@ class SpamDetector:
     def get_spammer(self, member):
         spammer = self.spammers.get(member.id)
         if not spammer:
-            spammer = Spammer(datetime.timedelta(minutes=5))
+            spammer = Spammer(member, datetime.timedelta(minutes=5), 1)
             self.spammers[member.id] = spammer
             return spammer
 
@@ -270,7 +272,7 @@ class SpamDetector:
         elif spammer.mute_time == datetime.timedelta(minutes=120):
             time = datetime.timedelta(minutes=360)
 
-        spammer = Spammer(time)
+        spammer = Spammer(member, time, spammer.infractions+1)
         self.spammers[member.id] = spammer
         return spammer
 
@@ -587,7 +589,7 @@ class Moderation(commands.Cog):
             "log_channel_id": None
         }
 
-    def get_spam_action(self, spammer):
+    def get_spam_action(self, config, spammer):
         return SpamAction.MUTE
 
     @commands.Cog.listener()
@@ -609,7 +611,7 @@ class Moderation(commands.Cog):
         detector = self.spam_detectors[message.guild.id]
         if detector.is_spamming(message):
             spammer = detector.get_spammer(message.author)
-            action = self.get_spam_action(spammer)
+            action = self.get_spam_action(config, spammer)
 
             if action == SpamAction.MUTE:
                 timers = self.bot.get_cog("Timers")
