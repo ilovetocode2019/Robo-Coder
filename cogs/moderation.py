@@ -209,6 +209,10 @@ class CooldownByContent(commands.CooldownMapping):
     def _bucket_key(self, message):
         return (message.channel.id, message.content)
 
+class SpamAction(enum.Enum):
+    MUTE = 1
+    BAN = 2
+
 class Spammer:
     def __init__(self, mute_time):
         self.mute_time = mute_time
@@ -248,11 +252,12 @@ class SpamDetector:
 
         return False
 
-    def get_mute_time(self, member):
+    def get_spammer(self, member):
         spammer = self.spammers.get(member.id)
         if not spammer:
-            self.spammers[member.id] = Spammer(datetime.timedelta(minutes=5))
-            return datetime.timedelta(minutes=5) 
+            spammer = Spammer(datetime.timedelta(minutes=5))
+            self.spammers[member.id] = spammer
+            return spammer
 
         if spammer.mute_time == datetime.timedelta(minutes=5):
             time = datetime.timedelta(minutes=10)
@@ -265,8 +270,9 @@ class SpamDetector:
         elif spammer.mute_time == datetime.timedelta(minutes=120):
             time = datetime.timedelta(minutes=360)
 
-        self.spammers[member.id] = Spammer(time)
-        return time
+        spammer = Spammer(time)
+        self.spammers[member.id] = spammer
+        return spammer
 
 class Moderation(commands.Cog):
     def __init__(self, bot):
@@ -274,36 +280,6 @@ class Moderation(commands.Cog):
         self.spam_detectors = collections.defaultdict(SpamDetector)
 
         self.emoji = ":police_car:"
-
-    @cache()
-    async def get_guild_config(self, guild, create_if_not_exists=True):
-        query = """SELECT *
-                   FROM guild_config
-                   WHERE guild_config.guild_id=$1;
-                """
-        record = await self.bot.db.fetchrow(query, guild.id)
-        if not record:
-            if create_if_not_exists:
-                record = await self.create_guild_config(guild)
-            else:
-                return
-
-        return GuildConfig.from_record(record, self.bot, self)
-
-    async def create_guild_config(self, guild):
-        query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id)
-                   VALUES ($1, $2, $3, $4, $5, $6);
-                """
-        await self.bot.db.execute(query, guild.id, None, [], False, [], None)
-
-        return {
-            "guild_id": guild.id,
-            "mute_role_id": None,
-            "muted": [],
-            "spam_prevention": False,
-            "ignore_spam_channels": [],
-            "log_channel_id": None
-        }
 
     @commands.command(name="purge", description="Purge messages from a channel")
     @commands.has_permissions(manage_messages=True)
@@ -581,6 +557,39 @@ class Moderation(commands.Cog):
         detector.spammers.pop(user.id)
         await ctx.send(f":white_check_mark: Reset automatic mute time for {user}")
 
+    @cache()
+    async def get_guild_config(self, guild, create_if_not_exists=True):
+        query = """SELECT *
+                FROM guild_config
+                WHERE guild_config.guild_id=$1;
+                """
+        record = await self.bot.db.fetchrow(query, guild.id)
+        if not record:
+            if create_if_not_exists:
+                record = await self.create_guild_config(guild)
+            else:
+                return
+
+        return GuildConfig.from_record(record, self.bot, self)
+
+    async def create_guild_config(self, guild):
+        query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id)
+                VALUES ($1, $2, $3, $4, $5, $6);
+                """
+        await self.bot.db.execute(query, guild.id, None, [], False, [], None)
+
+        return {
+            "guild_id": guild.id,
+            "mute_role_id": None,
+            "muted": [],
+            "spam_prevention": False,
+            "ignore_spam_channels": [],
+            "log_channel_id": None
+        }
+
+    def get_spam_action(self, spammer):
+        return SpamAction.MUTE
+
     @commands.Cog.listener()
     async def on_message(self, message):
         if not message.guild:
@@ -599,11 +608,16 @@ class Moderation(commands.Cog):
 
         detector = self.spam_detectors[message.guild.id]
         if detector.is_spamming(message):
-            timers = self.bot.get_cog("Timers")
-            if timers:
-                mute_time = detector.get_mute_time(message.author)
-                await timers.create_timer("tempmute", datetime.datetime.utcnow()+mute_time, [message.guild.id, message.author.id])
-                await message.author.add_roles(config.mute_role, reason=f"Automatic mute for spamming ({humanize.naturaldelta(mute_time)})")
+            spammer = detector.get_spammer(message.author)
+            action = self.get_spam_action(spammer)
+
+            if action == SpamAction.MUTE:
+                timers = self.bot.get_cog("Timers")
+                if timers:
+                    await timers.create_timer("tempmute", datetime.datetime.utcnow()+spammer.mute_time, [message.guild.id, message.author.id])
+                    await message.author.add_roles(config.mute_role, reason=f"Automatic mute for spamming ({humanize.naturaldelta(spammer.mute_time)})")
+            else:
+                await message.author.ban(reason=f"Automatic ban for spamming")
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
