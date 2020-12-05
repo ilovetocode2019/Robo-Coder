@@ -108,7 +108,11 @@ class Roles(commands.Cog):
 
         role = discord.utils.get(ctx.guild.roles, name=f"{color} color")
         if not role:
-            role = await ctx.guild.create_role(name=f"{color} color", color=color)
+            role = await ctx.guild.create_role(name=f"{color} color", color=color) 
+            for position, x in enumerate(reversed(ctx.guild.roles)):
+                if x.color.value:
+                    await role.edit(position=len(ctx.guild.roles)-position)
+                    break
 
         await ctx.author.add_roles(role)
         await ctx.send(f":white_check_mark: Your role color is now {color}")
