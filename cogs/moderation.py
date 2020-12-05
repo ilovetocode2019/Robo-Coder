@@ -454,7 +454,7 @@ class Moderation(commands.Cog):
         config = await self.get_guild_config(ctx.guild)
 
         if len(config.muted_members) == 0:
-            return await ctx.send(":x: No muted members")
+            return await ctx.send("No muted members")
 
         muted = [f"[{counter+1}] {str(member)} {f'({member.id})' if isinstance(member, discord.Member) else ''}" for counter, member in enumerate(config.muted_members)]
         muted = "\n".join(muted)
