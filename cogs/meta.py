@@ -32,19 +32,6 @@ def get_lines_of_code():
 
     return f"I have {total:,} lines of code, spread across {file_amount:,} files"
 
-def has_manage_guild():
-    async def predicate(ctx):
-        try:
-            await commands.has_guild_permissions(manage_guild=True).predicate(ctx)
-            permissions = True
-        except commands.errors.MissingPermissions:
-            permissions = False
-        return (
-            ctx.author.id == ctx.bot.owner_id
-            or permissions
-        )
-    return commands.check(predicate)
-
 class RoboCoderHelpCommand(commands.HelpCommand):
     async def send_bot_help(self, mapping):
         ctx = self.context
@@ -182,8 +169,7 @@ class Meta(commands.Cog):
         await ctx.send(f":wave: Hello, I am Robo Coder!\nTo get more info use {ctx.prefix}help")
 
     @prefix.command(name="add", description="add a prefix")
-    @commands.guild_only()
-    @has_manage_guild()
+    @commands.has_permissions(manage_guild=True)
     async def add(self, ctx, *, arg):
         self.bot.guild_prefixes[str(ctx.guild.id)].append(arg)
         with open("prefixes.json", "w") as f:
@@ -191,8 +177,7 @@ class Meta(commands.Cog):
         await ctx.send("Added prefix: " + arg)
     
     @prefix.command(name="remove", description="remove prefix")
-    @commands.guild_only()
-    @has_manage_guild()
+    @commands.has_permissions(manage_guild=True)
     async def remove(self, ctx, *, arg):
         if arg in self.bot.guild_prefixes[str(ctx.guild.id)]:
             self.bot.guild_prefixes[str(ctx.guild.id)].remove(arg)
