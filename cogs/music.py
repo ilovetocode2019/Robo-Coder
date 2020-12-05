@@ -310,10 +310,10 @@ class Song:
 
     def __init__(self, ctx, *, data, volume=0.5):
         self.data = data
-
         self.requester = ctx.author
-        self.filename = data["filename"]
 
+        self.id = data["id"]
+        self.filename = data["filename"]
         self.uploader = data.get("uploader")
         self.uploader_url = data.get("uploader_url")
         date = data.get("upload_date")
