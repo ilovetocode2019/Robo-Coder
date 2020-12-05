@@ -356,6 +356,13 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def mute_role_set(self, ctx, *, role: discord.Role):
+        if role.is_default():
+            return await ctx.send(":x: Cannot use the default role")
+        elif role > ctx.author.top_role:
+            return await ctx.send(":x: This role is higher than your highest role")
+        elif role > ctx.guild.me.top_role:
+            return await ctx.send(":x: This role is higher than my highest role")
+
         config = await self.get_guild_config(ctx.guild)
         await config.set_mute_role(role)
 
