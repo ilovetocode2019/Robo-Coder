@@ -98,6 +98,11 @@ class RoboCoder(commands.Bot):
                    extractor TEXT,
                    data jsonb DEFAULT ('{}'::jsonb)
                    );
+
+                   CREATE TABLE IF NOT EXISTS autoroles (
+                   guild_id BIGINT,
+                   role_id BIGINT PRIMARY KEY
+                   );
                 """
         await self.db.execute(query)
 
