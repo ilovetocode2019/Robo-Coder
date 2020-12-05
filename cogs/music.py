@@ -182,7 +182,7 @@ class Pages(menus.ListPageSource):
 
         looping = ""
         if player.looping_queue:
-            looping = "(🔁 Looping)"
+            looping = "(:repeat: Looping)"
 
         em = discord.Embed(title=f"Queue {looping}", description="", color=0x66FFCC)
         queue = ""
@@ -273,11 +273,11 @@ class Player:
     def create_embed(self):
         looping = ""
         if self.looping:
-            looping = "(🔂 Looping)"
+            looping = "(:repeat_one: Looping)"
 
-        playing = "▶️"
+        playing = ":arrow_forward:"
         if self.voice.is_playing():
-            playing = "⏸️"
+            playing = ":pause_button:"
 
         em = discord.Embed(title=f"{playing} {self.now.title} {looping}", color=0x66FFCC)
         em.add_field(name="Duration", value=f"{Song.timestamp_duration(int(time.time()-self.song_started))}/{self.now.timestamp_duration} `{self.get_bar(self.now.total_seconds)}`")
@@ -831,11 +831,11 @@ class Music(commands.Cog):
 
         looping = ""
         if player.looping:
-            looping = "(🔂 Looping)"
+            looping = "(:repeat_one: Looping)"
 
-        playing = "▶️"
+        playing = ":arrow_forward:"
         if player.voice.is_playing():
-            playing = "⏸️"
+            playing = ":pause_button:"
 
         em = discord.Embed(title=f"{playing} {song.title} {looping}", color=0x66FFCC)
         em.add_field(name="Duration", value=str(song.timestamp_duration))
@@ -867,11 +867,11 @@ class Music(commands.Cog):
 
             looping = ""
             if player.looping:
-                looping = "(🔂 Looping)"
+                looping = "(:repeat_one: Looping)"
 
-            playing = "▶️"
+            playing = ":arrow_forward:"
             if player.voice.is_playing():
-                playing = "⏸️"
+                playing = ":pause_button:"
 
             em = discord.Embed(title=f"{playing} {song.title} {looping}", color=0x66FFCC)
             em.add_field(name="Duration", value=str(song.timestamp_duration))
