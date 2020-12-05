@@ -6,96 +6,9 @@ import humanize
 import typing
 import collections
 import enum
-import dateparser
-import asyncio
-import functools
-import inspect
 
-class LRUDict(collections.OrderedDict):
-    def __init__(self, max_legnth = 10, *args, **kwargs):
-        if max_legnth <= 0:
-            raise ValueError()
-        self.max_legnth = max_legnth
-
-        super().__init__(*args, **kwargs)
-
-    def __setitem__(self, key, value):
-        super().__setitem__(key, value)
-
-        if len(self) > 10:
-            super().__delitem__(list(self)[0])
-
-    def __getitem__(self, key):
-        value = super().__getitem__(key)
-        self.move_to_end(key)
-        return value
-
-def cache(max_legnth = 100):
-    def decorator(func):
-        cache = LRUDict(max_legnth=max_legnth)
-
-        def __len__():
-            return len(cache)
-
-        def _get_key(*args, **kwargs):
-            return f"{':'.join([repr(arg) for arg in args])}{':'.join([f'{repr(kwarg)}={repr(value)}' for kwarg, value in kwargs.items()])}"
-
-        def invalidate(*args, **kwargs):
-            if not args:
-                cache.clear()
-                return
-
-            try:
-                key = _get_key(*args, **kwargs)
-                del cache[key]
-                return True
-            except KeyError:
-                return False
-
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            key = _get_key(*args, **kwargs)
-
-            try:
-                value = cache[key]
-                if asyncio.iscoroutinefunction(func):
-                    async def coro():
-                        return value
-                    return coro()
-                return value
-
-            except KeyError:
-                value = func(*args, **kwargs)
-                if inspect.isawaitable(value):
-                    async def coro():
-                        result = await value
-                        cache[key] = result
-                        return result
-                    return coro()
-
-                cache[key] = value
-                return value
-
-
-        wrapped.invalidate = invalidate
-        wrapped.cache = cache
-        wrapped._get_key = _get_key
-        wrapped.__len__ = __len__
-        return wrapped
-
-    return decorator
-
-class TimeConverter(commands.Converter):
-    async def convert(self, ctx, arg):
-        try:
-            if not arg.startswith("in") and not arg.startswith("at"):
-                arg = f"in {arg}"
-            time = dateparser.parse(arg, settings={"TIMEZONE": "UTC"})
-        except:
-            raise commands.BadArgument("Failed to parse time")
-        if not time:
-            raise commands.BadArgument("Failed to parse time")
-        return time
+from .utils import cache
+from .utils import human_time
 
 class BannedMember(commands.Converter):
     async def convert(self, ctx, arg):
@@ -377,7 +290,7 @@ class Moderation(commands.Cog):
     @commands.command(name="tempban", description="Temporarily ban a member from the server")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
-    async def tempban(self, ctx, user: typing.Union[discord.Member, int], time: TimeConverter, *, reason=None):
+    async def tempban(self, ctx, user: typing.Union[discord.Member, int], time: human_time.TimeConverter, *, reason=None):
         if reason:
             reason = f"Temporarily banned by {ctx.author} with reason {reason}"
         else:
@@ -513,7 +426,7 @@ class Moderation(commands.Cog):
     @commands.command(name="tempmute", description="Temporarily mute a member")
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
-    async def tempmute(self, ctx, user: discord.Member, time: TimeConverter, *, reason=None):
+    async def tempmute(self, ctx, user: discord.Member, time: human_time.TimeConverter, *, reason=None):
         config = await self.get_guild_config(ctx.guild)
 
         if not config.mute_role:
@@ -534,7 +447,7 @@ class Moderation(commands.Cog):
 
     @commands.command(name="selfmute", description="Mute yourself")
     @commands.bot_has_permissions(manage_roles=True)
-    async def selfmute(self, ctx, time: TimeConverter, *, reason=None):
+    async def selfmute(self, ctx, time: human_time.TimeConverter, *, reason=None):
         config = await self.get_guild_config(ctx.guild)
 
         delta = time-datetime.datetime.utcnow()
@@ -625,7 +538,7 @@ class Moderation(commands.Cog):
         detector.spammers.pop(user.id)
         await ctx.send(f":white_check_mark: Reset automatic mute time for {user}")
 
-    @cache()
+    @cache.cache()
     async def get_guild_config(self, guild):
         query = """SELECT *
                    FROM guild_config

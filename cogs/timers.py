@@ -5,19 +5,8 @@ from discord.ext import tasks
 import datetime
 import humanize
 import asyncio
-import dateparser
 
-class TimeConverter(commands.Converter):
-    async def convert(self, ctx, arg):
-        try:
-            if not arg.startswith("in") and not arg.startswith("at"):
-                arg = f"in {arg}"
-            time = dateparser.parse(arg, settings={"TIMEZONE": "UTC"})
-        except:
-            raise commands.BadArgument("Failed to parse time")
-        if not time:
-            raise commands.BadArgument("Failed to parse time")
-        return time
+from .utils import human_time
 
 class Timers(commands.Cog):
     def __init__(self, bot):
@@ -41,7 +30,7 @@ class Timers(commands.Cog):
         await self.bot.db.execute(query, timer)
 
     @commands.group(name="remind", description="Set a reminder", aliases=["timer"], invoke_without_command=True)
-    async def remind(self, ctx, time: TimeConverter, *, content):
+    async def remind(self, ctx, time: human_time.TimeConverter, *, content):
         await self.create_timer("timer", time, [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content])
         await ctx.send(f":white_check_mark: Set timer for {humanize.naturaldelta(time-datetime.datetime.utcnow())}")
 
