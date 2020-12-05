@@ -322,19 +322,23 @@ class Moderation(commands.Cog):
     @commands.command(name="ban", description="Ban a member from the server")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
-    async def ban(self, ctx, user: discord.Member, *, reason=None):
+    async def ban(self, ctx, user: typing.Union[discord.Member, int], *, reason=None):
         if reason:
             reason = f"Banned by {ctx.author} with reason {reason}"
         else:
             reason = f"Banned by {ctx.author}"
 
-        await user.ban(reason=reason)
-        await ctx.send(f":white_check_mark: Banned {user}")
+        if isinstance(user, int):
+            await ctx.guild.ban(discord.Object(id=user), reason=reason)
+            await ctx.send(f":white_check_mark: Banned {user}")
+        else:
+            await user.ban(reason=reason)
+            await ctx.send(f":white_check_mark: Banned user with ID of {user}")
 
     @commands.command(name="tempban", description="Temporarily ban a member from the server")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
-    async def tempban(self, ctx, user: discord.Member, time: TimeConverter, *, reason=None):
+    async def tempban(self, ctx, user: typing.Union[discord.Member, int], time: TimeConverter, *, reason=None):
         if reason:
             reason = f"Temporarily banned by {ctx.author} with reason {reason}"
         else:
@@ -345,7 +349,13 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: This feature is temporarily unavailable")
         await timers.create_timer("tempban", time, [ctx.guild.id, user.id])
 
-        await user.ban(reason=reason)
+        if isinstance(user, int):
+            await ctx.guild.ban(discord.Object(id=user), reason=reason)
+            await ctx.send(f":white_check_mark: Banned {user}")
+        else:
+            await user.ban(reason=reason)
+            await ctx.send(f":white_check_mark: Banned user with ID of {user}")
+
         await ctx.send(f":white_check_mark: Temporarily banned {user} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}")
 
     @commands.command(name="unban", description="Temporarily ban someone from the server")
