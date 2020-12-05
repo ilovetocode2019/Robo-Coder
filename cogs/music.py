@@ -816,6 +816,36 @@ class Music(commands.Cog):
 
         await ctx.send(embed=player.create_embed())
 
+    @commands.command(name="next", description="View the next song in the queue")
+    async def next(self, ctx):
+        player = self.bot.players.get(ctx.guild.id)
+
+        if not player:
+            return
+        if not ctx.author in player.voice.channel.members:
+            return
+        if len(player.queue._queue) == 0:
+            return await ctx.send("Queue is empty")
+
+        song = player.queue._queue[0]
+
+        looping = ""
+        if player.looping:
+            looping = "(🔂 Looping)"
+
+        playing = "▶️"
+        if player.voice.is_playing():
+            playing = "⏸️"
+
+        em = discord.Embed(title=f"{playing} {song.title} {looping}", color=0x66FFCC)
+        em.add_field(name="Duration", value=str(song.timestamp_duration))
+        em.add_field(name="Url", value=f"[Click]({song.url})")
+        em.add_field(name="Requester", value=f"{song.requester.mention}")
+        em.set_thumbnail(url=song.thumbnail)
+
+        await ctx.send(embed=em)
+
+
     @commands.group(name="queue", description="View the song queue", invoke_without_command=True)
     async def queue(self, ctx, song: int = None):
         player = self.bot.players.get(ctx.guild.id)
