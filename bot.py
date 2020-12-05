@@ -72,8 +72,7 @@ class RoboCoder(commands.Bot):
         self.db = await asyncpg.create_pool(config.database_uri, init=init)
 
         query = """CREATE TABLE IF NOT EXISTS guild_config (
-                   id SERIAL PRIMARY KEY,
-                   guild_id BIGINT,
+                   guild_id BIGINT PRIMARY KEY,
                    mute_role_id BIGINT,
                    muted BIGINT ARRAY,
                    spam_prevention BOOL,

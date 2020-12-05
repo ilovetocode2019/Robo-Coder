@@ -38,7 +38,7 @@ def cache(max_legnth = 100):
             return len(cache)
 
         def _get_key(*args, **kwargs):
-            return f"{':'.join([repr(arg) for arg in args])}{':'.join([f'{repr(kwarg)}:{repr(value)}' for kwarg, value in kwargs.items()])}"
+            return f"{':'.join([repr(arg) for arg in args])}{':'.join([f'{repr(kwarg)}={repr(value)}' for kwarg, value in kwargs.items()])}"
 
         def invalidate(*args, **kwargs):
             if not args:
@@ -142,68 +142,83 @@ class GuildConfig:
     async def set_mute_role(self, role):
         self.muted = []
         self.mute_role_id = role.id
-        query = """UPDATE guild_config
-                   SET mute_role_id=$1, muted=$2
-                   WHERE guild_config.guild_id=$3;
+
+        query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id)
+                   VALUES ($1, $2, $3, $4, $5, $6)
+                   ON CONFLICT (guild_id) DO UPDATE
+                   SET mute_role_id=$2, muted=$3;
                 """
-        await self.bot.db.execute(query, self.mute_role_id, self.muted, self.guild_id)
+        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
         self.invalidate()
 
     async def mute_member(self, member):
         self.muted.append(member.id)
-        query = """UPDATE guild_config
-                   SET muted=$1
-                   WHERE guild_config.guild_id=$2;
+
+        query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id)
+                   VALUES ($1, $2, $3, $4, $5, $6)
+                   ON CONFLICT (guild_id) DO UPDATE
+                   SET muted=$3;
                 """
-        await self.bot.db.execute(query, self.muted, self.guild_id)
+        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
         self.invalidate()
 
     async def unmute_member(self, member):
         self.muted.remove(member.id)
-        query = """UPDATE guild_config
-                   SET muted=$1
-                   WHERE guild_config.guild_id=$2;
+
+        query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id)
+                   VALUES ($1, $2, $3, $4, $5, $6)
+                   ON CONFLICT (guild_id) DO UPDATE
+                   SET muted=$3;
                 """
-        await self.bot.db.execute(query, self.muted, self.guild_id)
+        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
         self.invalidate()
 
     async def enable_spam_prevention(self):
-        query = """UPDATE guild_config
-                   SET spam_prevention=$1
-                   WHERE guild_config.guild_id=$2;
+        self.spam_prevention = True
+
+        query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id)
+                   VALUES ($1, $2, $3, $4, $5, $6)
+                   ON CONFLICT (guild_id) DO UPDATE
+                   SET spam_prevention=$4;
                 """
-        await self.bot.db.execute(query, True, self.guild_id)
+        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
         self.invalidate()
 
     async def disable_spam_prevention(self):
-        query = """UPDATE guild_config
-                   SET spam_prevention=$1
-                   WHERE guild_config.guild_id=$2;
+        self.spam_prevention = False
+
+        query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id)
+                   VALUES ($1, $2, $3, $4, $5, $6)
+                   ON CONFLICT (guild_id) DO UPDATE
+                   SET spam_prevention=$4;
                 """
-        await self.bot.db.execute(query, False, self.guild_id)
+        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
         self.invalidate()
 
     async def add_ignore_spam_channel(self, channel):
         self.ignore_spam_channels.append(channel.id)
-        query = """UPDATE guild_config
-                   SET ignore_spam_channels=$1
-                   WHERE guild_config.guild_id=$2;
+
+        query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id)
+                   VALUES ($1, $2, $3, $4, $5, $6)
+                   ON CONFLICT (guild_id) DO UPDATE
+                   SET ignore_spam_channels=$5;
                 """
-        await self.bot.db.execute(query, self.ignore_spam_channels, self.guild_id)
+        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
         self.invalidate()
 
     async def remove_ignore_spam_channel(self, channel):
         self.ignore_spam_channels.remove(channel.id)
-        query = """UPDATE guild_config
-                   SET ignore_spam_channels=$1
-                   WHERE guild_config.guild_id=$2;
+
+        query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id)
+                   VALUES ($1, $2, $3, $4, $5, $6)
+                   ON CONFLICT (guild_id) DO UPDATE
+                   SET ignore_spam_channels=$5;
                 """
-        await self.bot.db.execute(query, self.ignore_spam_channels, self.guild_id)
+        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
         self.invalidate()
 
     def invalidate(self):
         self.cog.get_guild_config.invalidate(self.cog, self.guild)
-        self.cog.get_guild_config.invalidate(self.cog, self.guild, create_if_not_exists=False)
 
 class CooldownByContent(commands.CooldownMapping):
     def _bucket_key(self, message):
@@ -560,34 +575,24 @@ class Moderation(commands.Cog):
         await ctx.send(f":white_check_mark: Reset automatic mute time for {user}")
 
     @cache()
-    async def get_guild_config(self, guild, create_if_not_exists=True):
+    async def get_guild_config(self, guild):
         query = """SELECT *
                    FROM guild_config
                    WHERE guild_config.guild_id=$1;
                 """
         record = await self.bot.db.fetchrow(query, guild.id)
+
         if not record:
-            if create_if_not_exists:
-                record = await self.create_guild_config(guild)
-            else:
-                return
+            record =  {
+                "guild_id": guild.id,
+                "mute_role_id": None,
+                "muted": [],
+                "spam_prevention": False,
+                "ignore_spam_channels": [],
+                "log_channel_id": None
+            }
 
-        return GuildConfig.from_record(record, self.bot, self)
-
-    async def create_guild_config(self, guild):
-        query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id)
-                   VALUES ($1, $2, $3, $4, $5, $6);
-                """
-        await self.bot.db.execute(query, guild.id, None, [], False, [], None)
-
-        return {
-            "guild_id": guild.id,
-            "mute_role_id": None,
-            "muted": [],
-            "spam_prevention": False,
-            "ignore_spam_channels": [],
-            "log_channel_id": None
-        }
+        return GuildConfig.from_record(dict(record), self.bot, self)
 
     def get_spam_action(self, config, spammer):
         return SpamAction.MUTE
@@ -601,9 +606,9 @@ class Moderation(commands.Cog):
         if message.author.bot:
             return
 
-        config = await self.get_guild_config(message.guild, create_if_not_exists=False)
+        config = await self.get_guild_config(message.guild)
 
-        if not config or not config.spam_prevention:
+        if not config.spam_prevention:
             return
         if message.channel.id in config.ignore_spam_channels:
             return
@@ -623,20 +628,20 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        config = await self.get_guild_config(after.guild, create_if_not_exists=False)
-        if not config:
+        config = await self.get_guild_config(after.guild)
+        if not config.mute_role:
             return
 
         if config.mute_role_id in [role.id for role in after.roles] and after.id not in config.muted:
-            query = """DELETE FROM timers
-                        WHERE event = 'tempmute'
-                        AND extra #>> '{0}' = $1
-                        AND extra #>> '{1}' = $2;
-                    """
             await config.mute_member(after)
-            await self.bot.db.execute(query, str(after.guild.id), str(after.id))
 
         elif config.mute_role_id not in [role.id for role in after.roles] and after.id in config.muted:
+            query = """DELETE FROM timers
+                       WHERE event = 'tempmute'
+                       AND extra #>> '{0}' = $1
+                       AND extra #>> '{1}' = $2;
+                    """
+            await self.bot.db.execute(query, str(after.guild.id), str(after.id))
             await config.unmute_member(after)
 
     @commands.Cog.listener()
@@ -650,27 +655,21 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        config = await self.get_guild_config(member.guild, create_if_not_exists=False)
-        if not config:
-            return
+        config = await self.get_guild_config(member.guild)
 
         if member.id in config.muted and config.mute_role:
             await member.add_roles(config.mute_role, reason=f"User was muted when they left")
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role):
-        config = await self.get_guild_config(role.guild, create_if_not_exists=False)
-        if not config:
-            return
+        config = await self.get_guild_config(role.guild)
 
-        if role.id == config.mute_role.id:
+        if role.id == config.mute_role_id:
             await config.set_mute_role(None)
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
-        config = await self.get_guild_config(channel.guild, create_if_not_exists=False)
-        if not config:
-            return
+        config = await self.get_guild_config(channel.guild)
 
         if channel.id in config.ignore_spam_channels:
             await config.remove_ignore_spam_channel(channel)
