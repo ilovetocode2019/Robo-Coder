@@ -112,6 +112,16 @@ class BannedMember(commands.Converter):
             raise commands.BadArgument("This is not a banned user")
         return ban.user
 
+class UserID(commands.Converter):
+    async def convert(self, ctx, arg):
+        try:
+            arg = int(arg)
+            user = ctx.bot.get_user(arg) or await ctx.bot.fetch_user(arg)
+            if not user:
+                raise BadArgument()
+            return user
+        except ValueError:
+            raise BadArgument()
 
 class GuildConfig:
     @classmethod
@@ -328,18 +338,18 @@ class Moderation(commands.Cog):
     @commands.command(name="ban", description="Ban a member from the server")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
-    async def ban(self, ctx, user: typing.Union[discord.Member, int], *, reason=None):
+    async def ban(self, ctx, user: typing.Union[discord.Member, UserID], *, reason=None):
         if reason:
             reason = f"Banned by {ctx.author} with reason {reason}"
         else:
             reason = f"Banned by {ctx.author}"
 
-        if isinstance(user, int):
-            await ctx.guild.ban(discord.Object(id=user), reason=reason)
-            await ctx.send(f":white_check_mark: Banned {user}")
-        else:
+        if isinstance(user, discord.User):
+            await ctx.guild.ban(user, reason=reason)
+        elif isinstance(user, discord.Member):
             await user.ban(reason=reason)
-            await ctx.send(f":white_check_mark: Banned user with ID of {user}")
+
+        await ctx.send(f":white_check_mark: Banned {user}")
 
     @commands.command(name="tempban", description="Temporarily ban a member from the server")
     @commands.bot_has_permissions(ban_members=True)
