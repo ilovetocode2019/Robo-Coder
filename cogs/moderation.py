@@ -9,6 +9,7 @@ import enum
 
 from .utils import cache
 from .utils import human_time
+from .utils import menus
 
 class BannedMember(commands.Converter):
     async def convert(self, ctx, arg):
@@ -492,6 +493,10 @@ class Moderation(commands.Cog):
         if not timers:
             return await ctx.send(":x: This feature is temporarily unavailable")
         await timers.create_timer("tempmute", time, [ctx.guild.id, ctx.author.id])
+
+        result = await menus.Confirm("Are you sure you want to mute yourself?").prompt(ctx)
+        if not result:
+            return await ctx.send("Aborting")
 
         await ctx.author.add_roles(config.mute_role, reason=reason)
         await ctx.send(f":white_check_mark: You have been muted for {humanize.naturaldelta(time-datetime.datetime.utcnow())}")
