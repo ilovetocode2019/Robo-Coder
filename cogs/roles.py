@@ -181,7 +181,7 @@ class Roles(commands.Cog):
 
         self.get_autoroles.invalidate(role.guild.id)
 
-        await ctx.send(":white_check_mark: Added role to autorole list")
+        await ctx.send(":white_check_mark: Removed role from autorole list")
 
     @cache()
     async def get_autoroles(self, guild):
