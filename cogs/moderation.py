@@ -99,13 +99,19 @@ class TimeConverter(commands.Converter):
 
 class BannedMember(commands.Converter):
     async def convert(self, ctx, arg):
-        try:
+        if arg.isdigit():
             arg = int(arg)
-            return (await ctx.guild.fetch_ban(discord.Object(id=arg))).user
-        except ValueError:
-            raise commands.BadArgument(f"You must provide an ID")
-        except discord.NotFound:
-            raise commands.BadArgument(f"That is not a banned member")
+            try:
+                return (await ctx.guild.fetch_ban(discord.Object(id=arg))).user
+            except discord.NotFound:
+                raise commands.BadArgument("That is not a banned user")
+
+        bans = await ctx.guild.bans()
+        ban = discord.utils.find(lambda ban: str(ban.user) == arg, bans)
+        if not ban:
+            raise commands.BadArgument("This is not a banned user")
+        return ban.user
+
 
 class GuildConfig:
     @classmethod
