@@ -238,8 +238,10 @@ class SpamDetector:
     def __init__(self):
         self.spammers = {}
         self.by_content = CooldownByContent.from_cooldown(10, 30.0, commands.BucketType.member)
-        self.by_attachment = commands.CooldownMapping.from_cooldown(10, 30.0, commands.BucketType.member)
-        self.by_mention = commands.CooldownMapping.from_cooldown(10, 30.0, commands.BucketType.member)
+        self.by_attachments = commands.CooldownMapping.from_cooldown(10, 30.0, commands.BucketType.member)
+        self.by_mentions = commands.CooldownMapping.from_cooldown(10, 30.0, commands.BucketType.member)
+        self.by_links = commands.CooldownMapping.from_cooldown(10, 30.0, commands.BucketType.member)
+        self.by_emojis = commands.CooldownMapping.from_cooldown(10, 30.0, commands.BucketType.member)
         self.by_member = commands.CooldownMapping.from_cooldown(15, 20.0, commands.BucketType.member)
 
     def is_spamming(self, message):
@@ -256,15 +258,15 @@ class SpamDetector:
             return True
 
         if message.attachments:
-            by_attachment = self.by_attachment.get_bucket(message)
-            if by_attachment.update_rate_limit(time):
-                by_attachment._window = 0
+            by_attachments = self.by_attachments.get_bucket(message)
+            if by_attachments.update_rate_limit(time):
+                by_attachments._window = 0
                 return True
 
         if [mention for mention in message.mentions if not mention.bot and mention.id != message.author.id]:
-            by_mention = self.by_mention.get_bucket(message)
-            if by_mention.update_rate_limit(time):
-                by_mention._window = 0
+            by_mentions = self.by_mentions.get_bucket(message)
+            if by_mentions.update_rate_limit(time):
+                by_mentions._window = 0
                 return True
 
         return False
