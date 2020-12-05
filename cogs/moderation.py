@@ -290,7 +290,7 @@ class Moderation(commands.Cog):
     @commands.command(name="tempban", description="Temporarily ban a member from the server")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
-    async def tempban(self, ctx, user: typing.Union[discord.Member, int], time: human_time.TimeConverter, *, reason=None):
+    async def tempban(self, ctx, user: typing.Union[discord.Member, UserID], time: human_time.TimeConverter, *, reason=None):
         if reason:
             reason = f"Temporarily banned by {ctx.author} with reason {reason}"
         else:
@@ -301,12 +301,10 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: This feature is temporarily unavailable")
         await timers.create_timer("tempban", time, [ctx.guild.id, user.id])
 
-        if isinstance(user, int):
-            await ctx.guild.ban(discord.Object(id=user), reason=reason)
-            await ctx.send(f":white_check_mark: Banned {user}")
-        else:
+        if isinstance(user, discord.User):
+            await ctx.guild.ban(user, reason=reason)
+        elif isinstance(user, discord.Member):
             await user.ban(reason=reason)
-            await ctx.send(f":white_check_mark: Banned user with ID of {user}")
 
         await ctx.send(f":white_check_mark: Temporarily banned {user} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}")
 
