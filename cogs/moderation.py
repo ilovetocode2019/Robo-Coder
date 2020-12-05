@@ -403,6 +403,27 @@ class Moderation(commands.Cog):
         await config.set_mute_role(role)
         await ctx.send(f":white_check_mark: Created a mute role and set the overwrites")
 
+    @mute_role.command(name="update", description="Update the mute role", aliases=["sync"])
+    @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def mute_role_update(self, ctx):
+        config = await self.get_guild_config(ctx.guild)
+
+        if not config.mute_role:
+            return await ctx.send(":x: No mute role to update")
+
+        reason = f"Update mute role by {ctx.author}"
+        channels = ctx.guild.text_channels + ctx.guild.categories
+
+        for channel in channels:
+            try:
+                overwrite = discord.PermissionOverwrite(send_messages=False, add_reactions=False)
+                await channel.set_permissions(config.mute_role, overwrite=overwrite, reason=reason)
+            except discord.HTTPException:
+                pass
+
+        await ctx.send(":white_check_mark: Successfully updated mute role")
+
     @commands.command(name="unmute", description="Unmute a member")
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
