@@ -962,6 +962,9 @@ class Music(commands.Cog):
 
     @commands.Cog.listener("on_voice_state_update")
     async def leave_on_inactivity(self, member, before, after):
+        if member.bot:
+            return
+
         player = self.bot.players.get(member.guild.id)
 
         if not player:
@@ -988,13 +991,14 @@ class Music(commands.Cog):
 
             player.loop.cancel()
             await player.voice.disconnect()
+
             try:
-                self.bot.players.pop(player.guild.id)
+                self.bot.players.pop(member.guild.id)
             except:
                 pass
+
         else:
             player.voice.resume()
-
 
 def setup(bot):
     bot.add_cog(Music(bot))
