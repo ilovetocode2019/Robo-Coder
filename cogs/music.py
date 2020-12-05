@@ -817,7 +817,7 @@ class Music(commands.Cog):
         await ctx.send(embed=player.create_embed())
 
     @commands.group(name="queue", description="View the song queue", invoke_without_command=True)
-    async def queue(self, ctx):
+    async def queue(self, ctx, song: int = None):
         player = self.bot.players.get(ctx.guild.id)
 
         if not player:
@@ -827,8 +827,29 @@ class Music(commands.Cog):
         if len(player.queue._queue) == 0:
             return await ctx.send("Queue is empty")
 
-        pages = menus.MenuPages(source=Pages(player), clear_reactions_after=True)
-        await pages.start(ctx)
+        if not song:
+            pages = menus.MenuPages(source=Pages(player), clear_reactions_after=True)
+            await pages.start(ctx)
+        else:
+            if song == 0 or song > len(player.queue._queue):
+                return await ctx.send("That is not a song in the playlist")
+            song = player.queue._queue[song-1]
+
+            looping = ""
+            if player.looping:
+                looping = "(🔂 Looping)"
+
+            playing = "▶️"
+            if player.voice.is_playing():
+                playing = "⏸️"
+
+            em = discord.Embed(title=f"{playing} {song.title} {looping}", color=0x66FFCC)
+            em.add_field(name="Duration", value=str(song.timestamp_duration))
+            em.add_field(name="Url", value=f"[Click]({song.url})")
+            em.add_field(name="Requester", value=f"{song.requester.mention}")
+            em.set_thumbnail(url=song.thumbnail)
+
+            await ctx.send(embed=em)
 
     @queue.command(name="save", description="Save the queue")
     async def queue_save(self, ctx):
@@ -849,17 +870,17 @@ class Music(commands.Cog):
             await ctx.send("No queue to save")
 
     @queue.command(name="remove", description="Remove a song from the queue")
-    async def queue_remove(self, ctx, index: int):
+    async def queue_remove(self, ctx, song: int):
         player = self.bot.players.get(ctx.guild.id)
 
         if not player:
             return
         if not ctx.author in player.voice.channel.members:
             return
-        if index == 0 or index > len(player.queue._queue):
-            return await ctx.send("Index not found")
+        if song == 0 or song > len(player.queue._queue):
+            return await ctx.send("That is not a song in the playlist")
 
-        to_remove = player.queue._queue[index-1]
+        to_remove = player.queue._queue[song-1]
         player.queue._queue.remove(to_remove)
         await ctx.send(f":wastebasket: Removed `{to_remove.title}` from queue")
 
