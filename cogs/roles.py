@@ -110,8 +110,8 @@ class Roles(commands.Cog):
         if not role:
             role = await ctx.guild.create_role(name=f"{color} color", color=color) 
             for position, x in enumerate(reversed(ctx.guild.roles)):
-                if x.color.value:
-                    await role.edit(position=len(ctx.guild.roles)-position)
+                if x.color.value and len(ctx.guild.roles)-position-1 < ctx.guild.me.top_role.position:
+                    await role.edit(position=len(ctx.guild.roles)-position-1)
                     break
 
         await ctx.author.add_roles(role)
