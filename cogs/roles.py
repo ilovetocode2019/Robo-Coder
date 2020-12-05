@@ -88,6 +88,7 @@ class Roles(commands.Cog):
         self.emoji  = ":label:"
 
     @commands.group(name="rolecolor", description="Assign yourself a role color", invoke_without_command=True)
+    @commands.bot_has_permissions(manage_roles=True)
     async def rolecolor(self, ctx, *, color: discord.Color = None):
         moderation = self.bot.get_cog("Moderation")
         if not moderation:
