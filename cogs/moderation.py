@@ -308,6 +308,23 @@ class Moderation(commands.Cog):
 
         await ctx.send(f":white_check_mark: Temporarily banned {user} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}")
 
+    @commands.command(name="softban", description="Ban a user and unban them right away")
+    @commands.bot_has_permissions(ban_members=True)
+    @commands.has_permissions(ban_members=True)
+    async def softban(self, ctx, user: typing.Union[discord.Member, UserID], *, reason=None):
+        if reason:
+            reason = f"Softban by {ctx.author} with reason {reason}"
+        else:
+            reason = f"Softban by {ctx.author}"
+
+        if isinstance(user, discord.User):
+            await ctx.guild.ban(user, reason=reason)
+        elif isinstance(user, discord.Member):
+            await user.ban(reason=reason)
+        await ctx.guild.unban(user)
+
+        await ctx.send(f":white_check_mark: Softbanned {user}")
+
     @commands.command(name="unban", description="Temporarily ban someone from the server")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
