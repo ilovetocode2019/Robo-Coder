@@ -39,41 +39,6 @@ class Tools(commands.Cog):
         self.bot = bot
         self.emoji = ":toolbox:"
 
-    @commands.command(name="source", descriptin="Get source code for a specified command")
-    async def sourcecode(self, ctx, *, command=None):
-        source_url = "https://github.com/ilovetocode2019/Robo-Coder"
-        branch = "master"
-
-        if command is None:
-            return await ctx.send(source_url)
-        if command == 'help':
-            src = type(self.bot.help_command)
-            module = src.__module__
-            filename = inspect.getsourcefile(src)
-        else:
-            obj = self.bot.get_command(command.replace('.', ' '))
-            if obj is None:
-                return await ctx.send('Could not find command.')
-
-            # since we found the command we're looking for, presumably anyway, let's
-            # try to access the code itself
-            src = obj.callback.__code__
-            module = obj.callback.__module__
-            filename = src.co_filename
-
-        lines, firstlineno = inspect.getsourcelines(src)
-        if not module.startswith('discord'):
-            # not a built-in command
-            location = os.path.relpath(filename).replace('\\', '/')
-        else:
-            location = module.replace('.', '/') + '.py'
-            source_url = 'https://github.com/Rapptz/discord.py'
-            branch = 'master'
-
-        final_url = f'<{source_url}/blob/{branch}/{location}#L{firstlineno}-L{firstlineno + len(lines) - 1}>'
-        await ctx.send(final_url)
-
-
     @commands.command(name="serverinfo", description="Get info on the server", aliases=["guildinfo"])
     @commands.guild_only()
     async def serverinfo(self, ctx):
