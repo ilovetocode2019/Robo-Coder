@@ -1,16 +1,16 @@
 import discord
 from discord.ext import commands
 
-import datetime
-import humanize
-import typing
-import collections
-import enum
 import argparse
+import collections
+import datetime
+import enum
+import shlex
+import typing
+import re
+import humanize
 
-from .utils import cache
-from .utils import human_time
-from .utils import menus
+from .utils import cache, human_time, menus
 
 class BannedMember(commands.Converter):
     async def convert(self, ctx, arg):
@@ -173,6 +173,13 @@ class GuildConfig:
 
     def invalidate(self):
         self.cog.get_guild_config.invalidate(self.cog, self.guild)
+
+class ArgumentParser(argparse.ArgumentParser):
+    def __init__(self):
+        super().__init__(add_help=False)
+
+    def error(self, message):
+        raise RuntimeError(message)
 
 class CooldownByContent(commands.CooldownMapping):
     def _bucket_key(self, message):
@@ -626,7 +633,85 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def purge(self, ctx, limit: typing.Optional[int] = 100, *, flags = None):
-        deleted = await ctx.channel.purge(limit=limit+1)
+        if flags:
+            parser = ArgumentParser()
+
+            parser.add_argument("--or", action="store_true", dest="_or")
+            parser.add_argument("--not", action="store_true", dest="_not")
+
+            parser.add_argument("--user", nargs="+")
+            parser.add_argument("--contains", nargs="+")
+            parser.add_argument("--starts", nargs="+")
+            parser.add_argument("--ends", nargs="+")
+
+            parser.add_argument("--emoji", action="store_true")
+            parser.add_argument("--bot", action="store_true")
+            parser.add_argument("--embeds", action="store_true")
+            parser.add_argument("--files", action="store_true")
+            parser.add_argument("--reactions", action="store_true")
+            parser.add_argument("--after", type=int)
+            parser.add_argument("--before", type=int)
+
+            try:
+                args = parser.parse_args(shlex.split(flags))
+            except Exception as e:
+                return await ctx.send(str(e))
+
+            checks = []
+            if args.user:
+                users = []
+                converter = commands.MemberConverter()
+                for arg in args.user:
+                    try:
+                        user = await converter.convert(ctx, arg)
+                        users.append(user)
+                    except commands.BadArgument as exc:
+                        return await ctx.send(f":x: {exc}")
+                checks.append(lambda message: message.author in users)
+
+            if args.contains:
+                checks.append(lambda message: any(sub in message.content for sub in args.contains))
+            if args.starts:
+                checks.append(lambda message: any(message.startswith(start) for start in args.starts))
+            if args.ends:
+                checks.append(lambda message: any(message.endswith(end) for end in args.ends))
+
+            if args.emoji:
+                regex = re.compile("<:(\w+):(\d+)>")
+                checks.append(lambda message: regex.search(message.content))
+            if args.bot:
+                checks.append(lambda message: message.author.bot)
+            if args.embeds:
+                checks.append(lambda message: len(message.embeds) != 0)
+            if args.files:
+                chekcs.append(lambda message: len(message.attachments) != 0)
+            if args.reactions:
+                checks.append(lambda message: len(message.reactions) != 0)
+
+            if args.before:
+                before = discord.Object(id=args.before)
+            else:
+                before = ctx.message
+
+            if args.after:
+                after = discord.Object(id=args.after)
+            else:
+                after = None
+
+            def check(message):
+                results = [check(message) for check in checks]
+                result = any(results) if args._or else all(results)
+                if args._not:
+                    return not result
+                else:
+                    return result
+
+        if flags:
+            deleted = await ctx.channel.purge(limit=limit, before=before, after=after, check=check)
+        else:
+            deleted = await ctx.channel.purge(limit=limit, before=ctx.message)
+
+        await ctx.message.delete()
         await ctx.send(f":white_check_mark: Deleted {len(deleted)} message(s)", delete_after=5)
 
     @commands.command(name="cleanup", description="Clean up commands from a channel")
