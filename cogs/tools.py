@@ -8,7 +8,9 @@ import functools
 import io
 import re
 import zlib
+import json
 import unicodedata
+import collections
 from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
@@ -36,7 +38,7 @@ class Tools(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.emoji = ":toolbox:"
-    
+
     @commands.command(name="source", descriptin="Get source code for a specified command")
     async def sourcecode(self, ctx, *, command=None):
         source_url = "https://github.com/ilovetocode2019/Robo-Coder"
@@ -196,8 +198,9 @@ class Tools(commands.Cog):
         await ctx.send("\n".join(info))
 
     @commands.command(name="poll", description="Create a poll")
+    @commands.guild_only()
     async def poll(self, ctx, title=None, *options):
-        emojis = [
+        possible_reactions = [
             "\N{REGIONAL INDICATOR SYMBOL LETTER A}",
             "\N{REGIONAL INDICATOR SYMBOL LETTER B}",
             "\N{REGIONAL INDICATOR SYMBOL LETTER C}",
@@ -210,9 +213,12 @@ class Tools(commands.Cog):
             "\N{REGIONAL INDICATOR SYMBOL LETTER J}",
         ]
 
+        Option = collections.namedtuple("Option", ["emoji", "text"])
+
         if not title:
             options = []
-            check = lambda message: message.channel.id == ctx.author.dm_channel.id
+
+            check = lambda message: message.channel == ctx.author.dm_channel and message.author == ctx.author
             await ctx.author.send("What is the title of the poll?")
 
             message = await self.bot.wait_for("message", check=check)
@@ -223,17 +229,36 @@ class Tools(commands.Cog):
                 message = await self.bot.wait_for("message", check=check)
                 if message.content == "done":
                     break
-                options.append(message.content)
+
+                args = message.content.split(" ")
+                if len(args) == 1:
+                    options.append(Option(None, message.content))
+                else:
+                    emoji = args[0]
+                    text = " ".join(args[1:])
+                    if emoji in self.bot.default_emojis:
+                        options.append(Option(emoji, text))
+                    else:
+                        options.append(Option(None, message.content))
+
                 await message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
 
-        if len(options) > len(emojis):
-            raise commands.BadArgument(f"You cannot have more then {len(emojis)} options")
+        else:
+            options = [Option(None, text) for text in options]
+
+        if len(options) > len(possible_reactions):
+            raise commands.BadArgument(f"You cannot have more then {len(possible_reactions)} options")
 
         description = ""
         reactions = []
         for counter, option in enumerate(options):
-            description += f"\n{emojis[counter]} {option}"
-            reactions.append(emojis[counter])
+            if option.emoji:
+                emoji = option.emoji
+            else:
+                emoji = possible_reactions[counter]
+
+            description += f"\n{emoji} {option.text}"
+            reactions.append(emoji)
 
         em = discord.Embed(title=title, description=description)
         em.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)

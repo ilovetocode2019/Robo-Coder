@@ -62,6 +62,9 @@ class RoboCoder(commands.Bot):
         if config.status_hook:
             self.status_webhook = Webhook.from_url(config.status_hook, adapter=AsyncWebhookAdapter(self.session))
 
+        with open("assets/emojis.json") as file:
+            self.default_emojis = json.load(file)
+
         async def init(conn):
             await conn.set_type_codec(
                 "jsonb",
