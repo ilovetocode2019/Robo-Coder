@@ -542,7 +542,7 @@ class Music(commands.Cog):
         player.ctx = ctx
         await ctx.send(f"Now connected to `{ctx.author.voice.channel.name}` and bound to `{ctx.channel.name}`")
 
-    @commands.command(name="play", description="Play a song", usage="[query]", aliases=["p"])
+    @commands.command(name="play", description="Play a song", aliases=["p"])
     async def play(self, ctx, *, query):
         player = self.bot.players.get(ctx.guild.id)
 
@@ -576,7 +576,7 @@ class Music(commands.Cog):
 
             await player.queue.put(song)
 
-    @commands.command(name="playbin", description="Play a list of songs", usage="[url]", aliases=["pb"])
+    @commands.command(name="playbin", description="Play a list of songs", aliases=["pb"])
     async def playbin(self, ctx, url):
         player = self.bot.players.get(ctx.guild.id)
 
@@ -754,7 +754,7 @@ class Music(commands.Cog):
         random.shuffle(player.queue._queue)
         await ctx.send(":twisted_rightwards_arrows: Shuffled music")
 
-    @commands.command(name="volume", description="Set the volume", usage="[volume]")
+    @commands.command(name="volume", description="Set the volume")
     async def volume(self, ctx, volume: int = None):
         player = self.bot.players.get(ctx.guild.id)
 
