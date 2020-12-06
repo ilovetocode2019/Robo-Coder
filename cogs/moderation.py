@@ -322,7 +322,8 @@ class Moderation(commands.Cog):
             await ctx.guild.ban(user, reason=reason)
         elif isinstance(user, discord.Member):
             await user.ban(reason=reason)
-        await ctx.guild.unban(user)
+
+        await ctx.guild.unban(user, reason=reason)
 
         await ctx.send(f":white_check_mark: Softbanned {user}")
 
@@ -389,7 +390,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def mute_role_create(self, ctx):
         config = await self.get_guild_config(ctx.guild)
-        reason = f"Creation of mute role by {ctx.author}"
+        reason = f"Create mute role by {ctx.author}"
         role = await ctx.guild.create_role(name="Muted", reason=reason)
 
         channels = ctx.guild.text_channels + ctx.guild.categories
