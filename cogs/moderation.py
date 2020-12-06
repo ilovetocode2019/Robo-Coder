@@ -253,13 +253,6 @@ class Moderation(commands.Cog):
 
         self.emoji = ":police_car:"
 
-    @commands.command(name="purge", description="Purge messages from a channel")
-    @commands.has_permissions(manage_messages=True)
-    @commands.bot_has_permissions(manage_messages=True)
-    async def purge(self, ctx, limit=100):
-        purged = await ctx.channel.purge(limit=limit+1)
-        await ctx.send(f":white_check_mark: Deleted {len(purged)} message(s)", delete_after=5)
-
     @commands.command(name="kick", description="Kick a member from the server")
     @commands.bot_has_permissions(kick_members=True)
     @commands.has_permissions(kick_members=True)
@@ -626,6 +619,39 @@ class Moderation(commands.Cog):
 
         detector.spammers.pop(user.id)
         await ctx.send(f":white_check_mark: Reset automatic mute time for {user}")
+
+    @commands.command(name="purge", description="Purge messages from a channel")
+    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
+    async def purge(self, ctx, limit=100):
+        purged = await ctx.channel.purge(limit=limit+1)
+        await ctx.send(f":white_check_mark: Deleted {len(purged)} message(s)", delete_after=5)
+
+    @commands.command(name="cleanup", description="Clean up commands from a channel")
+    @commands.has_permissions(manage_messages=True)
+    @commands.bot_has_permissions(manage_messages=True)
+    async def cleanup(self, ctx, limit=100):
+        if ctx.guild.me.guild_permissions.manage_messages:
+            method = self.complex_cleanup
+        else:
+            method = self.basic_cleanup
+
+        deleted = await method(ctx, limit+1)
+        await ctx.send(f":white_check_mark: Deleted {len(deleted)} message(s)", delete_after=5)
+
+    async def basic_cleanup(self, ctx, limit):
+        deleted = []
+        async for message in ctx.history(limit=limit):
+            if message.author.id == self.bot.user.id:
+                await message.delete()
+                deleted.append(message)
+        return deleted
+
+    async def complex_cleanup(self, ctx, limit):
+        prefixes = self.bot.guild_prefixes[str(ctx.guild.id)]
+        prefixes.append(self.bot.user.mention)
+        deleted = await ctx.channel.purge(limit=limit, check=lambda message: message.author.id == self.bot.user.id or message.content.startswith(tuple(prefixes)))
+        return deleted
 
     @cache.cache()
     async def get_guild_config(self, guild):
