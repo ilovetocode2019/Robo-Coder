@@ -1,6 +1,6 @@
 
 *.pyc
-*.json
+prefixes.json
 env/*
 songs/*
 ffmpeg.exe
