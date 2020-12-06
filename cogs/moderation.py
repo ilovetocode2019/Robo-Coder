@@ -293,9 +293,9 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     async def tempban(self, ctx, user: typing.Union[discord.Member, UserID], time: human_time.TimeConverter, *, reason=None):
         if reason:
-            reason = f"Temporarily banned by {ctx.author} with reason {reason}"
+            reason = f"Tempban by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())} with reason {reason}"
         else:
-            reason = f"Temporarily banned by {ctx.author}"
+            reason = f"Tempban by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}"
 
         timers = self.bot.get_cog("Timers")
         if not timers:
@@ -490,9 +490,9 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: Muted role not set")
 
         if reason:
-            reason = f"Tempmute by {ctx.author} with reason {reason}"
+            reason = f"Tempmute by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())} with reason {reason}"
         else:
-            reason = f"Tempmute by {ctx.author}"
+            reason = f"Tempmute by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}"
 
         timers = self.bot.get_cog("Timers")
         if not timers:
@@ -519,9 +519,9 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: You are already muted")
 
         if reason:
-            reason = f"Selfmute by {ctx.author} with reason {reason}"
+            reason = f"Selfmute by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())} with reason {reason}"
         else:
-            reason = f"Selfmute by {ctx.author}"
+            reason = f"Selfmute by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}"
 
         timers = self.bot.get_cog("Timers")
         if not timers:
