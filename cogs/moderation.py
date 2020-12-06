@@ -6,6 +6,7 @@ import humanize
 import typing
 import collections
 import enum
+import argparse
 
 from .utils import cache
 from .utils import human_time
@@ -620,12 +621,12 @@ class Moderation(commands.Cog):
         detector.spammers.pop(user.id)
         await ctx.send(f":white_check_mark: Reset automatic mute time for {user}")
 
-    @commands.command(name="purge", description="Purge messages from a channel")
+    @commands.command(name="purge", description="Purge messages from a channel", usage="[limit=100]")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
-    async def purge(self, ctx, limit=100):
-        purged = await ctx.channel.purge(limit=limit+1)
-        await ctx.send(f":white_check_mark: Deleted {len(purged)} message(s)", delete_after=5)
+    async def purge(self, ctx, limit: typing.Optional[int] = 100, *, flags = None):
+        deleted = await ctx.channel.purge(limit=limit+1)
+        await ctx.send(f":white_check_mark: Deleted {len(deleted)} message(s)", delete_after=5)
 
     @commands.command(name="cleanup", description="Clean up commands from a channel")
     @commands.has_permissions(manage_messages=True)
