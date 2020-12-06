@@ -964,7 +964,13 @@ class Music(commands.Cog):
         if not self.bot.players:
             return await ctx.send("No players")
 
-        await ctx.send("\n".join([f"{player.voice.guild} - `{player.voice.channel} | {player.ctx.channel}` ({player.voice.latency*1000}ms)" for player in self.bot.players.values()]))
+        players = []
+        for player in self.bot.players.values():
+            info = f"{player.voice.guild} - `{player.voice.channel} | {player.ctx.channel}`"
+            latency = f"{player.voice.latency*1000:.2f}ms"
+            players.append(f"{info} ({latency})")
+
+        await ctx.send("\n".join(players))
 
     @commands.command(name="stopall", descrition="Stop all players")
     @commands.is_owner()
