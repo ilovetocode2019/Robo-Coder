@@ -281,6 +281,13 @@ class Moderation(commands.Cog):
         else:
             reason = f"Banned by {ctx.author}"
 
+        query = """DELETE FROM timers
+                   WHERE event = 'tempban'
+                   AND extra #>> '{0}' = $1
+                   AND extra #>> '{1}' = $2;
+                """
+        await self.bot.db.execute(query, str(ctx.guild.id), str(user.id))
+
         if isinstance(user, discord.User):
             await ctx.guild.ban(user, reason=reason)
         elif isinstance(user, discord.Member):
@@ -296,6 +303,13 @@ class Moderation(commands.Cog):
             reason = f"Tempban by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())} with reason {reason}"
         else:
             reason = f"Tempban by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}"
+
+        query = """DELETE FROM timers
+                   WHERE event = 'tempban'
+                   AND extra #>> '{0}' = $1
+                   AND extra #>> '{1}' = $2;
+                """
+        await self.bot.db.execute(query, str(ctx.guild.id), str(user.id))
 
         timers = self.bot.get_cog("Timers")
         if not timers:
@@ -494,6 +508,13 @@ class Moderation(commands.Cog):
         else:
             reason = f"Tempmute by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}"
 
+        query = """DELETE FROM timers
+                   WHERE event = 'tempmute'
+                   AND extra #>> '{0}' = $1
+                   AND extra #>> '{1}' = $2;
+                """
+        await self.bot.db.execute(query, str(ctx.guild.id), str(user.id))
+
         timers = self.bot.get_cog("Timers")
         if not timers:
             return await ctx.send(":x: This feature is temporarily unavailable")
@@ -522,6 +543,13 @@ class Moderation(commands.Cog):
             reason = f"Selfmute by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())} with reason {reason}"
         else:
             reason = f"Selfmute by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}"
+
+        query = """DELETE FROM timers
+                   WHERE event = 'tempmute'
+                   AND extra #>> '{0}' = $1
+                   AND extra #>> '{1}' = $2;
+                """
+        await self.bot.db.execute(query, str(ctx.guild.id), str(ctx.author.id))
 
         timers = self.bot.get_cog("Timers")
         if not timers:
