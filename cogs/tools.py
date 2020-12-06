@@ -184,10 +184,16 @@ class Tools(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="charinfo", decription="Get info on a charecter")
-    async def charinfo(self, ctx, charecter):
-        digit = f'{ord(charecter):x}'
-        name = unicodedata.name(charecter, "Name not found")
-        await ctx.send(f'`\\U{digit:>08}`: {name} - {charecter} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>')
+    async def charinfo(self, ctx, *, text):
+        if len(text) > 20:
+            return await ctx.send("Your text must be shorter than 20 charecters")
+
+        info = []
+        for charecter in text:
+            digit = f'{ord(charecter):x}'
+            name = unicodedata.name(charecter, "Name not found")
+            info.append(f'`\\U{digit:>08}`: {name} - {charecter} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>')
+        await ctx.send("\n".join(info))
 
     @commands.command(name="poll", description="Create a poll")
     async def poll(self, ctx, title=None, *options):
