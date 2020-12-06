@@ -458,12 +458,13 @@ class Internet(commands.Cog):
     async def strawpoll(self, ctx, title=None, *options):
         if not title:
             options = []
-            check = lambda message: message.channel == ctx.channel and message.author == ctx.author
-            await ctx.send("What is the title of the poll?")
+            check = lambda message: message.channel.id == ctx.author.dm_channel.id
+            await ctx.author.send("What is the title of the poll?")
+
             message = await self.bot.wait_for("message", check=check)
             title = message.content
 
-            await ctx.send("Send me a list of poll options. Type `done` to send the poll")
+            await ctx.author.send("Send me a list of poll options. Type `done` to send the poll")
             while True:
                 message = await self.bot.wait_for("message", check=check)
                 if message.content == "done":
