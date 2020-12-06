@@ -72,7 +72,7 @@ class GuildConfig:
 
     async def set_mute_role(self, role):
         self.muted = []
-        self.mute_role_id = role.id
+        self.mute_role_id = role.id if role else None
 
         query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id, role_colors)
                    VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -423,6 +423,18 @@ class Moderation(commands.Cog):
                 pass
 
         await ctx.send(":white_check_mark: Successfully updated mute role")
+
+    @mute_role.command(name="unbind", description="Unbind the mute role")
+    @commands.has_permissions(manage_roles=True)
+    @commands.bot_has_permissions(manage_roles=True)
+    async def mute_role_unbind(self, ctx):
+        config = await self.get_guild_config(ctx.guild)
+
+        if not config.mute_role:
+            return await ctx.send(":x: No mute role to unbind")
+
+        await config.set_mute_role(None)
+        await ctx.send(":white_check_mark: Unbound mute role")
 
     @commands.command(name="unmute", description="Unmute a member")
     @commands.bot_has_permissions(manage_roles=True)
