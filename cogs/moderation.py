@@ -569,6 +569,7 @@ class Moderation(commands.Cog):
 
     @spam.command(name="enable", description="Enable spam prevention", aliases=["on"])
     @commands.has_permissions(manage_guild=True)
+    @commands.bot_has_permissions(manage_roles=True)
     async def spam_enable(self, ctx):
         config = await self.get_guild_config(ctx.guild)
 
