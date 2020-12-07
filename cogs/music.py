@@ -514,7 +514,7 @@ class Music(commands.Cog):
 
         try:
             voice_client = await ctx.author.voice.channel.connect()
-        except:
+        except discord.ClientException:
             await ctx.guild.voice_client.disconnect()
             return await ctx.send(":x: Failed to connect to voice")
 
