@@ -189,24 +189,33 @@ class Tools(commands.Cog):
             message = await self.bot.wait_for("message", check=check)
             title = message.content
 
-            await ctx.author.send("Send me a list of poll options. Type `done` to send the poll")
-            while True:
+            await ctx.author.send("Send me up to 10 poll options. Type `done` to send the poll")
+            while len(options) < len(possible_reactions):
                 message = await self.bot.wait_for("message", check=check)
                 if message.content == "done":
                     break
+                elif message.content == "abort":
+                    return await ctx.author.send("Aborted")
 
                 args = message.content.split(" ")
                 if len(args) == 1:
                     options.append(Option(None, message.content))
+                    await message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
                 else:
                     emoji = args[0]
                     text = " ".join(args[1:])
-                    if emoji in self.bot.default_emojis:
-                        options.append(Option(emoji, text))
+                    if emoji in [option.emoji for option in options]:
+                        await message.add_reaction("\N{CROSS MARK}")
+                        await ctx.author.send(":x: You already used that emoji", delete_after=5)
+                    elif text in [option.text for option in options]:
+                        await message.add_reaction("\N{CROSS MARK}")
+                        await ctx.author.send(":x: You already added that option", delete_after=5)
                     else:
-                        options.append(Option(None, message.content))
-
-                await message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+                        if emoji in self.bot.default_emojis:
+                            options.append(Option(emoji, text))
+                        else:
+                            options.append(Option(None, message.content))
+                        await message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
 
         else:
             options = [Option(None, text) for text in options]
