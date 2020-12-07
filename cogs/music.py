@@ -515,14 +515,7 @@ class Music(commands.Cog):
         try:
             voice_client = await ctx.author.voice.channel.connect()
         except:
-            client = None
-            for voice in self.bot.voice_clients:
-                if voice.guild.id == ctx.guild.id:
-                    client = voice
-                    break
-            if client:
-                await client.disconnect()
-
+            await ctx.guild.voice_client.disconnect()
             return await ctx.send(":x: Failed to connect to voice")
 
         self.bot.players[ctx.guild.id] = Player(ctx, voice_client)
@@ -932,7 +925,10 @@ class Music(commands.Cog):
     async def disconnect(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
 
-        if player and ctx.author in player.voice.channel.members:
+        if player:
+            if not ctx.author in player.voice.channel.members:
+                return
+
             if len(player.queue._queue) != 0:
                 queue = [x.url for x in player.queue._queue]
                 if player.looping_queue:
@@ -947,16 +943,9 @@ class Music(commands.Cog):
             except:
                 pass
             await ctx.send("Disconnected from voice")
-
-        elif not player and ctx.guild.id in self.bot.players or ctx.guild.id in [voice.guild.id for voice in self.bot.voice_clients]:
-            client = None
-            for voice in self.bot.voice_clients:
-                if voice.guild.id == ctx.guild.id:
-                    client = voice
-                    break
-            await client.disconnect()
+        elif ctx.guild.voice_client:
+            await ctx.guild.voice_client.disconnect()
             await ctx.send("Disconnected from voice")
-
 
     @commands.command(name="allplayers", description="View all players")
     @commands.is_owner()
