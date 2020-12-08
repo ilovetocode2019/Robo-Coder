@@ -21,10 +21,10 @@ class SongPages(menus.ListPageSource):
         super().__init__(songs, per_page=1)
 
     async def format_page(self, menu, song):
-
         em = discord.Embed(title=song.title, color=0x66FFCC)
         em.add_field(name="Duration", value=f"{song.timestamp_duration}")
         em.add_field(name="Url", value=f"[Click]({song.url})")
+        em.add_field(name="Uploader", value=f"[{song.uploader}]({song.uploader_url})")
         em.set_thumbnail(url=song.thumbnail)
         em.set_footer(text=f"{len(self.songs)} results | Page {menu.current_page+1}/{len(self.songs)}")
 
@@ -280,8 +280,9 @@ class Player:
             playing = ":pause_button:"
 
         em = discord.Embed(title=f"{playing} {self.now.title} {looping}", color=0x66FFCC)
-        em.add_field(name="Duration", value=f"{Song.timestamp_duration(int(time.time()-self.song_started))}/{self.now.timestamp_duration} `{self.get_bar(self.now.total_seconds)}`")
+        em.add_field(name="Duration", value=f"{Song.timestamp_duration(int(time.time()-self.song_started))}/{self.now.timestamp_duration} `{self.get_bar(self.now.total_seconds)}`", inline=False)
         em.add_field(name="Url", value=f"[Click]({self.now.url})")
+        em.add_field(name="Uploader", value=f"[{self.now.uploader}]({self.now.uploader_url})")
         em.add_field(name="Requester", value=f"{self.now.requester.mention}")
         em.set_thumbnail(url=self.now.thumbnail)
         return em
@@ -822,17 +823,10 @@ class Music(commands.Cog):
 
         song = player.queue._queue[0]
 
-        looping = ""
-        if player.looping:
-            looping = "(:repeat_one: Looping)"
-
-        playing = ":arrow_forward:"
-        if player.voice.is_playing():
-            playing = ":pause_button:"
-
-        em = discord.Embed(title=f"{playing} {song.title} {looping}", color=0x66FFCC)
+        em = discord.Embed(title=song.title, color=0x66FFCC)
         em.add_field(name="Duration", value=str(song.timestamp_duration))
         em.add_field(name="Url", value=f"[Click]({song.url})")
+        em.add_field(name="Uploader", value=f"[{song.uploader}]({song.uploader_url})")
         em.add_field(name="Requester", value=f"{song.requester.mention}")
         em.set_thumbnail(url=song.thumbnail)
 
@@ -858,17 +852,11 @@ class Music(commands.Cog):
                 return await ctx.send("That is not a song in the playlist")
             song = player.queue._queue[song-1]
 
-            looping = ""
-            if player.looping:
-                looping = "(:repeat_one: Looping)"
 
-            playing = ":arrow_forward:"
-            if player.voice.is_playing():
-                playing = ":pause_button:"
-
-            em = discord.Embed(title=f"{playing} {song.title} {looping}", color=0x66FFCC)
+            em = discord.Embed(title=song.title, color=0x66FFCC)
             em.add_field(name="Duration", value=str(song.timestamp_duration))
             em.add_field(name="Url", value=f"[Click]({song.url})")
+            em.add_field(name="Uploader", value=f"[{song.uploader}]({song.uploader_url})")
             em.add_field(name="Requester", value=f"{song.requester.mention}")
             em.set_thumbnail(url=song.thumbnail)
 
