@@ -215,7 +215,7 @@ class Player:
         self.looping_queue = False
         self.notifications = True
         self.volume = .5
-        self.restart = False
+        self.startover = False
 
         self.loop = self.bot.loop.create_task(self.player_loop())
 
@@ -237,15 +237,15 @@ class Player:
             self.voice.play(source, after=self.after_song)
             self.voice.source.volume = self.volume
 
-            if self.notifications and not self.restart:
+            if self.notifications and not self.startover:
                 await self.ctx.send(f":notes: Now playing {discord.utils.escape_mentions(self.now.title)}")
 
-            self.restart = False
+            self.startover = False
             self.song_started = time.time()
             await self.event.wait()
             self.event.clear()
 
-            if self.looping_queue and not self.looping and not self.restart:
+            if self.looping_queue and not self.looping and not self.startover:
                 await self.queue.put(self.now)
 
             if not self.looping:
@@ -645,7 +645,7 @@ class Music(commands.Cog):
         player.voice.resume()
         await ctx.send(":pause_button: Resumed")
 
-    @commands.command(name="startover", description="Restart the current song", aliases=["restart"])
+    @commands.command(name="startover", description="Start the current song from the beginning")
     async def startover(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
 
@@ -657,7 +657,7 @@ class Music(commands.Cog):
         if not player.now:
             return
 
-        player.restart = True
+        player.startover = True
 
         if not player.looping:
             player.queue._queue.appendleft(player.now)
@@ -666,7 +666,7 @@ class Music(commands.Cog):
 
         await ctx.send(":rewind: Starting over")
 
-    @commands.command(name="skipto", description="Jump to a song in the queue", aliases=["seek"])
+    @commands.command(name="skipto", description="Jump to a song in the queue")
     async def skipto(self, ctx, position: int):
         player = self.bot.players.get(ctx.guild.id)
 
