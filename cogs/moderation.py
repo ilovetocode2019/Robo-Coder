@@ -561,13 +561,6 @@ class Moderation(commands.Cog):
         else:
             reason = f"Selfmute by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}"
 
-        query = """DELETE FROM timers
-                   WHERE event = 'tempmute'
-                   AND extra #>> '{0}' = $1
-                   AND extra #>> '{1}' = $2;
-                """
-        await self.bot.db.execute(query, str(ctx.guild.id), str(ctx.author.id))
-
         timers = self.bot.get_cog("Timers")
         if not timers:
             return await ctx.send(":x: This feature is temporarily unavailable")
