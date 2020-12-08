@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 
 import argparse
-import collections
 import datetime
 import enum
 import shlex
@@ -196,38 +195,55 @@ class Spammer:
         self.infractions = infractions
 
 class SpamDetector:
-    def __init__(self):
+    emoji_regex = re.compile("<:(\w+):(\d+)>")
+    url_regex = re.compile(r"(?i)\b((?:https?://|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»""‘’]))")
+
+    def __init__(self, bot):
         self.spammers = {}
+        self.bot = bot
+
+        self.by_member = commands.CooldownMapping.from_cooldown(15, 20.0, commands.BucketType.member)
         self.by_content = CooldownByContent.from_cooldown(10, 30.0, commands.BucketType.member)
-        self.by_attachments = commands.CooldownMapping.from_cooldown(10, 30.0, commands.BucketType.member)
         self.by_mentions = commands.CooldownMapping.from_cooldown(10, 30.0, commands.BucketType.member)
         self.by_links = commands.CooldownMapping.from_cooldown(10, 30.0, commands.BucketType.member)
         self.by_emojis = commands.CooldownMapping.from_cooldown(10, 30.0, commands.BucketType.member)
-        self.by_member = commands.CooldownMapping.from_cooldown(15, 20.0, commands.BucketType.member)
+        self.by_attachments = commands.CooldownMapping.from_cooldown(10, 30.0, commands.BucketType.member)
 
     def is_spamming(self, message):
         time = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
-
-        by_content = self.by_content.get_bucket(message)
-        if by_content.update_rate_limit(time):
-            by_content._window = 0
-            return True
 
         by_member = self.by_member.get_bucket(message)
         if by_member.update_rate_limit(time):
             by_member._window = 0
             return True
 
-        if message.attachments:
-            by_attachments = self.by_attachments.get_bucket(message)
-            if by_attachments.update_rate_limit(time):
-                by_attachments._window = 0
-                return True
+        by_content = self.by_content.get_bucket(message)
+        if by_content.update_rate_limit(time):
+            by_content._window = 0
+            return True
 
         if [mention for mention in message.mentions if not mention.bot and mention.id != message.author.id]:
             by_mentions = self.by_mentions.get_bucket(message)
             if by_mentions.update_rate_limit(time):
                 by_mentions._window = 0
+                return True
+
+        if self.url_regex.search(message.content):
+            by_links = self.by_links.get_bucket(message)
+            if by_links.update_rate_limit(time):
+                by_links._window = 0
+                return True
+
+        if self.emoji_regex.search(message.content) or [emoji for emoji in self.bot.default_emojis if emoji in message.content]:
+            by_emojis = self.by_emojis.get_bucket(message)
+            if by_emojis.update_rate_limit(time):
+                by_emojis._window = 0
+                return True
+
+        if message.attachments:
+            by_attachments = self.by_attachments.get_bucket(message)
+            if by_attachments.update_rate_limit(time):
+                by_attachments._window = 0
                 return True
 
         return False
@@ -257,7 +273,7 @@ class SpamDetector:
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.spam_detectors = collections.defaultdict(SpamDetector)
+        self.spam_detectors = {}
 
         self.emoji = ":police_car:"
 
@@ -780,7 +796,12 @@ class Moderation(commands.Cog):
         if message.channel.id in config.ignore_spam_channels:
             return
 
-        detector = self.spam_detectors[message.guild.id]
+        if message.guild.id in self.spam_detectors:
+            detector = self.spam_detectors[message.guild.id]
+        else:
+            detector = SpamDetector(self.bot)
+            self.spam_detectors[message.guild.id] = detector
+
         if detector.is_spamming(message):
             spammer = detector.get_spammer(message.author)
             action = self.get_spam_action(config, spammer)
