@@ -336,25 +336,25 @@ class Song:
         return "**{0.title}** by **{0.uploader}**".format(self)
 
     @classmethod
-    async def from_query(cls, ctx, search, *, loop, download=True):
+    async def from_query(cls, ctx, query, *, loop):
         loop = loop or asyncio.get_event_loop()
 
         query = """SELECT *
                    FROM songs
                    WHERE songs.title=$1;
                 """
-        song = await ctx.bot.db.fetchrow(query, search)
+        song = await ctx.bot.db.fetchrow(query, query)
         if song:
             return cls(ctx, data=song["data"])
 
-        youtube_id = cls.regex.findall(search)
+        youtube_id = cls.regex.findall(query)
 
         if not youtube_id:
-            partial = functools.partial(cls.ytdl.extract_info, search, download=False, process=False)
+            partial = functools.partial(cls.ytdl.extract_info, query, download=False, process=False)
             data = await loop.run_in_executor(None, partial)
 
             if data is None:
-                raise YTDLError("Couldn't find anything that matches `{}`".format(search))
+                raise YTDLError("Couldn't find anything that matches `{}`".format(query))
 
             if "entries" not in data:
                 process_info = data
@@ -366,12 +366,12 @@ class Song:
                         break
 
                 if process_info is None:
-                    raise YTDLError("Couldn't find anything that matches `{}`".format(search))
+                    raise YTDLError("Couldn't find anything that matches `{}`".format(query))
 
             try:
                 webpage_url = process_info["webpage_url"]
             except:
-                webpage_url = search
+                webpage_url = query
 
             try:
                 song_id = process_info["song_id"]
@@ -394,7 +394,7 @@ class Song:
         if song:
             return cls(ctx, data=song["data"])
 
-        partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=download)
+        partial = functools.partial(cls.ytdl.extract_info, webpage_url, download=True)
         processed_info = await loop.run_in_executor(None, partial)
 
         if processed_info is None:
@@ -421,14 +421,14 @@ class Song:
         return cls(ctx, data=info)
 
     @classmethod
-    async def from_list(cls, ctx, search, *, loop, download=True):
+    async def playlist(cls, ctx, query, *, loop, download=True):
         loop = loop or asyncio.get_event_loop()
 
-        partial = functools.partial(cls.ytdl.extract_info, search, download=download, process=True)
+        partial = functools.partial(cls.ytdl.extract_info, query, download=download, process=True)
         data = await loop.run_in_executor(None, partial)
 
         if data is None:
-            raise YTDLError("Couldn't find anything that matches `{}`".format(search))
+            raise YTDLError("Couldn't find anything that matches `{}`".format(query))
 
         if "entries" not in data:
             data_list = data
@@ -556,7 +556,7 @@ class Music(commands.Cog):
 
         if "list=" in query:
             await ctx.send(":globe_with_meridians: Fetching playlist")
-            songs = await Song.from_list(ctx, query, loop=self.bot.loop)
+            songs = await Song.playlist(ctx, query, loop=self.bot.loop)
             for song in songs:
                 await player.queue.put(song)
         else:
@@ -607,7 +607,7 @@ class Music(commands.Cog):
         if not ctx.author in player.voice.channel.members:
             return
 
-        songs = await Song.from_list(ctx, f"ytsearch3:{query}", loop=self.bot.loop, download=False)
+        songs = await Song.playlist(ctx, f"ytsearch3:{query}", loop=self.bot.loop, download=False)
 
         pages = SongSelectorMenuPages(songs, clear_reactions_after=True)
         result = await pages.prompt(ctx)
