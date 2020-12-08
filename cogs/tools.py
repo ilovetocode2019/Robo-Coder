@@ -11,9 +11,14 @@ import zlib
 import json
 import unicodedata
 import collections
+import typing
+import datetime
+
 from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
+
+from .utils import human_time
 
 async def average_image_color(avatar_url, loop, session=None):
     session = session or aiohttp.ClientSession()
@@ -164,7 +169,7 @@ class Tools(commands.Cog):
 
     @commands.command(name="poll", description="Create a poll")
     @commands.guild_only()
-    async def poll(self, ctx, title=None, *options):
+    async def poll(self, ctx, title = None, time: typing.Optional[human_time.TimeConverter] = None, *options):
         possible_reactions = [
             "\N{REGIONAL INDICATOR SYMBOL LETTER A}",
             "\N{REGIONAL INDICATOR SYMBOL LETTER B}",
@@ -180,6 +185,9 @@ class Tools(commands.Cog):
 
         Option = collections.namedtuple("Option", ["emoji", "text"])
 
+        if not time:
+            time = datetime.datetime.utcnow()+datetime.timedelta(days=1)
+
         if not title:
             options = []
 
@@ -188,6 +196,13 @@ class Tools(commands.Cog):
 
             message = await self.bot.wait_for("message", check=check)
             title = message.content
+
+            await ctx.author.send("How long would you like the poll to last")
+            message = await self.bot.wait_for("message", check=check)
+            try:
+                time = await human_time.TimeConverter().convert(ctx, message.content)
+            except commands.BadArgument:
+                return await ctx.author.send(":x: That is not a valid time")
 
             await ctx.author.send("Send me up to 10 poll options. Type `done` to send the poll")
             while len(options) < len(possible_reactions):

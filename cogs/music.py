@@ -557,6 +557,7 @@ class Music(commands.Cog):
 
         if "list=" in query:
             await ctx.send(":globe_with_meridians: Fetching playlist")
+            await ctx.send(":white_check_mark: Finished downloading songs")
             songs = await Song.from_list(ctx, query, loop=self.bot.loop)
             for song in songs:
                 await player.queue.put(song)
@@ -594,6 +595,8 @@ class Music(commands.Cog):
         for url in songs:
             song = await Song.from_query(ctx, url, loop=self.bot.loop)
             await player.queue.put(song)
+
+        await ctx.send(":white_check_mark: Finished downloading songs")
 
     @commands.command(name="search", description="Search for a song on youtube")
     async def search(self, ctx, *, query):
