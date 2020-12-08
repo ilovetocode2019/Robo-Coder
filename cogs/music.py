@@ -550,9 +550,9 @@ class Music(commands.Cog):
 
         query = query.strip("<>")
         if query.startswith("https:"):
-            await ctx.send(f":mag: Searching <{query}>")
+            await ctx.send(f":mag: Searching for <{query}>")
         else:
-            await ctx.send(f":mag: Searching {query}")
+            await ctx.send(f":mag: Searching for {query}")
 
         if "list=" in query:
             await ctx.send(":globe_with_meridians: Fetching playlist")
