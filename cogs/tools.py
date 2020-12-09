@@ -18,8 +18,6 @@ from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
 
-from .utils import human_time
-
 async def average_image_color(avatar_url, loop, session=None):
     session = session or aiohttp.ClientSession()
     async with session.get(str(avatar_url)) as resp:
@@ -169,7 +167,7 @@ class Tools(commands.Cog):
 
     @commands.command(name="poll", description="Create a poll")
     @commands.guild_only()
-    async def poll(self, ctx, title = None, time: typing.Optional[human_time.TimeConverter] = None, *options):
+    async def poll(self, ctx, title = None, *options):
         possible_reactions = [
             "\N{REGIONAL INDICATOR SYMBOL LETTER A}",
             "\N{REGIONAL INDICATOR SYMBOL LETTER B}",
@@ -185,29 +183,24 @@ class Tools(commands.Cog):
 
         Option = collections.namedtuple("Option", ["emoji", "text"])
 
-        if not time:
-            time = datetime.datetime.utcnow()+datetime.timedelta(days=1)
-
         if not title:
             options = []
 
             check = lambda message: message.channel == ctx.author.dm_channel and message.author == ctx.author
-            await ctx.author.send("What is the title of the poll?")
+            try:
+                await ctx.author.send("What is the title of the poll?")
+            except discord.Forbidden:
+                return await ctx.send(f':x: You have DMs disabled')
 
             message = await self.bot.wait_for("message", check=check)
             title = message.content
-
-            await ctx.author.send("How long would you like the poll to last")
-            message = await self.bot.wait_for("message", check=check)
-            try:
-                time = await human_time.TimeConverter().convert(ctx, message.content)
-            except commands.BadArgument:
-                return await ctx.author.send(":x: That is not a valid time")
 
             await ctx.author.send("Send me up to 10 poll options. Type `done` to send the poll")
             while len(options) < len(possible_reactions):
                 message = await self.bot.wait_for("message", check=check)
                 if message.content == "done":
+                    if len(options) < 2:
+                        return await ctx.author.send(":x: You must have at least 2 options")
                     break
                 elif message.content == "abort":
                     return await ctx.author.send("Aborted")
@@ -237,6 +230,8 @@ class Tools(commands.Cog):
 
         if len(options) > len(possible_reactions):
             raise commands.BadArgument(f"You cannot have more then {len(possible_reactions)} options")
+        if len(options) < 2:
+            return await ctx.send(":x: You must have at least 2 options")
 
         description = ""
         reactions = []
