@@ -762,12 +762,14 @@ class Music(commands.Cog):
         if not player.voice.is_playing():
             return
 
-        if not volume:
-            return await ctx.send(f":loud_sound: {int(player.volume * 100)}")
+        if volume is None:
+            return await ctx.send(f":loud_sound: {int(player.volume * 100)}%")
+        if volume > 100:
+            return await ctx.send(":x: Volume cannot be more than 100%")
 
         player.voice.source.volume = volume / 100
         player.volume = volume / 100
-        await ctx.send(f":loud_sound: Volume set to {volume}")
+        await ctx.send(f":loud_sound: Volume set to {volume}%")
 
     @commands.command(name="notify", description="Enable/disable player updates")
     async def notify(self, ctx):
