@@ -238,7 +238,7 @@ class Player:
             self.voice.source.volume = self.volume
 
             if self.notifications and not self.startover:
-                await self.ctx.send(f":notes: Now playing {discord.utils.escape_mentions(self.now.title)}")
+                await self.ctx.send(f":notes: Now playing {self.now.title}")
 
             self.startover = False
             self.song_started = time.time()
@@ -691,7 +691,7 @@ class Music(commands.Cog):
 
         player.voice.stop()
         song = player.queue._queue[0]
-        await ctx.send(f":track_next: Jumped to {discord.utils.escape_mentions(song.title)}")
+        await ctx.send(f":track_next: Jumped to {song.title}")
 
     @commands.command(name="skip", description="Skip the music")
     async def skip(self, ctx):
