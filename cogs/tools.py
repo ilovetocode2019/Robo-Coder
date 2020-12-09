@@ -18,6 +18,8 @@ from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
 
+from .utils import formats
+
 async def average_image_color(avatar_url, loop, session=None):
     session = session or aiohttp.ClientSession()
     async with session.get(str(avatar_url)) as resp:
@@ -65,7 +67,8 @@ class Tools(commands.Cog):
 
         em.add_field(name="🗣️ Channels", value=f"<:textchannel:725730867644858518> {str(len(guild.text_channels))} \N{BULLET} <:voicechannel:725730883872751666> {str(len(guild.voice_channels))}")
 
-        em.add_field(name="👪 Members", value=f"{len(guild.members)} ({len([x for x in guild.members if x.bot])} bots)")
+        bots = len([x for x in guild.members if x.bot])
+        em.add_field(name="👪 Members", value=f"{len(guild.members)} ({formats.plural(bots):bot})")
         await ctx.send(embed=em)
 
     @commands.command(name="userinfo", description="Get info on a user", aliases=["ui", "whois"])

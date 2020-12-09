@@ -128,20 +128,7 @@ class Meta(commands.Cog):
         elif isinstance(e, discord.ext.commands.errors.BadArgument) or isinstance(e, discord.ext.commands.errors.BadUnionArgument):
             return await ctx.send(f":x: {e}")
         elif isinstance(e, discord.ext.commands.MaxConcurrencyReached):
-            if e.per == commands.BucketType.default:
-                return await ctx.send(f":x: This command can only be used {e.number} time(s) on the bot at once")
-            if e.per == commands.BucketType.user:
-                return await ctx.send(f":x: You can only use this command {e.number} time(s) per at once")
-            if e.per == commands.BucketType.guild:
-                return await ctx.send(f":x: This command can only be used {e.number} time(s) per server at once")
-            if e.per == commands.BucketType.channel:
-                return await ctx.send(f":x: This command can only be used {e.number} time(s) per channel at once")
-            if e.per == commands.BucketType.member:
-                return await ctx.send(f":x: You an only use this command {e.number} time(s) per member in the server at once")
-            if e.per == commands.BucketType.category:
-                return await ctx.send(f":x: You can only use this command {e.number} time(s) per category at once")
-            if e.per == commands.BucketType.role:
-                return await ctx.send(f":x: THis command can only be used {e.number} time(s) per role at once")
+            await ctx.send(":x: The max concurrency for this command has been reached")
 
         elif isinstance(e, discord.ext.commands.errors.CommandOnCooldown):
             return await ctx.send(f"You are on cooldown. Try again in {e.retry_after} seconds")

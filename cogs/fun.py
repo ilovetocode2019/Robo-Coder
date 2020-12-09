@@ -3,6 +3,8 @@ from discord.ext import commands
 
 import random
 
+from .utils import formats
+
 class Fun(commands.Cog):
     """Fun commands."""
 
@@ -21,11 +23,7 @@ class Fun(commands.Cog):
     @commands.command(name="rolldice", description="Role some dice")
     async def rolldice(self, ctx, dice=1, sides=6):
         numbers = [str(random.randint(1, sides)) for x in range(dice)]
-        if len(numbers) == 1:
-            dice_str = str(numbers[0])
-        else:
-            dice_str = f"{', '.join(numbers[:-1])} and a {numbers[-1]}"
-        await ctx.send(f"You rolled a {dice_str}")
+        await ctx.send(f"You rolled a {formats.join(numbers, last='and a')}")
 
     @commands.command(name="question", description="Ask me a question", aliases=["yesno", "8ball"])
     async def question(self, ctx, *, question):
