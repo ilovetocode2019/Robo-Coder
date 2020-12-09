@@ -11,7 +11,7 @@ class Roles(commands.Cog):
         self.bot = bot
         self.emoji  = ":label:"
 
-    @commands.group(name="rolecolor", description="Assign yourself a role color", invoke_without_command=True)
+    """@commands.group(name="rolecolor", description="Assign yourself a role color", invoke_without_command=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def rolecolor(self, ctx, *, color: discord.Color = None):
         moderation = self.bot.get_cog("Moderation")
@@ -69,7 +69,7 @@ class Roles(commands.Cog):
             return await ctx.send(":x: Role colors are already disabled")
 
         await config.disable_role_colors()
-        await ctx.send(":white_check_mark: Role colors are now disabled")
+        await ctx.send(":white_check_mark: Role colors are now disabled")"""
 
     @commands.group(name="autorole", description="Automaticly assign roles to users with they join", invoke_without_command=True)
     @commands.has_permissions(manage_roles=True)
