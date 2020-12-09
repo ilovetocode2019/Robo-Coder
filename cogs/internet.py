@@ -458,8 +458,11 @@ class Internet(commands.Cog):
     async def strawpoll(self, ctx, title=None, *options):
         if not title:
             options = []
-            check = lambda message: message.channel.id == ctx.author.dm_channel.id
-            await ctx.author.send("What is the title of the poll?")
+            check = lambda message: message.channel == ctx.author.dm_channel and message.author == ctx.author
+            try:
+                await ctx.author.send("What is the title of the poll?")
+            except discord.Forbidden:
+                return await ctx.send(":x: You have DMs disabled")
 
             message = await self.bot.wait_for("message", check=check)
             title = message.content
@@ -467,10 +470,19 @@ class Internet(commands.Cog):
             await ctx.author.send("Send me a list of poll options. Type `done` to send the poll")
             while True:
                 message = await self.bot.wait_for("message", check=check)
+
                 if message.content == "done":
+                    if len(options) < 2:
+                        return await ctx.author.send(":x: You must have at least 2 options")
                     break
+                elif message.content == "abort":
+                    return await ctx.author.send("Aborted")
+
                 options.append(message.content)
                 await message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+
+        if len(options) < 2:
+            return await ctx.send(":x: You must have at least 2 options")
 
         data = {"poll": {"title": title, "answers": list(options)}}
         async with self.bot.session.post("https://strawpoll.com/api/poll", json=data, headers={"Content Type": "application/json"}) as resp:

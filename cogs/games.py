@@ -113,7 +113,11 @@ class Games(commands.Cog):
         if ctx.channel.id in self.hangman_games:
             return await ctx.send(":x: A hangman game is already going in this channel")
 
-        await ctx.author.send("What is your hangman word?")
+        try:
+            await ctx.author.send("What is your hangman word?")
+        except discord.Forbidden:
+            return await ctx.send(":x: You need to have DMs enabled")
+
         try:
             def check(msg):
                 return msg.channel == ctx.author.dm_channel

@@ -190,7 +190,7 @@ class Tools(commands.Cog):
             try:
                 await ctx.author.send("What is the title of the poll?")
             except discord.Forbidden:
-                return await ctx.send(f':x: You have DMs disabled')
+                return await ctx.send(":x: You have DMs disabled")
 
             message = await self.bot.wait_for("message", check=check)
             title = message.content
