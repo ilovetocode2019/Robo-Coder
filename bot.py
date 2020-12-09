@@ -92,7 +92,7 @@ class RoboCoder(commands.Bot):
                    created_at TIMESTAMP DEFAULT (now() at time zone 'utc')
                    );
 
-                   CREATE TABLE IF NOT exists songs (
+                   CREATE TABLE IF NOT EXISTS songs (
                    id SERIAL PRIMARY KEY,
                    title TEXT,
                    filename TEXT,
