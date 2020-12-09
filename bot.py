@@ -37,7 +37,8 @@ extensions = [
 "cogs.fun",
 "cogs.games",
 "cogs.timers",
-"cogs.music"
+"cogs.music",
+"cogs.roles"
 ]
 
 class RoboCoder(commands.Bot):
