@@ -34,7 +34,6 @@ extensions = [
 "cogs.tools",
 "cogs.internet",
 "cogs.moderation",
-"cogs.roles",
 "cogs.fun",
 "cogs.games",
 "cogs.timers",
@@ -81,8 +80,7 @@ class RoboCoder(commands.Bot):
                    muted BIGINT ARRAY,
                    spam_prevention BOOL,
                    ignore_spam_channels BIGINT ARRAY,
-                   log_channel_id BIGINT,
-                   role_colors BOOL
+                   log_channel_id BIGINT
                    );
 
                    CREATE TABLE IF NOT EXISTS timers (
@@ -93,7 +91,7 @@ class RoboCoder(commands.Bot):
                    created_at TIMESTAMP DEFAULT (now() at time zone 'utc')
                    );
 
-                   CREATE TABLE IF NOT EXISTS songs (
+                   CREATE TABLE IF NOT exists songs (
                    id SERIAL PRIMARY KEY,
                    title TEXT,
                    filename TEXT,
