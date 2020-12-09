@@ -71,7 +71,7 @@ class GuildConfig:
         return self.bot.get_channel(self.log_channel_id)
 
     async def set_mute_role(self, role):
-        self.muted = []
+        self.muted = [member.id for member in role.members]
         self.mute_role_id = role.id if role else None
 
         query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id, role_colors)
@@ -412,6 +412,12 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: This role is higher than my highest role")
 
         config = await self.get_guild_config(ctx.guild)
+
+        if config.mute_role:
+            result = await menus.Confirm("A mute role is already set. Would you like to override it?").prompt(ctx)
+            if not result:
+                return await ctx.send("Aborting")
+
         await config.set_mute_role(role)
 
         await ctx.send(f":white_check_mark: Set mute role to {role.name} ({role.id})")
@@ -421,6 +427,12 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     async def mute_role_create(self, ctx):
         config = await self.get_guild_config(ctx.guild)
+
+        if config.mute_role:
+            result = await menus.Confirm("A mute role is already set. Would you like to override it?").prompt(ctx)
+            if not result:
+                return await ctx.send("Aborting")
+
         reason = f"Create mute role by {ctx.author}"
         role = await ctx.guild.create_role(name="Muted", reason=reason)
 
@@ -464,6 +476,10 @@ class Moderation(commands.Cog):
 
         if not config.mute_role:
             return await ctx.send(":x: No mute role to unbind")
+
+        result = await menus.Confirm("Are you sure you want to unbind the mute role?").prompt(ctx)
+        if not result:
+            return await ctx.send("Aborting")
 
         await config.set_mute_role(None)
         await ctx.send(":white_check_mark: Unbound mute role")
