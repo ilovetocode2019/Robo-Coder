@@ -30,9 +30,9 @@ class Timers(commands.Cog):
         await self.bot.db.execute(query, timer)
 
     @commands.group(name="remind", description="Set a reminder", aliases=["timer"], invoke_without_command=True)
-    async def remind(self, ctx, time: human_time.TimeConverter, *, content):
+    async def remind(self, ctx, time: human_time.TimeConverter, *, content = "..."):
         await self.create_timer("timer", time, [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content])
-        await ctx.send(f":white_check_mark: Set timer for {humanize.naturaldelta(time-datetime.datetime.utcnow())}")
+        await ctx.send(f":white_check_mark: Set timer for {humanize.naturaldelta(time-datetime.datetime.utcnow())} with message `{content}`")
 
     @remind.command(name="list", description="View your reminders")
     async def remind_list(self, ctx):
@@ -90,8 +90,9 @@ class Timers(commands.Cog):
         user = self.bot.get_user(timer["extra"][0])
         content = timer["extra"][3]
         created_at = timer["created_at"]
+        jump_url = timer["extra"][2]
 
-        em = discord.Embed(title=content, color=0x96c8da)
+        em = discord.Embed(title=content, description=f"\n[Jump]({jump_url})", color=0x96c8da)
         em.add_field(name="When", value=f"{humanize.naturaldelta(datetime.datetime.utcnow()-created_at)} ago")
         await channel.send(content=user.mention, embed=em)
 
