@@ -37,7 +37,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         ctx = self.context
         bot = ctx.bot
 
-        em = discord.Embed(title=f"{bot.user.name} Help", description="Help for Robo Coder Bot. Use `help [command]` or `help [Category]` for more specific help.\n", color=0x96c8da)
+        em = discord.Embed(title=f"{bot.user.name} Help", description=f"Help for Robo Coder Bot. Use `{ctx.prefix}help [command]` or `{ctx.prefix}help [Category]` for more specific help.\n", color=0x96c8da)
         msg = ""
         for name, cog in sorted(bot.cogs.items()):
             if not getattr(cog, "hidden", False):
