@@ -246,7 +246,7 @@ class Internet(commands.Cog):
 
     @commands.command(name="roblox", description="Get a Roblox user")
     @commands.cooldown(1, 30, commands.BucketType.user)
-    async def roblox(self, ctx, username):
+    async def roblox(self, ctx, *, username):
         await ctx.channel.trigger_typing()
         session = self.bot.session
         async with session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
