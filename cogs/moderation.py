@@ -770,6 +770,8 @@ class Moderation(commands.Cog):
             return
         if not isinstance(message.author, discord.Member):
             return
+        if message.author.guild_permissions.manage_messages:
+            return
         if message.author.bot:
             return
 
