@@ -240,7 +240,7 @@ class SpamDetector:
             time = datetime.timedelta(minutes=60)
         elif spammer.mute_time == datetime.timedelta(minutes=60):
             time = datetime.timedelta(minutes=120)
-        elif spammer.mute_time == datetime.timedelta(minutes=120):
+        else:
             time = datetime.timedelta(minutes=360)
 
         spammer = Spammer(member, time, spammer.infractions+1)
