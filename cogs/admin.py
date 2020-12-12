@@ -40,7 +40,7 @@ class Admin(commands.Cog):
             await ctx.send(f"**:warning: Extension `{cog.lower()}` not reloaded.**\n```py\n{traceback_data}```")
             print(f"Extension 'cogs.{cog.lower()}' not reloaded.\n{traceback_data}")
 
-    @commands.command(name="process", description="Get info about the memory and CPU usage")
+    @commands.command(name="process", description="View system stats")
     async def process(self, ctx):
         em = discord.Embed(title="Process", color=0x96c8da)
         em.add_field(name="CPU", value=f"{psutil.cpu_percent()}% used with {formats.plural(psutil.cpu_count()):CPU}")
