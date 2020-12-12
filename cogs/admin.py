@@ -150,11 +150,13 @@ class Admin(commands.Cog):
                             outdated.append((package, current_version, pypi_version))
             except:
                 pass
+            await asyncio.sleep(5)
 
         if outdated:
-            em = discord.Embed(title="Outdated Packages", description="", color=0x96c8da)
+            joined = " ".join([package[0] for package in outdated])
+            em = discord.Embed(title="Outdated Packages", description=f"Update with `r!jsk sh venv/bin/pip install -U {joined}`\n", color=0x96c8da)
             for package in outdated:
-                em.description += f"\n{package[0]} (Local: {package[1]} | PyPI: {package[2]})"
+                em.description += f"\n{package[0]} (Local: {package[1]} | Latest: {package[2]})"
 
             await self.bot.console.send(embed=em)
 
