@@ -557,10 +557,10 @@ class Music(commands.Cog):
 
         if "list=" in query:
             await ctx.send(":globe_with_meridians: Fetching playlist")
-            await ctx.send(":white_check_mark: Finished downloading songs")
             songs = await Song.from_list(ctx, query, loop=self.bot.loop)
             for song in songs:
                 await player.queue.put(song)
+            await ctx.send(":white_check_mark: Finished downloading songs")
         else:
             song = await Song.from_query(ctx, query, loop=self.bot.loop)
             if not song:
