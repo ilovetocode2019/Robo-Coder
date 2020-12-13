@@ -94,9 +94,10 @@ class TicTacToe:
         if self.winner:
             message = f":tada: {self.winner} won!"
         elif self.tie:
-            message = "Game tied"
+            message = "Game was a tie"
         else:
             message = f"It is {self.turn}'s turn"
+
         em = discord.Embed(title="Tic Tac Toe", description=f"{self.board_string}\n\n{message}", color=0x96c8da)
         em.set_footer(text=f"{self.players[0]} (\N{CROSS MARK}) vs {self.players[1]} (\N{HEAVY LARGE CIRCLE})")
         return em
@@ -111,7 +112,7 @@ class Games(commands.Cog):
     @commands.group(name="hangman", description="Play hangman in Discord", invoke_without_command=True)
     async def hangman(self, ctx):
         if ctx.channel.id in self.hangman_games:
-            return await ctx.send(":x: A hangman game is already going in this channel")
+            return await ctx.send(":x: A hangman game is already running in this channel")
 
         try:
             await ctx.author.send("What is your hangman word?")
@@ -119,9 +120,7 @@ class Games(commands.Cog):
             return await ctx.send(":x: You need to have DMs enabled")
 
         try:
-            def check(msg):
-                return msg.channel == ctx.author.dm_channel
-            msg = await self.bot.wait_for("message", check=check, timeout=180)
+            msg = await self.bot.wait_for("message", check=lambda message: message.channel == ctx.author.dm_channel, timeout=180)
             word = msg.content
         except asyncio.TimeoutError:
             return await ctx.send(":x: Hangman creation timed out")
@@ -157,50 +156,47 @@ class Games(commands.Cog):
     async def hangman_stop(self, ctx):
         hangman = self.hangman_games.get(ctx.channel.id)
         if not hangman:
-            return await ctx.send(":x: No hangman game in this channel")
+            return await ctx.send(":x: No hangman game is running this channel")
         if hangman.owner.id != ctx.author.id and not ctx.author.guild_permissions.manage_messages:
-            return await ctx.send(":x: You do not own the hangman game in this channel")
+            return await ctx.send(":x: You do not own the hangman game")
 
         self.hangman_games.pop(ctx.channel.id)
         await ctx.send(":white_check_mark: Hangman game stopped")
 
     @commands.command(name="tictactoe", description="Play a tic tac toe", aliases=["ttt"])
     async def ttt(self, ctx, *, opponent: discord.Member):
-        if ctx.channel.id in self.tic_tac_toe_games:
-            await ctx.send(":x: A tic tac toe game is already going in this channel")
-
         players = [ctx.author, opponent]
         random.shuffle(players)
-        ctx.game = TicTacToe(ctx, players)
-        ctx.game.message = await ctx.send(embed=ctx.game.embed)
+        game = TicTacToe(ctx, players)
+        game.message = await ctx.send(embed=game.embed)
 
         def check(reaction, user):
-            return user == ctx.game.turn and reaction.message.id == ctx.game.message.id and str(reaction.emoji) in emojis
+            return user == game.turn and reaction.message.id == game.message.id and str(reaction.emoji) in emojis
 
         emojis = {"1\N{combining enclosing keycap}": 1, "2\N{combining enclosing keycap}": 2, "3\N{combining enclosing keycap}": 3,
                     "4\N{combining enclosing keycap}": 4, "5\N{combining enclosing keycap}": 5, "6\N{combining enclosing keycap}": 6,
                     "7\N{combining enclosing keycap}": 7, "8\N{combining enclosing keycap}": 8, "9\N{combining enclosing keycap}": 9
         }
         for emoji in emojis:
-            await ctx.game.message.add_reaction(emoji)
+            await game.message.add_reaction(emoji)
 
         while True:
             while True:
                 reaction, user = await self.bot.wait_for("reaction_add", check=check)
 
                 index = emojis[str(reaction.emoji)]
-                if ctx.game.players[0] == ctx.game.turn:
+                if game.players[0] == game.turn:
                     icon = True
                 else:
                     icon = False
 
-                if ctx.game.board[index-1] == None:
-                    ctx.game.board[index-1] = icon
-                    ctx.game.turn, ctx.game.next = ctx.game.next, ctx.game.turn
+                if game.board[index-1] == None:
+                    game.board[index-1] = icon
+                    game.turn, game.next = game.next, game.turn
                     break
 
-            await ctx.game.message.edit(embed=ctx.game.embed)
-            if ctx.game.winner or ctx.game.tie:
+            await game.message.edit(embed=game.embed)
+            if game.winner or game.tie:
                 break
 
 def setup(bot):
