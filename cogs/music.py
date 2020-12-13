@@ -757,20 +757,6 @@ class Music(commands.Cog):
         song = player.queue._queue[0]
         await ctx.send(f":track_next: Jumped to {song.title}")
 
-    @commands.command(name="seek", description="Seek a different position in the song")
-    async def seek(self, ctx, position: int):
-        player = self.bot.players.get(ctx.guild.id)
-
-        if not player:
-            return
-        if not ctx.author in player.voice.channel.members:
-            return
-        if not player.now:
-            return
-
-        player.pause()
-
-
     @commands.group(name="loop", descrition="Loop/unloop the music", invoke_without_command=True)
     async def loop(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
