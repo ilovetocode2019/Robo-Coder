@@ -293,7 +293,7 @@ class Player:
     @property
     def bar(self):
         bar = ""
-        decimal = (time.time()-self.song_started)/self.now.total_seconds
+        decimal = self.duration/self.now.total_seconds
 
         i = int(decimal*30)
         for x in range(30):
