@@ -591,6 +591,7 @@ class Music(commands.Cog):
             return await ctx.send("You are not in any voice channel")
 
         await player.voice.move_to(ctx.author.voice.channel)
+        player.resume()
         player.ctx = ctx
 
         await ctx.send(f"Now connected to `{ctx.author.voice.channel.name}` and bound to `{ctx.channel.name}`")
