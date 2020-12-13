@@ -711,6 +711,9 @@ class Music(commands.Cog):
             return
 
         player.voice.source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(player.now.filename), player.volume)
+        player.song_started = time.time()
+        player.pause_started = None
+
         await ctx.send(":rewind: Starting over")
 
     @commands.command(name="skip", description="Skip the music")
