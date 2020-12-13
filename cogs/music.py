@@ -975,8 +975,11 @@ class Music(commands.Cog):
             except:
                 pass
             await ctx.send("Disconnected from voice")
+
         elif ctx.guild.voice_client:
             await ctx.guild.voice_client.disconnect()
+            if ctx.guild.id in self.bot._connection._voice_clients:
+                self.bot._connection._voice_clients.pop(ctx.guild.id)
             await ctx.send("Disconnected from voice")
 
     @commands.command(name="allplayers", description="View all players")
