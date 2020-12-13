@@ -627,7 +627,7 @@ class Music(commands.Cog):
         try:
             songs = await self.get_bin(url=url)
         except:
-            return await ctx.send(":x: I couldn't fetch that bin. Make sure the url is valid.")
+            return await ctx.send(":x: I couldn't fetch that bin. Make sure the URL is valid.")
 
         for url in songs:
             song = await Song.from_query(ctx, url, loop=self.bot.loop)
