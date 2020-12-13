@@ -1,6 +1,5 @@
 discord.py
 jishaku
-async_timeout
 asyncpg
 youtube_dl
 Pillow

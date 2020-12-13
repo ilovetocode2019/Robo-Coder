@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 from discord.ext import menus
 
-from async_timeout import timeout
 from urllib.parse import urlparse
 import asyncio
 import youtube_dl
@@ -215,6 +214,7 @@ class Player:
         self.looping_queue = False
         self.notifications = True
         self.volume = .5
+        self.song_started = None
         self.startover = False
 
         self.loop = self.bot.loop.create_task(self.player_loop())
@@ -223,8 +223,7 @@ class Player:
         while True:
             if not self.now:
                 try:
-                    async with timeout(180):
-                        self.now = await self.queue.get()
+                    self.now = await asyncio.wait_for(self.queue.get(), timeout=180)
                 except asyncio.TimeoutError:
                     await self.voice.disconnect()
                     try:
@@ -235,14 +234,15 @@ class Player:
 
             source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.now.filename))
             self.voice.play(source, after=self.after_song)
+            self.song_started = time.time()
             self.voice.source.volume = self.volume
 
             if self.notifications and not self.startover:
                 await self.ctx.send(f":notes: Now playing {self.now.title}")
 
             self.startover = False
-            self.song_started = time.time()
             await self.event.wait()
+            self.song_started = None
             self.event.clear()
 
             if self.looping_queue and not self.looping and not self.startover:
@@ -251,11 +251,17 @@ class Player:
             if not self.looping:
                 self.now = None
 
-    def after_song(self, e):
-        if not e:
+    def after_song(self, exc):
+        if not exc:
             self.event.set()
         else:
-            raise e
+            raise exc
+
+    def pause(self):
+        self.voice.pause()
+
+    def resume(self):
+        self.voice.resume()
 
     def get_bar(self, seconds):
         bar = ""
@@ -636,7 +642,7 @@ class Music(commands.Cog):
         if not ctx.author in player.voice.channel.members:
             return
 
-        player.voice.pause()
+        player.pause()
         await ctx.send(":arrow_forward: Paused")
 
     @commands.command(name="resume", description="Resume the music")
@@ -648,7 +654,7 @@ class Music(commands.Cog):
         if not ctx.author in player.voice.channel.members:
             return
 
-        player.voice.resume()
+        player.resume()
         await ctx.send(":pause_button: Resumed")
 
     @commands.command(name="startover", description="Start the current song from the beginning")
@@ -1015,10 +1021,10 @@ class Music(commands.Cog):
         if len(members) > 0:
             return
 
-        player.voice.pause()
+        player.pause()
 
         def check(member, before, after):
-            return not member.bot and member.id == self.bot.user.id and before.channel != after.channel
+            return not member.bot and before.channel != after.channel
 
         try:
             await self.bot.wait_for("voice_state_update", timeout=180, check=check)
@@ -1042,7 +1048,7 @@ class Music(commands.Cog):
                 pass
 
         else:
-            player.voice.resume()
+            player.resume()
 
 def setup(bot):
     bot.add_cog(Music(bot))
