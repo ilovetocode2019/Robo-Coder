@@ -286,6 +286,13 @@ class Player:
             self.bot.players.pop(self.ctx.guild.id)
 
     @property
+    def is_playing(self):
+        if self.now:
+            return True
+        else:
+            return False
+
+    @property
     def duration(self):
         if self.pause_started:
             return (time.time()-self.song_started) - (time.time()-self.pause_started)
@@ -615,7 +622,7 @@ class Music(commands.Cog):
             if not song:
                 return
 
-            if player.voice.is_playing():
+            if player.is_playing:
                 await ctx.send(f":page_facing_up: Enqueued {song.title}")
 
             await player.queue.put(song)
@@ -663,7 +670,7 @@ class Music(commands.Cog):
 
         song = await Song.from_query(ctx, result.data["id"], loop=self.bot.loop)
 
-        if player.voice.is_playing():
+        if player.is_playing:
             await ctx.send(f":page_facing_up: Enqueued {song.title}")
 
         await player.queue.put(song)
@@ -804,7 +811,7 @@ class Music(commands.Cog):
             return
         if not ctx.author in player.voice.channel.members:
             return
-        if not player.voice.is_playing():
+        if not player.is_playing:
             return
 
         if volume is None:
