@@ -232,7 +232,7 @@ class Player:
             self.voice.play(source, after=self.after_song)
             self.song_started = time.time()
 
-            if self.notification:
+            if self.notifications:
                 await self.ctx.send(f":notes: Now playing {self.now.title}")
 
             await self.event.wait()
