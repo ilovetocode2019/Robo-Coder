@@ -979,7 +979,7 @@ class Music(commands.Cog):
             await player.voice.disconnect()
 
         self.bot.players = {}
-        await ctx.send("All Players have been stopped")
+        await ctx.send("All players have been stopped")
 
     @commands.command(name="endplayer", description="Stops a single player")
     @commands.is_owner()
