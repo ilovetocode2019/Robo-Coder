@@ -763,16 +763,19 @@ class Music(commands.Cog):
         if not player.now:
             return
 
-        if position >= player.now.total_seconds or position <= 0:
+        if position > player.now.total_seconds or position < 0:
             return await ctx.send(":x: That is not a valid position")
+
+        emoji = ":fast_forward:" if position > player.duration else ":rewind:"
 
         timestamp = Song.timestamp_duration(position)
         source = discord.FFmpegPCMAudio(player.now.filename, options=f"-ss {timestamp}")
         player.voice.source = discord.PCMVolumeTransformer(source, player.volume)
+
         player.song_started = time.time()-position
         player.pause_started = None
 
-        await ctx.send(f":fast_forward: Seeking {timestamp}")
+        await ctx.send(f"{emoji} Seeked {timestamp}")
 
     @commands.group(name="loop", descrition="Loop/unloop the music", invoke_without_command=True)
     async def loop(self, ctx):
