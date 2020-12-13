@@ -131,7 +131,7 @@ class Games(commands.Cog):
         self.hangman_games[ctx.channel.id] = hangman = Hangman(ctx, word)
         self.hangman_games[ctx.channel.id].message = await ctx.send(embed=self.hangman_games[ctx.channel.id].embed)
 
-    @hangman.command(name="guess", description="Guess a word in a hangman game")
+    @hangman.command(name="guess", description="Guess a word in a hangman game", aliases=["g"])
     async def hangman_guess(self, ctx, letter):
         hangman = self.hangman_games.get(ctx.channel.id)
         if not hangman:
