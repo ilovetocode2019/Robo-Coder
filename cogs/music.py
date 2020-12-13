@@ -533,7 +533,9 @@ class Music(commands.Cog):
             return await ctx.send("You are not in any voice channel")
 
         await player.voice.move_to(ctx.author.voice.channel)
+
         player.ctx = ctx
+
         await ctx.send(f"Now connected to `{ctx.author.voice.channel.name}` and bound to `{ctx.channel.name}`")
 
     @commands.command(name="play", description="Play a song", aliases=["p"])
@@ -1006,7 +1008,7 @@ class Music(commands.Cog):
 
         player = self.bot.players.get(member.guild.id)
 
-        if not player:
+        if not player or not player.voice:
             return
 
         members = [x for x in player.voice.channel.members if not x.bot]
@@ -1016,11 +1018,14 @@ class Music(commands.Cog):
         player.voice.pause()
 
         def check(member, before, after):
-            return (not member.bot and after.channel and after.channel == player.voice.channel) or (member.id == self.bot.user.id and before.channel != after.channel)
+            return not member.bot and member.id == self.bot.user.id and before.channel != after.channel
 
         try:
             await self.bot.wait_for("voice_state_update", timeout=180, check=check)
         except asyncio.TimeoutError:
+            if player.voice:
+                return
+
             if len(player.queue._queue) != 0:
                 queue = [x.url for x in player.queue._queue]
                 if player.looping_queue:
