@@ -119,7 +119,7 @@ class RoboCoder(commands.Bot):
             await self.status_webhook.send("Connected to Discord")
 
     async def on_disconnect(self):
-        if config.status_hook:
+        if config.status_hook and not self.session.closed:
             await self.status_webhook.send("Disconnected from Discord")
 
     async def on_resumed(self):
