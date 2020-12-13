@@ -214,8 +214,10 @@ class Player:
         self.looping_queue = False
         self.notifications = True
         self.volume = .5
-        self.song_started = None
         self.startover = False
+
+        self.song_started = None
+        self.pause_started = None
 
         self.loop = self.bot.loop.create_task(self.player_loop())
 
@@ -243,6 +245,7 @@ class Player:
             self.startover = False
             await self.event.wait()
             self.song_started = None
+            self.pause_started = None
             self.event.clear()
 
             if self.looping_queue and not self.looping and not self.startover:
@@ -258,14 +261,30 @@ class Player:
             raise exc
 
     def pause(self):
+        if self.pause_started:
+            self.song_started += (time.time()-self.pause_started)
+            self.pause_started = None
+
         self.voice.pause()
+        self.pause_started = time.time()
 
     def resume(self):
+        if self.pause_started:
+            self.song_started += (time.time()-self.pause_started)
+            self.pause_started = None
+
         self.voice.resume()
 
-    def get_bar(self, seconds):
+    @property
+    def duration(self):
+        if self.pause_started:
+            return (time.time()-self.song_started) - (time.time()-self.pause_started)
+        return (time.time()-self.song_started)
+
+    @property
+    def bar(self):
         bar = ""
-        decimal = (time.time()-self.song_started)/seconds
+        decimal = (time.time()-self.song_started)/self.now.total_seconds
 
         i = int(decimal*30)
         for x in range(30):
@@ -276,7 +295,8 @@ class Player:
 
         return bar
 
-    def create_embed(self):
+    @property
+    def embed(self):
         looping = ""
         if self.looping:
             looping = "(:repeat_one: Looping)"
@@ -286,7 +306,7 @@ class Player:
             playing = ":pause_button:"
 
         em = discord.Embed(title=f"{playing} {self.now.title} {looping}", color=0x66FFCC)
-        em.add_field(name="Duration", value=f"{Song.timestamp_duration(int(time.time()-self.song_started))}/{self.now.timestamp_duration} `{self.get_bar(self.now.total_seconds)}`", inline=False)
+        em.add_field(name="Duration", value=f"{Song.timestamp_duration(self.duration)}/{self.now.timestamp_duration} `{self.bar}`", inline=False)
         em.add_field(name="Url", value=f"[Click]({self.now.url})")
         em.add_field(name="Uploader", value=f"[{self.now.uploader}]({self.now.uploader_url})")
         em.add_field(name="Requester", value=f"{self.now.requester.mention}")
@@ -456,6 +476,8 @@ class Song:
 
     @staticmethod
     def parse_duration(duration: int):
+        duration = int(duration)
+
         minutes, seconds = divmod(duration, 60)
         hours, minutes = divmod(minutes, 60)
         days, hours = divmod(hours, 24)
@@ -474,6 +496,8 @@ class Song:
 
     @staticmethod
     def timestamp_duration(duration: int):
+        duration = int(duration)
+
         minutes, seconds = divmod(duration, 60)
         hours, minutes = divmod(minutes, 60)
         days, hours = divmod(hours, 24)
@@ -597,7 +621,7 @@ class Music(commands.Cog):
         url = url.strip("<>")
         try:
             songs = await self.get_bin(url=url)
-        except Exception as exc:
+        except:
             return await ctx.send(":x: I couldn't fetch that bin. Make sure the url is valid.")
 
         for url in songs:
@@ -821,7 +845,7 @@ class Music(commands.Cog):
         if not player.now:
             return await ctx.send("Not playing anything")
 
-        await ctx.send(embed=player.create_embed())
+        await ctx.send(embed=player.embed)
 
     @commands.command(name="next", description="View the next song in the queue")
     async def next(self, ctx):
