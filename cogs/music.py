@@ -665,6 +665,8 @@ class Music(commands.Cog):
             return
         if not ctx.author in player.voice.channel.members:
             return
+        if not player.now or not player.voice.is_playing():
+            return
 
         player.pause()
         await ctx.send(":arrow_forward: Paused")
@@ -676,6 +678,8 @@ class Music(commands.Cog):
         if not player:
             return
         if not ctx.author in player.voice.channel.members:
+            return
+        if not player.now or player.voice.is_playing():
             return
 
         player.resume()
