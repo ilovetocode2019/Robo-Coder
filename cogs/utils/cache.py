@@ -39,7 +39,7 @@ def cache(max_legnth = 100):
 
             try:
                 key = _get_key(*args, **kwargs)
-                del cache[key]
+                cache.pop(key)
                 return True
             except KeyError:
                 return False
