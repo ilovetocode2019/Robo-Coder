@@ -1,18 +1,13 @@
 import discord
-from discord.ext import commands
-from discord.ext import menus
+from discord.ext import commands, menus
 
-from urllib.parse import urlparse
 import asyncio
-import youtube_dl
 import functools
-import os
+import youtube_dl
 import random
-import time
-import logging
 import re
-
-logger = logging.getLogger("robo_coder.music")
+import time
+import urllib
 
 class SongPages(menus.ListPageSource):
     def __init__(self, songs):
@@ -537,7 +532,7 @@ class Music(commands.Cog):
         return ctx.guild
 
     async def get_bin(self, url):
-        parsed = urlparse(url)
+        parsed = urllib.parse.urlparse(url)
         newpath = "/raw" + parsed.path
         url = parsed.scheme + "://" + parsed.netloc + newpath
         async with self.bot.session.get(url) as response:
@@ -549,6 +544,12 @@ class Music(commands.Cog):
         async with self.bot.session.post("https://mystb.in/documents", data=content.encode("utf-8")) as resp:
             data = await resp.json()
             return f"https://mystb.in/{data['key']}"
+
+    async def save_queue(self, player):
+        queue = [song.url for song in player.queue._queue]
+        if player.looping_queue:
+            queue = [player.now.url] + queue
+        return await self.post_bin("\n".join(queue))
 
     @commands.command(name="connect", description="Connect the bot to a voice channel", aliases=["join"])
     async def connect(self, ctx):
@@ -896,7 +897,6 @@ class Music(commands.Cog):
                 return await ctx.send("That is not a song in the playlist")
             song = player.queue._queue[song-1]
 
-
             em = discord.Embed(title=song.title, color=0x66FFCC)
             em.add_field(name="Duration", value=str(song.timestamp_duration))
             em.add_field(name="Url", value=f"[Click]({song.url})")
@@ -916,10 +916,7 @@ class Music(commands.Cog):
             return
 
         if len(player.queue._queue) != 0:
-            queue = [x.url for x in player.queue._queue]
-            if player.looping_queue:
-                queue = [player.now.url] + queue
-            url = await self.post_bin(str("\n".join(queue)))
+            url = await self.save_queue(player)
             await ctx.send(f"Playlist saved to {url}")
         else:
             await ctx.send("No queue to save")
@@ -996,10 +993,7 @@ class Music(commands.Cog):
     async def stopall(self, ctx):
         for player in self.bot.players.values():
             if len(player.queue._queue) != 0:
-                queue = [x.url for x in player.queue._queue]
-                if player.looping_queue:
-                    queue = [player.now.url] + queue
-                url = await self.post_bin(str("\n".join(queue)))
+                url = await self.save_queue(player)
                 await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{ctx.prefix}playbin {url}`.")
             elif player.now:
                 await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
@@ -1018,10 +1012,7 @@ class Music(commands.Cog):
         player = self.bot.players[player]
 
         if len(player.queue._queue) != 0:
-            queue = [x.url for x in player.queue._queue]
-            if player.looping_queue:
-                queue = [player.now.url] + queue
-            url = await self.post_bin(str("\n".join(queue)))
+            url = await self.save_queue(player)
             await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{ctx.prefix}playbin {url}`.")
         elif player.now:
             await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
@@ -1052,14 +1043,8 @@ class Music(commands.Cog):
         try:
             await self.bot.wait_for("voice_state_update", timeout=180, check=check)
         except asyncio.TimeoutError:
-            if player.voice:
-                return
-
             if len(player.queue._queue) != 0:
-                queue = [x.url for x in player.queue._queue]
-                if player.looping_queue:
-                    queue = [player.now.url] + queue
-                url = await self.post_bin(str("\n".join(queue)))
+                url = await self.save_queue(player)
                 await player.ctx.send(f"Playlist saved to {url}")
 
             await player.disconnect()
