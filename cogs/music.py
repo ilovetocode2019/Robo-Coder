@@ -261,7 +261,7 @@ class Player:
             raise exc
 
     def pause(self):
-        if self.pause_started:
+        if self.pause_started and self.song_started:
             self.song_started += (time.time()-self.pause_started)
             self.pause_started = None
 
@@ -269,7 +269,7 @@ class Player:
         self.pause_started = time.time()
 
     def resume(self):
-        if self.pause_started:
+        if self.pause_started and self.song_started:
             self.song_started += (time.time()-self.pause_started)
             self.pause_started = None
 
@@ -1055,7 +1055,7 @@ class Music(commands.Cog):
         player.pause()
 
         def check(member, before, after):
-            return not member.bot and after and after.channel == player.voice.channel
+            return not member.bot and after and after.channel and after.channel == player.voice.channel
 
         try:
             await self.bot.wait_for("voice_state_update", timeout=180, check=check)
