@@ -13,6 +13,8 @@ import os
 import codecs
 import pathlib
 
+from .utils import formats
+
 def get_lines_of_code():
     total = 0
     file_amount = 0
@@ -131,7 +133,7 @@ class Meta(commands.Cog):
             await ctx.send(":x: The max concurrency for this command has been reached")
 
         elif isinstance(e, discord.ext.commands.errors.CommandOnCooldown):
-            return await ctx.send(f"You are on cooldown. Try again in {e.retry_after} seconds")
+            return await ctx.send(f"You are on cooldown. Try again in {formats.plural(int(e.retry_after)):second}")
         elif isinstance(e, discord.ext.commands.errors.CommandNotFound):
             return
 
