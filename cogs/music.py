@@ -959,10 +959,7 @@ class Music(commands.Cog):
                 return
 
             if len(player.queue._queue) != 0:
-                queue = [x.url for x in player.queue._queue]
-                if player.looping_queue:
-                    queue = [player.now.url] + queue
-                url = await self.post_bin(str("\n".join(queue)))
+                url = await self.save_queue(player)
                 await ctx.send(f"Playlist saved to {url}")
 
             await player.disconnect()
