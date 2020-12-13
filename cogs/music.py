@@ -1030,8 +1030,8 @@ class Music(commands.Cog):
 
         await ctx.send("Player has been stopped")
 
-    @commands.Cog.listener("on_voice_state_update")
-    async def leave_on_inactivity(self, member, before, after):
+    @commands.Cog.listener()
+    async def on_voice_state_update(self, member, before, after):
         if member.bot:
             return
 
