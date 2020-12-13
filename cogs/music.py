@@ -275,6 +275,20 @@ class Player:
 
         self.voice.resume()
 
+    def stop(self):
+        self.looping = False
+        self.looping_queue = False
+        self.queue._queue.clear()
+        self.voice.stop()
+
+    async def disconnect(self):
+        self.stop()
+        self.loop.cancel()
+        await self.voice.disconnect()
+
+        if self.ctx.guild.id in self.bot.players:
+            self.bot.players.pop(self.ctx.guild.id)
+
     @property
     def duration(self):
         if self.pause_started:
@@ -568,7 +582,6 @@ class Music(commands.Cog):
             return await ctx.send("You are not in any voice channel")
 
         await player.voice.move_to(ctx.author.voice.channel)
-
         player.ctx = ctx
 
         await ctx.send(f"Now connected to `{ctx.author.voice.channel.name}` and bound to `{ctx.channel.name}`")
@@ -582,9 +595,6 @@ class Music(commands.Cog):
             player = self.bot.players.get(ctx.guild.id)
             if not player:
                 return
-
-        if not ctx.author in player.voice.channel.members:
-            return
 
         query = query.strip("<>")
         if query.startswith("https:"):
@@ -618,9 +628,6 @@ class Music(commands.Cog):
             if not player:
                 return
 
-        if not ctx.author in player.voice.channel.members:
-            return
-
         await ctx.send(":globe_with_meridians: Fetching playlist")
 
         url = url.strip("<>")
@@ -644,9 +651,6 @@ class Music(commands.Cog):
             player = self.bot.players.get(ctx.guild.id)
             if not player:
                 return
-
-        if not ctx.author in player.voice.channel.members:
-            return
 
         songs = await Song.from_list(ctx, f"ytsearch3:{query}", loop=self.bot.loop, download=False)
 
@@ -835,10 +839,7 @@ class Music(commands.Cog):
         if not ctx.author in player.voice.channel.members:
             return
 
-        player.looping = False
-        player.looping_queue = False
-        player.queue._queue.clear()
-        player.voice.stop()
+        player.stop()
         await ctx.send(":stop_button: Stopped music, cleared queue")
 
     @commands.command(name="now", description="Get the current playing song", aliases=["np"])
@@ -875,7 +876,6 @@ class Music(commands.Cog):
         em.set_thumbnail(url=song.thumbnail)
 
         await ctx.send(embed=em)
-
 
     @commands.group(name="queue", description="View the song queue", invoke_without_command=True)
     async def queue(self, ctx, song: int = None):
@@ -968,12 +968,7 @@ class Music(commands.Cog):
                 url = await self.post_bin(str("\n".join(queue)))
                 await ctx.send(f"Playlist saved to {url}")
 
-            player.loop.cancel()
-            await player.voice.disconnect()
-            try:
-                self.bot.players.pop(ctx.guild.id)
-            except:
-                pass
+            await player.disconnect()
             await ctx.send("Disconnected from voice")
 
         elif ctx.guild.voice_client:
@@ -1009,8 +1004,7 @@ class Music(commands.Cog):
             elif player.now:
                 await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
 
-            player.loop.cancel()
-            await player.voice.disconnect()
+            await player.disconnect()
 
         self.bot.players = {}
         await ctx.send("All players have been stopped")
@@ -1032,12 +1026,7 @@ class Music(commands.Cog):
         elif player.now:
             await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
 
-        player.loop.cancel()
-        await player.voice.disconnect()
-        try:
-            self.bot.players.pop(ctx.guild.id)
-        except:
-            pass
+        await player.disconnect()
 
         await ctx.send("Player has been stopped")
 
@@ -1073,13 +1062,7 @@ class Music(commands.Cog):
                 url = await self.post_bin(str("\n".join(queue)))
                 await player.ctx.send(f"Playlist saved to {url}")
 
-            player.loop.cancel()
-            await player.voice.disconnect()
-
-            try:
-                self.bot.players.pop(member.guild.id)
-            except:
-                pass
+            await player.disconnect()
 
         else:
             player.resume()
