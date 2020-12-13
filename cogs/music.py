@@ -988,7 +988,7 @@ class Music(commands.Cog):
         players = []
         for player in self.bot.players.values():
             info = f"{player.voice.guild} - `{player.voice.channel} | {player.ctx.channel}`"
-            latency = f"{player.voice.latency*1000:,}ms"
+            latency = f"{player.voice.latency*1000:.2f}ms"
             players.append(f"{info} ({latency})")
 
         await ctx.send("\n".join(players))
