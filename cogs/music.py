@@ -538,24 +538,25 @@ class Music(commands.Cog):
 
     @commands.command(name="connect", description="Connect the bot to a voice channel", aliases=["join"])
     async def connect(self, ctx):
+        channel = ctx.author.voice.channel
+
         if not ctx.author.voice:
             return await ctx.send(":x: You are not in any voice channel")
         if ctx.guild.id in self.bot.players or ctx.guild.id in [voice.guild.id for voice in self.bot.voice_clients]:
             return await ctx.send(":x: Already connected to a voice channel")
-
-        channel = ctx.author.voice.channel
-        message = await ctx.send(f"Connecting to `{channel}`...")
+        if channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.guild.me.guild_permissions.move_members:
+            return await ctx.send(f":x: I can't connect to `{channel}` because it's full")
 
         try:
             voice_client = await channel.connect()
         except:
             if ctx.guild.voice_client:
                 await ctx.guild.voice_client.disconnect()
-            return await message.edit(content=f":x: I couldn't connect to `{channel}`")
+            return await ctx.send(f":x: I couldn't connect to `{channel}`")
 
         self.bot.players[ctx.guild.id] = Player(ctx, voice_client)
         player = self.bot.players[ctx.guild.id]
-        await message.edit(content=f"Connected to `{channel}`")
+        await ctx.send(f"Connected to `{channel}`")
 
     @commands.command(name="summon", description="Summon the bot to a different channel")
     async def summon(self, ctx):
@@ -697,7 +698,6 @@ class Music(commands.Cog):
             return
         if not ctx.author in player.voice.channel.members:
             return
-
         if not player.now:
             return
 
@@ -718,7 +718,6 @@ class Music(commands.Cog):
             return
         if not ctx.author in player.voice.channel.members:
             return
-
         if not player.now:
             return
 
