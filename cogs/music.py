@@ -209,7 +209,6 @@ class Player:
         self.looping_queue = False
         self.notifications = True
         self.volume = .5
-        self.startover = False
 
         self.song_started = None
         self.pause_started = None
@@ -232,9 +231,8 @@ class Player:
             source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.now.filename), self.volume)
             self.voice.play(source, after=self.after_song)
             self.song_started = time.time()
-            self.startover = False
 
-            if self.notifications and not self.startover:
+            if self.notification:
                 await self.ctx.send(f":notes: Now playing {self.now.title}")
 
             await self.event.wait()
@@ -242,7 +240,7 @@ class Player:
             self.song_started = None
             self.pause_started = None
 
-            if self.looping_queue and not self.looping and not self.startover:
+            if self.looping_queue and not self.looping:
                 await self.queue.put(self.now)
             if not self.looping:
                 self.now = None
@@ -712,13 +710,7 @@ class Music(commands.Cog):
         if not player.now:
             return
 
-        player.startover = True
-
-        if not player.looping:
-            player.queue._queue.appendleft(player.now)
-
-        player.voice.stop()
-
+        player.voice.source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(player.now.filename), player.volume)
         await ctx.send(":rewind: Starting over")
 
     @commands.command(name="skip", description="Skip the music")
