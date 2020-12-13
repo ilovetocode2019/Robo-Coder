@@ -229,23 +229,21 @@ class Player:
                         pass
                     return
 
-            source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.now.filename))
+            source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.now.filename), self.volume)
             self.voice.play(source, after=self.after_song)
             self.song_started = time.time()
-            self.voice.source.volume = self.volume
+            self.startover = False
 
             if self.notifications and not self.startover:
                 await self.ctx.send(f":notes: Now playing {self.now.title}")
 
-            self.startover = False
             await self.event.wait()
+            self.event.clear()
             self.song_started = None
             self.pause_started = None
-            self.event.clear()
 
             if self.looping_queue and not self.looping and not self.startover:
                 await self.queue.put(self.now)
-
             if not self.looping:
                 self.now = None
 
@@ -352,7 +350,7 @@ class Song:
     ytdl = youtube_dl.YoutubeDL(YTDL_OPTIONS)
     regex = re.compile("(?:https?://)?(?:www.)?(?:youtube.com|youtu.be)/(?:watch\\?v=)?([^\\s]+)")
 
-    def __init__(self, ctx, *, data, volume=0.5):
+    def __init__(self, ctx, *, data):
         self.data = data
         self.requester = ctx.author
 
@@ -360,10 +358,9 @@ class Song:
         self.filename = data["filename"]
         self.uploader = data.get("uploader")
         self.uploader_url = data.get("uploader_url")
-        date = data.get("upload_date")
         self.date = data.get("upload_date")
         self.total_seconds = int(data.get("duration"))
-        self.upload_date = date[6:8] + "." + date[4:6] + "." + date[0:4]
+        self.upload_date = self.date[6:8] + "." + self.date[4:6] + "." + self.date[0:4]
         self.title = data.get("title")
         self.thumbnail = data.get("thumbnail")
         self.description = data.get("description")
@@ -724,6 +721,20 @@ class Music(commands.Cog):
 
         await ctx.send(":rewind: Starting over")
 
+    @commands.command(name="skip", description="Skip the music")
+    async def skip(self, ctx):
+        player = self.bot.players.get(ctx.guild.id)
+
+        if not player:
+            return
+        if not ctx.author in player.voice.channel.members:
+            return
+        if not player.now:
+            return
+
+        player.voice.stop()
+        await ctx.send(":track_next: Skipped current song")
+
     @commands.command(name="skipto", description="Jump to a song in the queue")
     async def skipto(self, ctx, position: int):
         player = self.bot.players.get(ctx.guild.id)
@@ -746,8 +757,8 @@ class Music(commands.Cog):
         song = player.queue._queue[0]
         await ctx.send(f":track_next: Jumped to {song.title}")
 
-    @commands.command(name="skip", description="Skip the music")
-    async def skip(self, ctx):
+    @commands.command(name="seek", description="Seek a different position in the song")
+    async def seek(self, ctx, position: int):
         player = self.bot.players.get(ctx.guild.id)
 
         if not player:
@@ -757,8 +768,8 @@ class Music(commands.Cog):
         if not player.now:
             return
 
-        player.voice.stop()
-        await ctx.send(":track_next: Skipped current song")
+        player.pause()
+
 
     @commands.group(name="loop", descrition="Loop/unloop the music", invoke_without_command=True)
     async def loop(self, ctx):
@@ -1052,9 +1063,7 @@ class Music(commands.Cog):
             if len(player.queue._queue) != 0:
                 url = await self.save_queue(player)
                 await player.ctx.send(f"Playlist saved to {url}")
-
             await player.disconnect()
-
         else:
             player.resume()
 
