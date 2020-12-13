@@ -752,6 +752,28 @@ class Music(commands.Cog):
         song = player.queue._queue[0]
         await ctx.send(f":track_next: Jumped to {song.title}")
 
+    @commands.command(name="seek", description="Seek a position in the song")
+    async def seek(self, ctx, position: int):
+        player = self.bot.players.get(ctx.guild.id)
+
+        if not player:
+            return
+        if not ctx.author in player.voice.channel.members:
+            return
+        if not player.now:
+            return
+
+        if position >= player.now.total_seconds or position <= 0:
+            return await ctx.send(":x: That is not a valid position")
+
+        timestamp = Song.timestamp_duration(position)
+        source = discord.FFmpegPCMAudio(player.now.filename, options=f"-ss {timestamp}")
+        player.voice.source = discord.PCMVolumeTransformer(source, player.volume)
+        player.song_started = time.time()-position
+        player.pause_started = None
+
+        await ctx.send(f":fast_forward: Seeking {timestamp}")
+
     @commands.group(name="loop", descrition="Loop/unloop the music", invoke_without_command=True)
     async def loop(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
