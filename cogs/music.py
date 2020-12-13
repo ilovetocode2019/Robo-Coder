@@ -1052,7 +1052,7 @@ class Music(commands.Cog):
         player.pause()
 
         def check(member, before, after):
-            return not member.bot and before.channel != after.channel
+            return not member.bot and after.channel == player.voice.channel
 
         try:
             await self.bot.wait_for("voice_state_update", timeout=180, check=check)
