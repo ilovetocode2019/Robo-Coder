@@ -40,7 +40,7 @@ class Hangman:
         if self.won:
             em.description = ":tada: You Won!"
         elif self.won == False:
-            em.description = "You Lost"
+            em.description = f"You Lost. The word was ||{self.word}||"
 
         if self.incorrect:
             em.add_field(name="Incorrect Guesses", value=", ".join(self.incorrect))
