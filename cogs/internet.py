@@ -476,7 +476,7 @@ class Internet(commands.Cog):
                         return await ctx.author.send(":x: You must have at least 2 options")
                     break
                 elif message.content == "abort":
-                    return await ctx.author.send("Aborted")
+                    return await ctx.author.send("Aborting")
 
                 options.append(message.content)
                 await message.add_reaction("\N{WHITE HEAVY CHECK MARK}")

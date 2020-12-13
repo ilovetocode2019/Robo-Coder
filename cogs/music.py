@@ -652,7 +652,7 @@ class Music(commands.Cog):
         pages = SongSelectorMenuPages(songs, clear_reactions_after=True)
         result = await pages.prompt(ctx)
         if not result:
-            return await ctx.send("Not playing anything")
+            return await ctx.send("Aborting")
 
         song = await Song.from_query(ctx, result.data["id"], loop=self.bot.loop)
 

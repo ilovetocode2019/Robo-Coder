@@ -206,7 +206,7 @@ class Tools(commands.Cog):
                         return await ctx.author.send(":x: You must have at least 2 options")
                     break
                 elif message.content == "abort":
-                    return await ctx.author.send("Aborted")
+                    return await ctx.author.send("Aborting")
 
                 args = message.content.split(" ")
                 if len(args) == 1:
