@@ -551,7 +551,10 @@ class Music(commands.Cog):
 
     @commands.command(name="connect", description="Connect the bot to a voice channel", aliases=["join"])
     async def connect(self, ctx):
-        channel = ctx.author.voice.channel
+        try:
+            channel = ctx.author.voice.channel
+        except AttributeError:
+            return await ctx.send(":x: You are not connected to a voice channel")
 
         if not ctx.author.voice:
             return await ctx.send(":x: You are not in any voice channel")
