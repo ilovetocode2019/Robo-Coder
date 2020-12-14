@@ -203,7 +203,7 @@ class Meta(commands.Cog):
         invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms, guild=None, redirect_uri=None)
         await ctx.send(f"<{invite}>")
 
-    @commands.command(name="code", description="Find out how much code I have")
+    @commands.command(name="code", description="Find out what I'm made of")
     async def code(self, ctx):
         code = get_lines_of_code()
         await ctx.send(code)
