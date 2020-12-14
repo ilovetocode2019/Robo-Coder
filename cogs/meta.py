@@ -129,7 +129,7 @@ class Meta(commands.Cog):
         elif isinstance(error, commands.MaxConcurrencyReached):
             await ctx.send(f":x: {error}")
         elif isinstance(error, commands.errors.CommandOnCooldown):
-            await ctx.send(f"You are on cooldown. Try again in {formats.plural(int(error.retry_after)):second}")
+            await ctx.send(f"You are on cooldown. Try again in {formats.plural(int(error.retry_after)):second}.")
         elif isinstance(error, commands.errors.CheckFailure):
             return
         elif isinstance(error, commands.errors.CommandNotFound):
