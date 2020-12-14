@@ -117,28 +117,28 @@ class Meta(commands.Cog):
         print(f"Ignoring exception in command {ctx.command}:", file=sys.stderr)
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
-        if isinstance(error, discord.ext.commands.NoPrivateMessage):
+        if isinstance(error, commands.NoPrivateMessage):
             await ctx.send("This command can not be used in DMs")
-        elif isinstance(error, discord.ext.commands.errors.BotMissingPermissions):
+        elif isinstance(error, commands.errors.BotMissingPermissions):
             perms_text = "\n".join([f"- {perm.replace('_', ' ').capitalize()}" for perm in error.missing_perms])
             await ctx.send(f":x: I am missing some permissions:\n {perms_text}") 
-        elif isinstance(error, discord.ext.commands.errors.MissingRequiredArgument):
+        elif isinstance(error, commands.errors.MissingRequiredArgument):
             await ctx.send(f":x: You are missing a argument: `{error.param}`")
-        elif isinstance(error, discord.ext.commands.errors.BadArgument) or isinstance(error, discord.ext.commands.errors.BadUnionArgument):
+        elif isinstance(error, commands.errors.BadArgument) or isinstance(error, commands.errors.BadUnionArgument):
             await ctx.send(f":x: {error}")
-        elif isinstance(error, discord.ext.commands.MaxConcurrencyReached):
+        elif isinstance(error, commands.MaxConcurrencyReached):
             await ctx.send(f":x: {error}")
-        elif isinstance(error, discord.ext.commands.errors.CommandOnCooldown):
+        elif isinstance(error, ommands.errors.CommandOnCooldown):
             await ctx.send(f"You are on cooldown. Try again in {formats.plural(int(error.retry_after)):second}")
-        elif isinstance(error, discord.ext.commands.errors.CheckFailure):
+        elif isinstance(error, commands.errors.CheckFailure):
             return
-        elif isinstance(error, discord.ext.commands.errors.CommandNotFound):
+        elif isinstance(error, commands.errors.CommandNotFound):
             return
 
         if isinstance(error, commands.CommandInvokeError):
-            if isinstance(error, discord.ext.commands.errors.CheckFailure):
+            if isinstance(error, commands.errors.CheckFailure):
                 return
-            elif isinstance(error, discord.ext.commands.errors.CommandNotFound):
+            elif isinstance(error, commands.errors.CommandNotFound):
                 return
 
             em = discord.Embed(title=":warning: Error", description="", color=discord.Color.gold(), timestamp=datetime.datetime.utcnow())
