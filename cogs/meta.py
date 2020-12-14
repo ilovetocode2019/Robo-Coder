@@ -112,40 +112,39 @@ class Meta(commands.Cog):
     def cog_unload(self):
         self.bot.help_command = self._original_help_command
 
-    @commands.Cog.listener("on_command_error")
-    async def on_command_error(self, ctx, e: commands.CommandError):
-        error = "".join(traceback.format_exception(type(e), e, e.__traceback__, 1))
-        print("Ignoring exception in command {}:".format(ctx.command), file=sys.stderr)
-        traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
-        
-        if isinstance(e, discord.ext.commands.NoPrivateMessage):
-            return await ctx.send("This command can not be used in DMs")
-        elif isinstance(e, discord.ext.commands.errors.BotMissingPermissions):
-            perms_text = "\n".join([f"- {perm.replace('_', ' ').capitalize()}" for perm in e.missing_perms])
-            return await ctx.send(f":x: I am missing some permissions:\n {perms_text}") 
-        elif isinstance(e, discord.ext.commands.errors.CheckFailure):
-            return
-        elif isinstance(e, discord.ext.commands.errors.MissingRequiredArgument):
-            return await ctx.send(f":x: You are missing a argument: `{e.param}`")
-        elif isinstance(e, discord.ext.commands.errors.BadArgument) or isinstance(e, discord.ext.commands.errors.BadUnionArgument):
-            return await ctx.send(f":x: {e}")
-        elif isinstance(e, discord.ext.commands.MaxConcurrencyReached):
-            await ctx.send(":x: The max concurrency for this command has been reached")
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        print(f"Ignoring exception in command {ctx.command}:", file=sys.stderr)
+        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
-        elif isinstance(e, discord.ext.commands.errors.CommandOnCooldown):
-            return await ctx.send(f"You are on cooldown. Try again in {formats.plural(int(e.retry_after)):second}")
-        elif isinstance(e, discord.ext.commands.errors.CommandNotFound):
+        if isinstance(error, discord.ext.commands.NoPrivateMessage):
+            await ctx.send("This command can not be used in DMs")
+        elif isinstance(error, discord.ext.commands.errors.BotMissingPermissions):
+            perms_text = "\n".join([f"- {perm.replace('_', ' ').capitalize()}" for perm in error.missing_perms])
+            await ctx.send(f":x: I am missing some permissions:\n {perms_text}") 
+        elif isinstance(error, discord.ext.commands.errors.MissingRequiredArgument):
+            await ctx.send(f":x: You are missing a argument: `{error.param}`")
+        elif isinstance(error, discord.ext.commands.errors.BadArgument) or isinstance(error, discord.ext.commands.errors.BadUnionArgument):
+            await ctx.send(f":x: {error}")
+        elif isinstance(error, discord.ext.commands.MaxConcurrencyReached):
+            await ctx.send(f":x: {error}")
+        elif isinstance(error, discord.ext.commands.errors.CommandOnCooldown):
+            await ctx.send(f"You are on cooldown. Try again in {formats.plural(int(error.retry_after)):second}")
+        elif isinstance(error, discord.ext.commands.errors.CheckFailure):
+            return
+        elif isinstance(error, discord.ext.commands.errors.CommandNotFound):
             return
 
-        em = discord.Embed(title=":warning: Error", color=discord.Color.gold(), timestamp=datetime.datetime.utcnow())
-        em.description = f"```py\n{e}```\n"
-        msg = await ctx.send(embed=em)
+        if isinstance(error, commands.CommandInvokeError):
+            if isinstance(error, discord.ext.commands.errors.CheckFailure):
+                return
+            elif isinstance(error, discord.ext.commands.errors.CommandNotFound):
+                return
 
-        if isinstance(e, commands.CommandInvokeError):
             em = discord.Embed(title=":warning: Error", description="", color=discord.Color.gold(), timestamp=datetime.datetime.utcnow())
             em.description += f"\nCommand: `{ctx.command}`"
             em.description += f"\nLink: [Jump]({ctx.message.jump_url})"
-            em.description += f"\n\n```py\n{e}```\n"
+            em.description += f"\n\n```py\n{error}```\n"
 
             await self.bot.console.send(embed=em)
 
