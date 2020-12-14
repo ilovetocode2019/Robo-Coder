@@ -769,7 +769,7 @@ class Music(commands.Cog):
         emoji = ":fast_forward:" if position > player.duration else ":rewind:"
 
         timestamp = Song.timestamp_duration(position)
-        source = discord.FFmpegPCMAudio(player.now.filename, options=f"-ss {timestamp}")
+        source = discord.FFmpegPCMAudio(player.now.filename, before_options=f"-ss {timestamp}")
         player.voice.source = discord.PCMVolumeTransformer(source, player.volume)
 
         player.song_started = time.time()-position
