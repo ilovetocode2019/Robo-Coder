@@ -122,7 +122,7 @@ class Games(commands.Cog):
 
         try:
             msg = await self.bot.wait_for("message", check=lambda message: message.channel == ctx.author.dm_channel and message.author.id == ctx.author.id, timeout=180)
-            word = msg.content
+            word = msg.content.lower()
         except asyncio.TimeoutError:
             return await ctx.send(":x: Hangman creation timed out")
 
@@ -139,6 +139,8 @@ class Games(commands.Cog):
             return await ctx.send(":x: No hangman game in this channel")
         if hangman.owner == ctx.author:
             return await ctx.send(":x: You cannot guess in your own game")
+        if not letter.isalpha():
+            return await ctx.send(":x: That is not a valid guess")
 
         if len(letter) != 1 or letter in hangman.correct + hangman.incorrect:
             await ctx.message.add_reaction("\N{HEAVY EXCLAMATION MARK SYMBOL}")
