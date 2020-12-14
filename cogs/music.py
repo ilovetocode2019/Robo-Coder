@@ -310,15 +310,10 @@ class Player:
 
     @property
     def embed(self):
-        looping = ""
-        if self.looping:
-            looping = "(:repeat_one: Looping)"
+        playing = ":pause_button:" if self.voice.is_playing() else ":arrow_forward:"
+        looping = ":repeat:" if self.looping else ""
 
-        playing = ":arrow_forward:"
-        if self.voice.is_playing():
-            playing = ":pause_button:"
-
-        em = discord.Embed(title=f"{playing} {self.now.title} {looping}", color=0x66FFCC)
+        em = discord.Embed(title=f"{playing}{looping} {self.now.title}", color=0x66FFCC)
         em.add_field(name="Duration", value=f"{Song.timestamp_duration(self.duration)}/{self.now.timestamp_duration} `{self.bar}`", inline=False)
         em.add_field(name="Url", value=f"[Click]({self.now.url})")
         em.add_field(name="Uploader", value=f"[{self.now.uploader}]({self.now.uploader_url})")
