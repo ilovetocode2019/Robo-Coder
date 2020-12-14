@@ -110,6 +110,7 @@ class Games(commands.Cog):
         self.tic_tac_toe_games = {}
 
     @commands.group(name="hangman", description="Play hangman in Discord", invoke_without_command=True)
+    @commands.max_concurrency(1, commands.BucketType.channel)
     async def hangman(self, ctx):
         if ctx.channel.id in self.hangman_games:
             return await ctx.send(":x: A hangman game is already running in this channel")
@@ -120,7 +121,7 @@ class Games(commands.Cog):
             return await ctx.send(":x: You need to have DMs enabled")
 
         try:
-            msg = await self.bot.wait_for("message", check=lambda message: message.channel == ctx.author.dm_channel, timeout=180)
+            msg = await self.bot.wait_for("message", check=lambda message: message.channel == ctx.author.dm_channel and message.author.id == ctx.author.id, timeout=180)
             word = msg.content
         except asyncio.TimeoutError:
             return await ctx.send(":x: Hangman creation timed out")
