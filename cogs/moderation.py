@@ -678,7 +678,7 @@ class Moderation(commands.Cog):
                 checks.append(lambda message: any(message.endswith(end) for end in args.ends))
 
             if args.emoji:
-                regex = re.compile("<:(\w+):(\d+)>")
+                regex = re.compile("<a?:\w+:\d+>")
                 checks.append(lambda message: regex.search(message.content))
             if args.bot:
                 checks.append(lambda message: message.author.bot)
