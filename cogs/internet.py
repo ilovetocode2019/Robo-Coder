@@ -282,6 +282,8 @@ class Internet(commands.Cog):
     @commands.command(name="minecraft", description="Get info on a minecraft user", aliases=["mc"])
     @commands.cooldown(2, 30, commands.BucketType.user)
     async def minecraft(self, ctx, *, username):
+        await ctx.channel.trigger_typing()
+
         async with self.bot.session.get(f"https://api.mojang.com/users/profiles/minecraft/{username}") as resp:
             if resp.status != 200:
                 return await ctx.send(":x: Could not fetch Minecraft user")
@@ -337,9 +339,11 @@ class Internet(commands.Cog):
     @commands.command(name="wikipedia", descroption="Search wikipedia", aliases=["wiki"])
     @commands.cooldown(2, 30, commands.BucketType.user)
     async def wikipedia(self, ctx, *, search):
-        url = "http://en.wikipedia.org/w/api.php"
+        await ctx.channel.trigger_typing()
 
+        url = "http://en.wikipedia.org/w/api.php"
         data = {"prop": "info|pageprops", "inprop": "url", "ppprop": "disambiguation", "redirects": "", "titles": search, "format": "json", "action": "query"}
+
         async with self.bot.session.get(url, params=data) as resp:
             if resp.status != 200:
                 return await ctx.send(f":x: Failed to fetch page data (error code {resp.status})")
@@ -367,6 +371,8 @@ class Internet(commands.Cog):
     @commands.command(name="google", description="Search google")
     @commands.cooldown(1, 60, commands.BucketType.user)
     async def google(self, ctx, *, search):
+        await ctx.channel.trigger_typing()
+
         results = await self.search_google(search)
         pages = menus.MenuPages(GoogleResultPages(results, search), clear_reactions_after=True)
         await pages.start(ctx)
@@ -379,6 +385,8 @@ class Internet(commands.Cog):
     @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
     @commands.cooldown(3, 30, commands.BucketType.user)
     async def github(self, ctx, *, item):
+        await ctx.channel.trigger_typing()
+
         if "/" in item:
             async with self.bot.session.get(f"https://api.github.com/repos/{item}") as resp:
                 if resp.status != 200:
@@ -415,6 +423,8 @@ class Internet(commands.Cog):
     @commands.command(name="pypi", description="Search for a project on PyPI", aliases=["pip", "project"])
     @commands.cooldown(3, 30, commands.BucketType.user)
     async def pypi(self, ctx, project, release=None):
+        await ctx.channel.trigger_typing()
+
         if release:
             url = f"https://pypi.org/pypi/{project}/{release}/json"
         else:
@@ -456,6 +466,8 @@ class Internet(commands.Cog):
     @commands.command(name="strawpoll", description="Create a strawpoll")
     @commands.cooldown(3, 30, commands.BucketType.user)
     async def strawpoll(self, ctx, title=None, *options):
+        await ctx.channel.trigger_typing()
+
         if not title:
             options = []
             check = lambda message: message.channel == ctx.author.dm_channel and message.author == ctx.author
