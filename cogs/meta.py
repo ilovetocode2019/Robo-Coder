@@ -136,12 +136,10 @@ class Meta(commands.Cog):
             return
 
         if isinstance(error, commands.CommandInvokeError):
-            if isinstance(error, commands.errors.CheckFailure):
-                return
-            elif isinstance(error, commands.errors.CommandNotFound):
-                return
+            em = discord.Embed(title=":warning: Error", description=f"An unexpected error has occured: \n```py\n{error}```", color=discord.Color.gold())
+            await ctx.send(embed=em)
 
-            em = discord.Embed(title=":warning: Error", description="", color=discord.Color.gold(), timestamp=datetime.datetime.utcnow())
+            em = discord.Embed(title=":warning: Error", description="", color=discord.Color.gold())
             em.description += f"\nCommand: `{ctx.command}`"
             em.description += f"\nLink: [Jump]({ctx.message.jump_url})"
             em.description += f"\n\n```py\n{error}```\n"
