@@ -80,6 +80,18 @@ class Timers(commands.Cog):
 
         await ctx.send(":white_check_mark: Timer has been canceled")
 
+    @remind.command(name="clear", description="Clear your reminders")
+    async def remind_clear(self, ctx):
+        query = """DELETE FROM timers
+                   WHERE event = 'timer'
+                   AND extra #>> '{0}' = $1;
+                """
+        result = await self.bot.db.execute(query, str(ctx.author.id))
+        if result == "DELETE 0":
+            return await ctx.send(":x: No reminders to delete")
+
+        await ctx.send(":white_check_mark: Your reminders have been cleared")
+
     @commands.Cog.listener()
     async def on_timer_complete(self, timer):
         time = (timer["time"]-datetime.datetime.utcnow())
