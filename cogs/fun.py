@@ -18,6 +18,9 @@ class Fun(commands.Cog):
 
     @commands.command(name="random", description="Choose a random option", aliases=["choose", "which", "select"])
     async def select(self, ctx, *options):
+        if not options:
+            return await ctx.send(":x: You must specify options to choose from")
+
         await ctx.send(random.choice(options))
 
     @commands.command(name="rolldice", description="Role some dice")
