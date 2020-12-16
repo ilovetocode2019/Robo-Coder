@@ -17,11 +17,11 @@ class Timers(commands.Cog):
     def cog_unload(self):
         self.loop.cancel()
 
-    async def create_timer(self, event, time, extra):
-        query = """INSERT INTO timers (event, time, extra)
-                   VALUES ($1, $2, $3);
+    async def create_timer(self, event, time, extra, created_at):
+        query = """INSERT INTO timers (event, time, extra, created_at)
+                   VALUES ($1, $2, $3, $4);
                 """
-        await self.bot.db.execute(query, event, time, extra)
+        await self.bot.db.execute(query, event, time, extra, created_at)
 
     async def cancel_timer(self, timer):
         query = """DELETE FROM timers
@@ -31,8 +31,8 @@ class Timers(commands.Cog):
 
     @commands.group(name="remind", description="Set a reminder", aliases=["timer"], invoke_without_command=True)
     async def remind(self, ctx, time: human_time.TimeConverter, *, content = "..."):
-        await self.create_timer("timer", time, [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content])
-        await ctx.send(f":white_check_mark: Set timer for {humanize.naturaldelta(time-datetime.datetime.utcnow())} with message `{content}`")
+        await self.create_timer("timer", time, [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content], ctx.message.created_at)
+        await ctx.send(f":white_check_mark: Set timer for {humanize.naturaldelta(time-ctx.message.created_at)} with message `{content}`")
 
     @remind.command(name="list", description="View your reminders")
     async def remind_list(self, ctx):
