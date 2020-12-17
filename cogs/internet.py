@@ -403,7 +403,7 @@ class Internet(commands.Cog):
         await ctx.channel.trigger_typing()
 
         results = await self.search_google(query)
-        pages = menus.MenuPages(GoogleResultPages(results, search), clear_reactions_after=True)
+        pages = menus.MenuPages(GoogleResultPages(results, query), clear_reactions_after=True)
         await pages.start(ctx)
 
     async def search_google(self, query):
