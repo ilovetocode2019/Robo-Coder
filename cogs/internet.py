@@ -399,10 +399,10 @@ class Internet(commands.Cog):
 
     @commands.command(name="google", description="Search google")
     @commands.cooldown(1, 60, commands.BucketType.user)
-    async def google(self, ctx, *, search):
+    async def google(self, ctx, *, query):
         await ctx.channel.trigger_typing()
 
-        results = await self.search_google(search)
+        results = await self.search_google(query)
         pages = menus.MenuPages(GoogleResultPages(results, search), clear_reactions_after=True)
         await pages.start(ctx)
 
