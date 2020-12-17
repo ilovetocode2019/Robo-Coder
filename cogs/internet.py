@@ -261,7 +261,7 @@ class Internet(commands.Cog):
             html = html.decode("utf-8")
             soup = bs4.BeautifulSoup(html , "html.parser")
 
-        em = discord.Embed(title=profile["Username"], description="", url=profile_url)
+        em = discord.Embed(title=profile["Username"], description="", url=profile_url, color=0x96c8da)
 
         links = soup.find_all("img")
         avatar_url = links[0].get("src")
