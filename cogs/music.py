@@ -8,6 +8,8 @@ import random
 import re
 import time
 import urllib
+import traceback
+import sys
 
 class SongPages(menus.ListPageSource):
     def __init__(self, songs):
@@ -249,7 +251,7 @@ class Player:
         if not exc:
             self.event.set()
         else:
-            raise exc
+            traceback.print_exception(type(exc), exc, exc,__traceback__, file=sys.stderr)
 
     def pause(self):
         if self.pause_started and self.song_started:
