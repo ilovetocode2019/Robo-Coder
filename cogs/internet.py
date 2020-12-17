@@ -11,8 +11,8 @@ import dateparser
 import json
 import base64
 import functools
+import bs4
 from PIL import Image
-from bs4 import BeautifulSoup
 
 class DocsPages(menus.ListPageSource):
     def __init__(self, data, search):
@@ -245,38 +245,67 @@ class Internet(commands.Cog):
         await self.do_docs(ctx, "tpy", obj)
 
     @commands.command(name="roblox", description="Get a Roblox user")
-    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.cooldown(2, 30, commands.BucketType.user)
     async def roblox(self, ctx, *, username):
         await ctx.channel.trigger_typing()
         session = self.bot.session
         async with session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
-            data = await resp.json()
-            if "Id" not in data:
-                return await ctx.send("Sorry, that user is not found")
-        userid = data["Id"]
+            if resp.status == 400:
+                return await ctx.send(":x: I couldn't find that user")
+            profile = await resp.json()
+            user_id = profile["Id"]
+            profile_url = f"https://www.roblox.com/users/{user_id}/profile"
 
-        #Make API requests
-        async with session.get(f"https://users.roblox.com/v1/users/{userid}") as resp:
-            data = await resp.json()
-        async with session.get(f"https://users.roblox.com/v1/users/{userid}/status") as resp:
-            status = await resp.json()
-        async with session.get(f"https://friends.roblox.com/v1/users/{userid}/friends/count") as resp:
-            friends = await resp.json()
-
-        #Parse html to get profile image
-        async with session.get(f"https://www.roblox.com/users/{userid}/profile") as resp:
+        async with session.get(profile_url) as resp:
             html = await resp.read()
             html = html.decode("utf-8")
-            soup = BeautifulSoup(html , 'html.parser')
-            links = soup.find_all("img")
-            avatar_url = links[0].get("src")         
+            soup = bs4.BeautifulSoup(html , "html.parser")
 
-        em = discord.Embed(title=data["displayName"], description=data["description"], url=f"https://roblox.com/users/{userid}", timestamp=dateparser.parse(data["created"]), color=0x96c8da)
-        if status["status"]:
-            em.add_field(name="Status", value=status["status"]) 
-        em.add_field(name="Friends Count", value=friends["count"])
+        em = discord.Embed(title=profile["Username"], description="", url=profile_url)
+
+        links = soup.find_all("img")
+        avatar_url = links[0].get("src")
+
+        if soup.find("span", class_="icon-premium-medium"):
+            em.description += "This user has premium \n\n"
+
+        about = soup.find("span", class_="profile-about-content-text linkify")
+        if about:
+            em.description += about.contents[0]
+
+        friends_count = soup.find("div", class_="hidden").attrs["data-friendscount"]
+        if friends_count:
+            url = f"{profile_url}/friends#!/friends"
+            em.add_field(name="Friends", value=f"{friends_count} [(view)]({url})")
+
+        followers_count = soup.find("div", class_="hidden").attrs["data-followerscount"]
+        if followers_count:
+            url = f"{profile_url}/friends#!/followers"
+            em.add_field(name="Follwers", value=f"{followers_count} [(view)]({url})")
+
+        followings_count = soup.find("div", class_="hidden").attrs["data-followingscount"]
+        if followings_count:
+            url = f"{profile_url}/friends#!/following"
+            em.add_field(name="Following", value=f"{followings_count} [(view)]({url})")
+
+        status = soup.find("div", class_="hidden").attrs["data-statustext"]
+        if status:
+            em.add_field(name="Status", value=status, inline=True)
         em.set_thumbnail(url=avatar_url)
-        em.set_footer(text="Created at")
+
+        stats = {}
+        for stat in soup.find("ul", class_="profile-stats-container").find_all("li"):
+            key = stat.find("p", class_="text-label").contents[0]
+            value = stat.find("p", class_="text-lead").contents[0]
+            stats[key] = value
+
+        if "Place Visits" in stats:
+            em.add_field(name="Place Visits", value=stats["Place Visits"])
+
+        if "Join Date" in stats:
+            em.timestamp = dateparser.parse(stats["Join Date"])
+            em.set_footer(text="Join Date")
+
         await ctx.send(embed=em)
 
     @commands.command(name="minecraft", description="Get info on a minecraft user", aliases=["mc"])
