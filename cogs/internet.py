@@ -1,17 +1,17 @@
 import discord
 from discord.ext import commands, menus
 
-import io
-import os
-import re
-import zlib
-import aiohttp
 import datetime
 import dateparser
 import json
 import base64
 import functools
 import bs4
+import urllib
+import io
+import os
+import re
+import zlib
 from PIL import Image
 
 class DocsPages(menus.ListPageSource):
@@ -246,17 +246,17 @@ class Internet(commands.Cog):
 
     @commands.command(name="roblox", description="Get a Roblox user")
     @commands.cooldown(2, 30, commands.BucketType.user)
-    async def roblox(self, ctx, *, username):
+    async def roblox(self, ctx, username):
         await ctx.channel.trigger_typing()
-        session = self.bot.session
-        async with session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
+
+        async with self.bot.session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
             if resp.status == 400:
                 return await ctx.send(":x: I couldn't find that user")
             profile = await resp.json()
             user_id = profile["Id"]
             profile_url = f"https://www.roblox.com/users/{user_id}/profile"
 
-        async with session.get(profile_url) as resp:
+        async with self.bot.session.get(profile_url) as resp:
             html = await resp.read()
             html = html.decode("utf-8")
             soup = bs4.BeautifulSoup(html , "html.parser")
@@ -309,8 +309,8 @@ class Internet(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="minecraft", description="Get info on a minecraft user", aliases=["mc"])
-    @commands.cooldown(2, 30, commands.BucketType.user)
-    async def minecraft(self, ctx, *, username):
+    @commands.cooldown(1, 30, commands.BucketType.user)
+    async def minecraft(self, ctx, username):
         await ctx.channel.trigger_typing()
 
         async with self.bot.session.get(f"https://api.mojang.com/users/profiles/minecraft/{username}") as resp:
@@ -407,13 +407,13 @@ class Internet(commands.Cog):
         await pages.start(ctx)
 
     async def search_google(self, query):
-        async with self.bot.session.get(f"{self.bot.config.google_url}&q={query}") as resp:
+        async with self.bot.session.get(f"{self.bot.config.google_url}&q={urllib.parse.quote(query)}") as resp:
             data = await resp.json()
             return data["items"]
 
     @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
     @commands.cooldown(3, 30, commands.BucketType.user)
-    async def github(self, ctx, *, item):
+    async def github(self, ctx, item):
         await ctx.channel.trigger_typing()
 
         if "/" in item:
