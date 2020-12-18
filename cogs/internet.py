@@ -250,8 +250,9 @@ class Internet(commands.Cog):
         await ctx.channel.trigger_typing()
 
         async with self.bot.session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
-            if resp.status == 400:
+            if resp.status != 200:
                 return await ctx.send(":x: I couldn't find that user")
+
             profile = await resp.json()
             user_id = profile["Id"]
             base_url = f"https://www.roblox.com/users/{user_id}"
@@ -307,7 +308,7 @@ class Internet(commands.Cog):
 
         async with self.bot.session.get(f"https://api.mojang.com/users/profiles/minecraft/{username}") as resp:
             if resp.status != 200:
-                return await ctx.send(":x: Could not fetch Minecraft user")
+                return await ctx.send(":x: I couldn't find that user")
 
             data = await resp.json()
         name = data["name"]
@@ -368,6 +369,7 @@ class Internet(commands.Cog):
         async with self.bot.session.get(url, params=data) as resp:
             if resp.status != 200:
                 return await ctx.send(f":x: Failed to fetch page data (error code {resp.status})")
+
             page_data = await resp.json()
             pages = page_data["query"]["pages"]
             page_id = list(page_data["query"]["pages"].keys())[0]
@@ -395,13 +397,16 @@ class Internet(commands.Cog):
         await ctx.channel.trigger_typing()
 
         results = await self.search_google(query)
+        if not results:
+            return await ctx.send(":x: No results were found for your query")
+            
         pages = menus.MenuPages(GoogleResultPages(results, query), clear_reactions_after=True)
         await pages.start(ctx)
 
     async def search_google(self, query):
         async with self.bot.session.get(f"{self.bot.config.google_url}&q={urllib.parse.quote(query)}") as resp:
             data = await resp.json()
-            return data["items"]
+            return data.get("items")
 
     @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
     @commands.cooldown(3, 20, commands.BucketType.user)
@@ -411,7 +416,8 @@ class Internet(commands.Cog):
         if "/" in item:
             async with self.bot.session.get(f"https://api.github.com/repos/{item}") as resp:
                 if resp.status != 200:
-                    return await ctx.send(":x: Could not fetch GitHub repository")
+                    return await ctx.send(":x: I couldn't find that GitHub repository")
+
                 data = await resp.json()
                 owner = data["owner"]
 
@@ -426,7 +432,7 @@ class Internet(commands.Cog):
         else:
             async with self.bot.session.get(f"https://api.github.com/users/{item}") as resp:
                 if resp.status != 200:
-                    return await ctx.send(":x: Could not fetch GitHub user")
+                    return await ctx.send(":x: I couldn't find that GitHub user")
                 data = await resp.json()
 
             em = discord.Embed(title=data["login"], description=data['bio'], url=data["html_url"], timestamp=dateparser.parse(data["created_at"]), color=0x96c8da)
@@ -453,7 +459,8 @@ class Internet(commands.Cog):
 
         async with self.bot.session.get(url) as resp:
             if resp.status != 200:
-                return await ctx.send(f":x: Could not fetch package")
+                return await ctx.send(f":x: I couldn't find that package")
+
             data = await resp.json()
             info = data["info"]
             releases = data["releases"]
