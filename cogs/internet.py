@@ -245,7 +245,7 @@ class Internet(commands.Cog):
         await self.do_docs(ctx, "tpy", obj)
 
     @commands.command(name="roblox", description="Get a Roblox user")
-    @commands.cooldown(2, 30, commands.BucketType.user)
+    @commands.cooldown(2, 20, commands.BucketType.user)
     async def roblox(self, ctx, username):
         await ctx.channel.trigger_typing()
 
@@ -301,7 +301,7 @@ class Internet(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="minecraft", description="Get info on a minecraft user", aliases=["mc"])
-    @commands.cooldown(1, 30, commands.BucketType.user)
+    @commands.cooldown(1, 20, commands.BucketType.user)
     async def minecraft(self, ctx, username):
         await ctx.channel.trigger_typing()
 
@@ -358,7 +358,7 @@ class Internet(commands.Cog):
         await ctx.send(embed=em, file=discord.File(output, filename="face.png"))
 
     @commands.command(name="wikipedia", descroption="Search wikipedia", aliases=["wiki"])
-    @commands.cooldown(2, 30, commands.BucketType.user)
+    @commands.cooldown(2, 20, commands.BucketType.user)
     async def wikipedia(self, ctx, *, search):
         await ctx.channel.trigger_typing()
 
@@ -404,7 +404,7 @@ class Internet(commands.Cog):
             return data["items"]
 
     @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
-    @commands.cooldown(3, 30, commands.BucketType.user)
+    @commands.cooldown(3, 20, commands.BucketType.user)
     async def github(self, ctx, item):
         await ctx.channel.trigger_typing()
 
@@ -442,7 +442,7 @@ class Internet(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="pypi", description="Search for a project on PyPI", aliases=["pip", "project"])
-    @commands.cooldown(3, 30, commands.BucketType.user)
+    @commands.cooldown(3, 20, commands.BucketType.user)
     async def pypi(self, ctx, project, release=None):
         await ctx.channel.trigger_typing()
 
@@ -485,7 +485,7 @@ class Internet(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="strawpoll", description="Create a strawpoll")
-    @commands.cooldown(3, 30, commands.BucketType.user)
+    @commands.cooldown(3, 20, commands.BucketType.user)
     async def strawpoll(self, ctx, title=None, *options):
         await ctx.channel.trigger_typing()
 
