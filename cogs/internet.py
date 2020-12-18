@@ -254,14 +254,14 @@ class Internet(commands.Cog):
                 return await ctx.send(":x: I couldn't find that user")
             profile = await resp.json()
             user_id = profile["Id"]
-            profile_url = f"https://www.roblox.com/users/{user_id}/profile"
+            base_url = f"https://www.roblox.com/users/{user_id}"
 
-        async with self.bot.session.get(profile_url) as resp:
+        async with self.bot.session.get(f"{base_url}/profile") as resp:
             html = await resp.read()
             html = html.decode("utf-8")
             soup = bs4.BeautifulSoup(html , "html.parser")
 
-        em = discord.Embed(title=profile["Username"], description="", url=profile_url, color=0x96c8da)
+        em = discord.Embed(title=profile["Username"], description="", url=f"{base_url}/profile", color=0x96c8da)
 
         links = soup.find_all("img")
         avatar_url = links[0].get("src")
@@ -273,38 +273,30 @@ class Internet(commands.Cog):
         if about:
             em.description += about.contents[0]
 
-        friends_count = soup.find("div", class_="hidden").attrs["data-friendscount"]
+        friends_count = soup.find("div", class_="hidden").get("data-friendscount")
         if friends_count:
-            url = f"{profile_url}/friends#!/friends"
+            url = f"{base_url}/friends#!/friends"
             em.add_field(name="Friends", value=f"{friends_count} [(view)]({url})")
 
-        followers_count = soup.find("div", class_="hidden").attrs["data-followerscount"]
+        followers_count = soup.find("div", class_="hidden").get("data-followerscount")
         if followers_count:
-            url = f"{profile_url}/friends#!/followers"
+            url = f"{base_url}/friends#!/followers"
             em.add_field(name="Follwers", value=f"{followers_count} [(view)]({url})")
 
-        followings_count = soup.find("div", class_="hidden").attrs["data-followingscount"]
+        followings_count = soup.find("div", class_="hidden").get("data-followingscount")
         if followings_count:
-            url = f"{profile_url}/friends#!/following"
+            url = f"{base_url}/friends#!/following"
             em.add_field(name="Following", value=f"{followings_count} [(view)]({url})")
 
-        status = soup.find("div", class_="hidden").attrs["data-statustext"]
+        status = soup.find("div", class_="hidden").get("data-statustext")
         if status:
-            em.add_field(name="Status", value=status, inline=True)
+            em.add_field(name="Status", value=status, inline=False)
         em.set_thumbnail(url=avatar_url)
 
-        stats = {}
         for stat in soup.find("ul", class_="profile-stats-container").find_all("li"):
-            key = stat.find("p", class_="text-label").contents[0]
+            name = stat.find("p", class_="text-label").contents[0]
             value = stat.find("p", class_="text-lead").contents[0]
-            stats[key] = value
-
-        if "Place Visits" in stats:
-            em.add_field(name="Place Visits", value=stats["Place Visits"])
-
-        if "Join Date" in stats:
-            em.timestamp = dateparser.parse(stats["Join Date"])
-            em.set_footer(text="Join Date")
+            em.add_field(name=name, value=value)
 
         await ctx.send(embed=em)
 
