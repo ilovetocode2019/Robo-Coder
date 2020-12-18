@@ -281,7 +281,7 @@ class Internet(commands.Cog):
         followers_count = soup.find("div", class_="hidden").get("data-followerscount")
         if followers_count:
             url = f"{base_url}/friends#!/followers"
-            em.add_field(name="Follwers", value=f"{followers_count} [(view)]({url})")
+            em.add_field(name="Followers", value=f"{followers_count} [(view)]({url})")
 
         followings_count = soup.find("div", class_="hidden").get("data-followingscount")
         if followings_count:
