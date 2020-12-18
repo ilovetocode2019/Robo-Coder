@@ -256,8 +256,7 @@ class Internet(commands.Cog):
 
         em = discord.Embed(title=profile["Username"], description="", url=f"{base_url}/profile", color=0x96c8da)
 
-        links = soup.find_all("img")
-        avatar_url = links[0].get("src")
+        avatar_url = soup.find("img").get("src")
 
         if soup.find("span", class_="icon-premium-medium"):
             em.description += "This user has premium \n\n"
@@ -418,7 +417,18 @@ class Internet(commands.Cog):
 
             em = discord.Embed(title="Calculator", description=f"{equation.contents[0]}{result.contents[0]}", color=0x96c8da)
             em.add_field(name="Search Results", value=search_results)
+            return await ctx.send(embed=em)
 
+        converter = soup.find("div", class_="vk_c card obcontainer card-section")
+        if converter:
+            original, output = converter.find_all("input", class_="vXQmIe gsrt")
+            units = converter.find_all("option", {"selected": "1"})
+            search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
+            em = discord.Embed(title=f"Unit Converter ({units[0].text})", color=0x96c8da)
+            em.add_field(name=units[1].text, value=original.get("value"))
+            em.add_field(name=units[2].text, value=output.get("value"))
+            em.add_field(name="Search Results", value=search_results, inline=False)
             return await ctx.send(embed=em)
 
         pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
