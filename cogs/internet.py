@@ -15,14 +15,14 @@ import zlib
 from PIL import Image
 
 class DocsPages(menus.ListPageSource):
-    def __init__(self, data, search):
-        self.search = search
+    def __init__(self, data, query):
+        self.query = query
         self.data = data
         super().__init__(data, per_page=10)
 
     async def format_page(self, menu, entries):
         offset = menu.current_page * self.per_page
-        em = discord.Embed(title=f"Results for '{self.search}'", description="", color=0x96c8da)
+        em = discord.Embed(title=f"Results for '{self.query}'", description="", color=0x96c8da)
         for i, v in enumerate(entries, start=offset):
             em.description += "\n[`"+v[0]+"`]("+v[1]+")"
         em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{int(len(self.data)/10)+1}")
@@ -30,23 +30,14 @@ class DocsPages(menus.ListPageSource):
         return em
 
 class GoogleResultPages(menus.ListPageSource):
-    def __init__(self, data, search):
-        self.search = search
+    def __init__(self, data, query):
+        self.query = query
         self.data = data
         super().__init__(data, per_page=1)
 
     async def format_page(self, menu, entry):
-        em = discord.Embed(title=entry["title"], url=entry["link"], color=0x96c8da)
-        if entry.get("snippet"):
-           em.description = entry["snippet"]
-
-        try:
-            image = entry["pagemap"]["cse_thumbnail"][0]["src"]
-            em.set_thumbnail(url=image)
-        except KeyError:
-            pass
-
-        em.set_author(name=f"Results for '{self.search}'")
+        em = discord.Embed(title=entry["title"], description=entry["description"], url=entry["url"], color=0x96c8da)
+        em.set_author(name=f"Results for '{self.query}'")
         em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{len(self.data)}")
 
         return em
@@ -232,15 +223,15 @@ class Internet(commands.Cog):
     async def docs_python(self, ctx, obj=None):
         await self.do_docs(ctx, "python", obj)
 
-    @docs.command(name="asyncpg", description="Search Asyncpg docs")
+    @docs.command(name="asyncpg", description="Search Asyncpg docs", hidden=True)
     async def docs_asyncpg(self, ctx, obj=None):
         await self.do_docs(ctx, "asyncpg", obj)
 
-    @docs.command(name="pillow", descrption="Search Pillow docs", aliases=["pil"])
+    @docs.command(name="pillow", descrption="Search Pillow docs", aliases=["pil"], hidden=True)
     async def docs_pillow(self, ctx, obj=None):
         await self.do_docs(ctx, "pillow", obj)
 
-    @docs.command(name="telegram", description="Search Telegram.py docs", aliases=["telegrampy", "telegram.py", "tpy"])
+    @docs.command(name="telegram", description="Search Telegram.py docs", aliases=["telegrampy", "telegram.py", "tpy"], hidden=True)
     async def docs_telegram(self, ctx, obj=None):
         await self.do_docs(ctx, "tpy", obj)
 
@@ -257,10 +248,11 @@ class Internet(commands.Cog):
             user_id = profile["Id"]
             base_url = f"https://www.roblox.com/users/{user_id}"
 
-        async with self.bot.session.get(f"{base_url}/profile") as resp:
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
+        async with self.bot.session.get(f"{base_url}/profile", headers=headers) as resp:
             html = await resp.read()
             html = html.decode("utf-8")
-            soup = bs4.BeautifulSoup(html , "html.parser")
+            soup = bs4.BeautifulSoup(html, "html.parser")
 
         em = discord.Embed(title=profile["Username"], description="", url=f"{base_url}/profile", color=0x96c8da)
 
@@ -392,21 +384,34 @@ class Internet(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="google", description="Search google")
-    @commands.cooldown(1, 60, commands.BucketType.user)
+    @commands.cooldown(1, 20, commands.BucketType.user)
     async def google(self, ctx, *, query):
         await ctx.channel.trigger_typing()
 
-        results = await self.search_google(query)
-        if not results:
-            return await ctx.send(":x: No results were found for your query")
-            
-        pages = menus.MenuPages(GoogleResultPages(results, query), clear_reactions_after=True)
-        await pages.start(ctx)
+        params = {"safe": "on", "lr": "lang_en", "hl": "en"}
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
+        async with self.bot.session.get(f"https://google.com/search?q={urllib.parse.quote(query)}", params=params, headers=headers) as resp:
+            html = await resp.read()
 
-    async def search_google(self, query):
-        async with self.bot.session.get(f"{self.bot.config.google_url}&q={urllib.parse.quote(query)}") as resp:
-            data = await resp.json()
-            return data.get("items")
+            with open("google.html", "w", encoding="utf-8") as file:
+                file.write(html.decode("utf-8"))
+
+            soup = bs4.BeautifulSoup(html, "html.parser")
+
+        entries = []
+        for counter, result in enumerate(soup.find_all("div", class_="rc")):
+            data = result.find("div", class_="yuRUbf")
+            link = result.find("a")
+
+            span = link.find("h3").find("span")
+            cite = link.find("div").find("cite", class_="iUh30")
+            description = soup.find_all("div", class_="IsZvec")[counter].find("span", "aCOpRe")
+
+            href = link.get("href")
+            entries.append({"title": span.contents[0], "description":  f"`{cite.contents[0]}` \n\n{description.contents[0].text}", "url": href})
+
+        pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
+        await pages.start(ctx)
 
     @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
     @commands.cooldown(3, 20, commands.BucketType.user)
