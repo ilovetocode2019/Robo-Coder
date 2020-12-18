@@ -410,6 +410,17 @@ class Internet(commands.Cog):
             href = link.get("href")
             entries.append({"title": span.contents[0], "description":  f"`{cite.contents[0]}` \n\n{description.contents[0].text}", "url": href})
 
+        calculator = soup.find("div", class_="tyYmIf")
+        if calculator:
+            equation = calculator.find("span", class_="vUGUtc")
+            result = calculator.find("span", class_="qv3Wpe")
+            search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
+            em = discord.Embed(title="Calculator", description=f"{equation.contents[0]}{result.contents[0]}", color=0x96c8da)
+            em.add_field(name="Search Results", value=search_results)
+
+            return await ctx.send(embed=em)
+
         pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
         await pages.start(ctx)
 
