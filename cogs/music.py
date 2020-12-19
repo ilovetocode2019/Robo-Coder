@@ -586,7 +586,6 @@ class Music(commands.Cog):
             return await ctx.send("You are not in any voice channel")
 
         await player.voice.move_to(ctx.author.voice.channel)
-        player.resume()
         player.ctx = ctx
 
         await ctx.send(f"Now connected to `{ctx.author.voice.channel.name}` and bound to `{ctx.channel.name}`")
@@ -1061,7 +1060,7 @@ class Music(commands.Cog):
         player.pause()
 
         def check(member, before, after):
-            return not member.bot and after and after.channel and after.channel == player.voice.channel
+            return (not member.bot and after and after.channel and after.channel == player.voice.channel) or (member.id == self.bot.user.id and after.channel and after.channel != before.channel)
 
         try:
             await self.bot.wait_for("voice_state_update", timeout=180, check=check)
