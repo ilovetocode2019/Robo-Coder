@@ -4,7 +4,7 @@ asyncpg
 youtube_dl
 Pillow
 dateparser
-bs4
-psutil
 humanize
+psutil
+lxml
 git+https://github.com/Rapptz/discord-ext-menus

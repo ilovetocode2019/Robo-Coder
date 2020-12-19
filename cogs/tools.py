@@ -14,7 +14,6 @@ import collections
 import typing
 import datetime
 
-from bs4 import BeautifulSoup
 from PIL import Image
 from io import BytesIO
 

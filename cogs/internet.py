@@ -6,12 +6,12 @@ import dateparser
 import json
 import base64
 import functools
-import bs4
 import urllib
 import io
 import os
 import re
 import zlib
+import lxml
 from PIL import Image
 
 class DocsPages(menus.ListPageSource):
@@ -252,42 +252,49 @@ class Internet(commands.Cog):
         async with self.bot.session.get(f"{base_url}/profile", headers=headers) as resp:
             html = await resp.read()
             html = html.decode("utf-8")
-            soup = bs4.BeautifulSoup(html, "html.parser")
+            root = lxml.etree.fromstring(html, lxml.etree.HTMLParser())
+
+            with open("roblox.html", "w") as file:
+                file.write(html)
 
         em = discord.Embed(title=profile["Username"], description="", url=f"{base_url}/profile", color=0x96c8da)
 
-        avatar_url = soup.find("img").get("src")
+        avatar = root.find(".//div[@class='thumbnail-holder']/span[@class='thumbnail-span-original hidden']/img")
+        if avatar is not None:
+            em.set_thumbnail(url=avatar.get("src"))
 
-        if soup.find("span", class_="icon-premium-medium"):
+        if root.find(".//span[@class='icon-premium-medium']") is not None:
             em.description += "This user has premium \n\n"
 
-        about = soup.find("span", class_="profile-about-content-text linkify")
-        if about:
-            em.description += about.contents[0]
+        about = root.find(".//span[@class='profile-about-content-text linkify']")
+        if about is not None:
+            em.description += about.text
 
-        friends_count = soup.find("div", class_="hidden").get("data-friendscount")
+        details = root.find(".//div[@class='hidden']")
+
+        friends_count = details.get("data-friendscount")
         if friends_count:
             url = f"{base_url}/friends#!/friends"
             em.add_field(name="Friends", value=f"{friends_count} [(view)]({url})")
 
-        followers_count = soup.find("div", class_="hidden").get("data-followerscount")
+        followers_count = details.get("data-followerscount")
         if followers_count:
             url = f"{base_url}/friends#!/followers"
             em.add_field(name="Followers", value=f"{followers_count} [(view)]({url})")
 
-        followings_count = soup.find("div", class_="hidden").get("data-followingscount")
+        followings_count = details.get("data-followingscount")
         if followings_count:
             url = f"{base_url}/friends#!/following"
             em.add_field(name="Following", value=f"{followings_count} [(view)]({url})")
 
-        status = soup.find("div", class_="hidden").get("data-statustext")
+        status = details.get("data-statustext")
         if status:
             em.add_field(name="Status", value=status, inline=False)
-        em.set_thumbnail(url=avatar_url)
 
-        for stat in soup.find("ul", class_="profile-stats-container").find_all("li"):
-            name = stat.find("p", class_="text-label").contents[0]
-            value = stat.find("p", class_="text-lead").contents[0]
+        stats = root.findall(".//ul[@class='profile-stats-container']/li")
+        for stat in stats:
+            name = stat[0].text
+            value = stat[1].text
             em.add_field(name=name, value=value)
 
         await ctx.send(embed=em)
@@ -391,38 +398,43 @@ class Internet(commands.Cog):
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
         async with self.bot.session.get(f"https://google.com/search?q={urllib.parse.quote(query)}", params=params, headers=headers) as resp:
             html = await resp.read()
+            html = html.decode("utf-8")
 
             with open("google.html", "w", encoding="utf-8") as file:
-                file.write(html.decode("utf-8"))
+                file.write(html)
 
-            soup = bs4.BeautifulSoup(html, "html.parser")
+            root = lxml.etree.fromstring(html, lxml.etree.HTMLParser())
 
         entries = []
-        for counter, result in enumerate(soup.find_all("div", class_="rc")):
-            data = result.find("div", class_="yuRUbf")
-            link = result.find("a")
+        divs = root.findall(".//div[@class='IsZvec']")
+        results = root.findall(".//div[@class='rc']")
+        if len(results) == 0:
+            return await ctx.send(":x: I couldn't find any results for that query")
 
-            span = link.find("h3").find("span")
-            cite = link.find("div").find("cite", class_="iUh30")
-            description = soup.find_all("div", class_="IsZvec")[counter].find("span", "aCOpRe")
+        for counter, result in enumerate(results):
+            link = result.find(".//div[@class='yuRUbf']/a")
+
+            span = link.find(".//h3/span")
+            cite = link.find(".//div/cite")
+            description = divs[counter].find(".//span")
 
             href = link.get("href")
-            entries.append({"title": span.contents[0], "description":  f"`{cite.contents[0]}` \n\n{description.contents[0].text}", "url": href})
+            entries.append({"title": span.text, "description":  f"`{cite.text}` \n\n{description.text}", "url": href})
 
-        calculator = soup.find("div", class_="tyYmIf")
-        if calculator:
-            equation = calculator.find("span", class_="vUGUtc")
-            result = calculator.find("span", class_="qv3Wpe")
+        calculator = root.find(".//div[@class='tyYmIf']")
+        if calculator is not None:
+            equation = calculator.find(".//span[@class='vUGUtc']")
+            result = calculator.find(".//span[@class='qv3Wpe']")
             search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
-            em = discord.Embed(title="Calculator", description=f"{equation.contents[0]}{result.contents[0]}", color=0x96c8da)
+            em = discord.Embed(title="Calculator", description=f"{equation.text}{result.text}", color=0x96c8da)
             em.add_field(name="Search Results", value=search_results)
             return await ctx.send(embed=em)
 
-        converter = soup.find("div", class_="vk_c card obcontainer card-section")
+        converter = root.find(".//div[@class='vk_c card obcontainer card-section']")
         if converter:
-            original, output = converter.find_all("input", class_="vXQmIe gsrt")
-            units = converter.find_all("option", {"selected": "1"})
+            original, output = converter.findall(".//input[@class='vXQmIe gsrt']")
+            units = converter.findall(".//option[@selected='1']")
             search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
             em = discord.Embed(title=f"Unit Converter ({units[0].text})", color=0x96c8da)
