@@ -414,12 +414,12 @@ class Internet(commands.Cog):
         for counter, result in enumerate(results):
             link = result.find(".//div[@class='yuRUbf']/a")
 
-            span = link.find(".//h3/span")
+            span = link.find(".//h3[@class='LC20lb DKV0Md']/span")
             cite = link.find(".//div/cite")
-            description = divs[counter].find(".//span")
+            description = divs[counter].find(".//span[@class='aCOpRe']/span")
 
             href = link.get("href")
-            entries.append({"title": span.text, "description":  f"`{cite.text}` \n\n{description.text}", "url": href})
+            entries.append({"title": span.text, "description":  f"`{cite.text}` \n\n{' '.join(description.itertext())}", "url": href})
 
         calculator = root.find(".//div[@class='tyYmIf']")
         if calculator is not None:
