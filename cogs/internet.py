@@ -253,7 +253,7 @@ class Internet(commands.Cog):
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
         async with self.bot.session.get(f"{base_url}/profile", headers=headers) as resp:
-            elif resp.status != 200:
+            if resp.status != 200:
                 return await ctx.send(f":x: Failed to fetch user data (error code {resp.status})")
 
             html = await resp.read()
