@@ -11,7 +11,7 @@ import io
 import os
 import re
 import zlib
-import lxml
+from lxml import etree
 from PIL import Image
 
 class DocsPages(menus.ListPageSource):
@@ -252,7 +252,7 @@ class Internet(commands.Cog):
         async with self.bot.session.get(f"{base_url}/profile", headers=headers) as resp:
             html = await resp.read()
             html = html.decode("utf-8")
-            root = lxml.etree.fromstring(html, lxml.etree.HTMLParser())
+            root = etree.fromstring(html, etree.HTMLParser())
 
             with open("roblox.html", "w") as file:
                 file.write(html)
@@ -403,7 +403,7 @@ class Internet(commands.Cog):
             with open("google.html", "w", encoding="utf-8") as file:
                 file.write(html)
 
-            root = lxml.etree.fromstring(html, lxml.etree.HTMLParser())
+            root = etree.fromstring(html, etree.HTMLParser())
 
         entries = []
         divs = root.findall(".//div[@class='IsZvec']")
