@@ -713,7 +713,7 @@ class Moderation(commands.Cog):
             deleted = await ctx.channel.purge(limit=limit, before=ctx.message)
 
         await ctx.message.delete()
-        await ctx.send(f":white_check_mark: Deleted {formats.plural(len(deleted)):messages}", delete_after=5)
+        await ctx.send(f":white_check_mark: Deleted {formats.plural(len(deleted)):message}", delete_after=5)
 
     @commands.command(name="cleanup", description="Clean up commands from a channel")
     @commands.has_permissions(manage_messages=True)
@@ -725,7 +725,7 @@ class Moderation(commands.Cog):
             method = self.basic_cleanup
 
         deleted = await method(ctx, limit+1)
-        await ctx.send(f":white_check_mark: Deleted {formats.plural(len(deleted)):messages}", delete_after=5)
+        await ctx.send(f":white_check_mark: Deleted {formats.plural(len(deleted)):message}", delete_after=5)
 
     async def basic_cleanup(self, ctx, limit):
         deleted = []
