@@ -242,14 +242,20 @@ class Internet(commands.Cog):
 
         async with self.bot.session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
             if resp.status != 200:
-                return await ctx.send(":x: I couldn't find that user")
+                return await ctx.send(f":x: Failed to find user (error code {resp.status})")
 
             profile = await resp.json()
+            if "Id" not in profile:
+                return await ctx.send(":x: I couldn't find that user")
+
             user_id = profile["Id"]
             base_url = f"https://www.roblox.com/users/{user_id}"
 
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
         async with self.bot.session.get(f"{base_url}/profile", headers=headers) as resp:
+            elif resp.status != 200:
+                return await ctx.send(f":x: Failed to fetch user data (error code {resp.status})")
+
             html = await resp.read()
             html = html.decode("utf-8")
             root = etree.fromstring(html, etree.HTMLParser())
