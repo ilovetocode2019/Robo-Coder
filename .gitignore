@@ -1,7 +1,7 @@
 
 *.pyc
-prefixes.json
-env/*
 songs/*
+prefixes.json
 ffmpeg.exe
 config.py
+*.html
