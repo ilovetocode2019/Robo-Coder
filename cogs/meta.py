@@ -146,39 +146,9 @@ class Meta(commands.Cog):
 
             await self.bot.console.send(embed=em)
 
-    @commands.group(invoke_without_command=True)
-    async def prefix(self, ctx):
-        await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))
-
     @commands.command(name="hello", aliases=["hi"])
     async def hi(self, ctx):
         await ctx.send(f":wave: Hello, I am Robo Coder!\nTo get more info use {ctx.prefix}help")
-
-    @prefix.command(name="add", description="add a prefix")
-    @commands.has_permissions(manage_guild=True)
-    async def add(self, ctx, *, arg):
-        self.bot.guild_prefixes[str(ctx.guild.id)].append(arg)
-        with open("prefixes.json", "w") as f:
-            json.dump(self.bot.guild_prefixes, f)
-        await ctx.send("Added prefix: " + arg)
-    
-    @prefix.command(name="remove", description="remove prefix")
-    @commands.has_permissions(manage_guild=True)
-    async def remove(self, ctx, *, arg):
-        if arg in self.bot.guild_prefixes[str(ctx.guild.id)]:
-            self.bot.guild_prefixes[str(ctx.guild.id)].remove(arg)
-            await ctx.send("Removed prefix: " + arg)
-        else:
-            await ctx.send(f"That prefix does not exist. Try '{ctx.prefix}prefixes' to get a list of prefixes")
-
-        with open("prefixes.json", "w") as f:
-            json.dump(self.bot.guild_prefixes, f)
-
-    @prefix.command(name="prefixes", description="veiw a list of prefixes")
-    @commands.guild_only()
-    async def prefixes(self, ctx):
-        server_prefixes = self.bot.guild_prefixes
-        await ctx.send("prefixes: " + ", ".join(server_prefixes))        
 
     @commands.command(name="ping", description="Check my latency")
     async def ping(self, ctx):
@@ -205,6 +175,36 @@ class Meta(commands.Cog):
     async def code(self, ctx):
         code = get_lines_of_code()
         await ctx.send(code)
+
+    @commands.group(invoke_without_command=True)
+    async def prefix(self, ctx):
+        await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))
+
+    @prefix.command(name="add", description="add a prefix")
+    @commands.has_permissions(manage_guild=True)
+    async def add(self, ctx, *, arg):
+        self.bot.guild_prefixes[str(ctx.guild.id)].append(arg)
+        with open("prefixes.json", "w") as f:
+            json.dump(self.bot.guild_prefixes, f)
+        await ctx.send("Added prefix: " + arg)
+    
+    @prefix.command(name="remove", description="remove prefix")
+    @commands.has_permissions(manage_guild=True)
+    async def remove(self, ctx, *, arg):
+        if arg in self.bot.guild_prefixes[str(ctx.guild.id)]:
+            self.bot.guild_prefixes[str(ctx.guild.id)].remove(arg)
+            await ctx.send("Removed prefix: " + arg)
+        else:
+            await ctx.send(f"That prefix does not exist. Try '{ctx.prefix}prefixes' to get a list of prefixes")
+
+        with open("prefixes.json", "w") as f:
+            json.dump(self.bot.guild_prefixes, f)
+
+    @prefix.command(name="prefixes", description="veiw a list of prefixes")
+    @commands.guild_only()
+    async def prefixes(self, ctx):
+        server_prefixes = self.bot.guild_prefixes
+        await ctx.send("prefixes: " + ", ".join(server_prefixes))
 
 def setup(bot):
     bot.add_cog(Meta(bot))
