@@ -425,7 +425,7 @@ class Internet(commands.Cog):
             description = divs[counter].find(".//span[@class='aCOpRe']/span")
 
             href = link.get("href")
-            entries.append({"title": span.text, "description":  f"`{cite.text}` \n\n{' '.join(description.itertext())}", "url": href})
+            entries.append({"title": span.text, "description":  f"`{cite.text}` \n\n{' '.join(description.itertext()) if description else ''}", "url": href})
 
         calculator = root.find(".//div[@class='tyYmIf']")
         if calculator is not None:
