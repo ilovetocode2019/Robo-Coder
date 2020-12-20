@@ -134,7 +134,7 @@ class Tools(commands.Cog):
             if x[1] == user:
                 em.add_field(name="👪 Join Position", value=x[0]+1)
 
-        if len(user.roles) != 0:
+        if len(user.roles) > 1:
             em.add_field(name="Roles", value=" ".join([role.mention for role in user.roles if not role.is_default()]))
 
         await ctx.send(embed=em)
