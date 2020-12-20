@@ -438,7 +438,7 @@ class Internet(commands.Cog):
             return await ctx.send(embed=em)
 
         converter = root.find(".//div[@class='vk_c card obcontainer card-section']")
-        if converter:
+        if converter is not None:
             original, output = converter.findall(".//input[@class='vXQmIe gsrt']")
             units = converter.findall(".//option[@selected='1']")
             search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
@@ -446,6 +446,22 @@ class Internet(commands.Cog):
             em = discord.Embed(title=f"Unit Converter ({units[0].text})", color=0x96c8da)
             em.add_field(name=units[1].text, value=original.get("value"))
             em.add_field(name=units[2].text, value=output.get("value"))
+            em.add_field(name="Search Results", value=search_results, inline=False)
+            return await ctx.send(embed=em)
+
+        translator = root.find(".//div[@class='tw-src-ltr']")
+        if translator is not None:
+            langs = root.find(".//div[@class='pcCUmf vCOSGb']")
+            original_language = langs.find(".//div[@class='j1iyq hide-focus-ring']/span[@class='source-language']")
+            output_language = langs.find(".//div[@class='j1iyq hide-focus-ring']/span[@class='target-language']")
+
+            original = translator.find(".//pre[@id='tw-source-text']/span")
+            output = translator.find(".//pre[@id='tw-target-text']/span")
+            search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
+            em = discord.Embed(title="Translator", color=0x96c8da)
+            em.add_field(name=original_language.text, value=original.text)
+            em.add_field(name=output_language.text, value=output.text)
             em.add_field(name="Search Results", value=search_results, inline=False)
             return await ctx.send(embed=em)
 
