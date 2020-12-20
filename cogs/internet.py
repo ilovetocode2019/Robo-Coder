@@ -395,7 +395,7 @@ class Internet(commands.Cog):
         em = discord.Embed(title=f"{page['title']} ({page_id})", description=description, url=page["fullurl"])
         await ctx.send(embed=em)
 
-    @commands.command(name="google", description="Search google")
+    @commands.command(name="google", description="Search google", aliases=["g"])
     @commands.cooldown(1, 20, commands.BucketType.user)
     async def google(self, ctx, *, query):
         await ctx.channel.trigger_typing()
