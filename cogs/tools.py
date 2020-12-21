@@ -47,93 +47,81 @@ class Tools(commands.Cog):
     @commands.guild_only()
     async def serverinfo(self, ctx):
         await ctx.channel.trigger_typing()
-
         guild = ctx.guild
         
         try:
             color = await average_image_color(guild.icon_url, self.bot.loop, self.bot.session)
         except:
             color = discord.Embed.Empty
-        em = discord.Embed(title=f"{guild.name} ({guild.id})", description="", color=color)
-        
+        em = discord.Embed(color=color)
+        em.set_author(name=f"{guild.name} ({guild.id})", icon_url=ctx.guild.icon_url)
         em.set_thumbnail(url=guild.icon_url)
 
-        em.add_field(name="👑 Owner", value=guild.owner.mention)
+        em.add_field(name=":crown: Owner", value=guild.owner.mention)
+        em.add_field(name=":clock3: Created at", value=f"{humanize.naturaldate(guild.created_at)} ({humanize.naturaltime(guild.created_at)})")
+        em.add_field(name="<:nitro:725730843930132560> Nitro Boosts", value=guild.premium_tier)
+        bots = len([member for member in guild.members if member.bot])
+        em.add_field(name=":earth_americas: Region", value=str(guild.region).upper().replace("-", " "))
+        em.add_field(name=":speaking_head: Channels", value=f"<:textchannel:725730867644858518> {str(len(guild.text_channels))} \N{BULLET} <:voicechannel:725730883872751666> {str(len(guild.voice_channels))}")
+        em.add_field(name=":family: Members", value=f"{len(guild.members)} ({formats.plural(bots):bot})")
 
-        em.add_field(name="<:nitro:725730843930132560> Level", value=guild.premium_tier)
+        static_emojis = len([emoji for emoji in guild.emojis if not emoji.animated])
+        static_emojis_percentage = int((static_emojis/guild.emoji_limit)*100)
+        static_text = f"{static_emojis}/{guild.emoji_limit} ({static_emojis_percentage}%)"
+        animated_emojis = len([emoji for emoji in guild.emojis if emoji.animated])
+        animated_emojis_percentage = int((animated_emojis/guild.emoji_limit)*100)
+        animated_text = f"{animated_emojis}/{guild.emoji_limit} ({animated_emojis_percentage}%)"
+        em.add_field(name=":slight_smile: Emojis", value=f"Static: {static_text} \nAnimated: {animated_text} \nTotal: {len(guild.emojis)}/{guild.emoji_limit}")
+        em.add_field(name=":bookmark: Roles", value=str(len(guild.roles)))
 
-        em.add_field(name="🕒 Created at", value=f"{humanize.naturaldate(guild.created_at)} ({humanize.naturaltime(guild.created_at)})")
-
-        em.add_field(name="🗣️ Channels", value=f"<:textchannel:725730867644858518> {str(len(guild.text_channels))} \N{BULLET} <:voicechannel:725730883872751666> {str(len(guild.voice_channels))}")
-
-        bots = len([x for x in guild.members if x.bot])
-        em.add_field(name="👪 Members", value=f"{len(guild.members)} ({formats.plural(bots):bot})")
         await ctx.send(embed=em)
 
     @commands.command(name="userinfo", description="Get info on a user", aliases=["ui", "whois"])
     @commands.guild_only()
     async def userinfo(self, ctx, *, user:discord.Member=None):
         await ctx.channel.trigger_typing()
-
         if not user:
             user = ctx.author
 
+        pubilic_flags_mapping = {
+        discord.UserFlags.staff: "<:staff:726131232534036572>",
+        discord.UserFlags.partner: "<:partner:726131508330496170>",
+        discord.UserFlags.hypesquad: "<:hypesquad:726131852427001887>",
+        discord.UserFlags.bug_hunter: "<:bughunter:726132004604608553>",
+        discord.UserFlags.hypesquad_bravery: "<:hypesquad_bravery:726132273082007659>",
+        discord.UserFlags.hypesquad_brilliance: "<:hypesquad_brilliance:726132442343145583>",
+        discord.UserFlags.hypesquad_balance: "<:hypesquad_balance:726132611084320879>",
+        discord.UserFlags.early_supporter: "<:earlysupporter:726132986516471918>",
+        discord.UserFlags.verified_bot_developer: "<:verified:726134370544386189>",
+        }
+
         badges = ""
-
-        if user.public_flags.staff:
-            badges += "<:staff:726131232534036572>"
-        
-        if user.public_flags.partner:
-            badges += "<:partner:726131508330496170>"
-        
-        if user.public_flags.hypesquad:
-            badges += "<:hypesquad:726131852427001887>"
-
-        if user.public_flags.bug_hunter:
-            badges += "<:bughunter:726132004604608553>"
-
-        if user.public_flags.hypesquad_bravery:
-            badges += "<:hypesquad_bravery:726132273082007659>"
-
-        if user.public_flags.hypesquad_brilliance:
-            badges += "<:hypesquad_brilliance:726132442343145583>"
-
-        if user.public_flags.hypesquad_balance:
-            badges += "<:hypesquad_balance:726132611084320879>"
-
-        if user.public_flags.early_supporter:
-            badges += "<:earlysupporter:726132986516471918>"
-
-        if user.public_flags.verified_bot_developer:
-            badges += "<:verified:726134370544386189>"
+        for flag in user.public_flags.all():
+            emoji = pubilic_flags_mapping.get(flag)
+            print(emoji)
+            if emoji:
+                badges += emoji
 
         try:
             color = await average_image_color(user.avatar_url, self.bot.loop, session=self.bot.session)
         except:
             color = discord.Embed.Empty
 
-        title = user.name
-        if user.nick != None:
-            title += f" ({user.nick})"
-        title += f" - {user.id}"
-        em = discord.Embed(title=title, description=badges, color=color)
-        
+        em = discord.Embed(description=badges, color=color)
+        em.set_author(name=f"{user} {f'({user.nick})' if user.nick else ''} - {user.id}", icon_url=user.avatar_url)
         em.set_thumbnail(url=user.avatar_url)
 
         if user.id == ctx.guild.owner.id:
-            em.description += "\n👑 This person owns the server"
-
+            em.description += "\n:crown: This person owns the server"
         if user.bot:
-            em.description += "\n🤖 This user is a bot"
+            em.description += "\n:robot: This user is a bot"
 
-        em.add_field(name="🕒 Created at", value=f"{humanize.naturaldate(user.created_at)} ({humanize.naturaltime(user.created_at)})")
-
-        em.add_field(name="➡️ Joined at", value=f"{humanize.naturaldate(user.joined_at)} ({humanize.naturaltime(user.joined_at)})")
+        em.add_field(name=":clock3: Created at", value=f"{humanize.naturaldate(user.created_at)} ({humanize.naturaltime(user.created_at)})")
+        em.add_field(name=":arrow_right: Joined at", value=f"{humanize.naturaldate(user.joined_at)} ({humanize.naturaltime(user.joined_at)})")
 
         for x in enumerate(sorted(ctx.guild.members, key=lambda x: x.joined_at)):
             if x[1] == user:
-                em.add_field(name="👪 Join Position", value=x[0]+1)
-
+                em.add_field(name=":family: Join Position", value=x[0]+1)
         if len(user.roles) > 1:
             em.add_field(name="Roles", value=" ".join([role.mention for role in user.roles if not role.is_default()]))
 
@@ -142,8 +130,7 @@ class Tools(commands.Cog):
     @commands.command(name="avatar", description="Get a users avatar")
     async def avatar(self, ctx, *, user:discord.Member=None):
         await ctx.channel.trigger_typing()
-
-        if user == None:
+        if not user:
             user = ctx.author
 
         try:
