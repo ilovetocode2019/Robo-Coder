@@ -98,7 +98,6 @@ class Tools(commands.Cog):
         badges = ""
         for flag in user.public_flags.all():
             emoji = pubilic_flags_mapping.get(flag)
-            print(emoji)
             if emoji:
                 badges += emoji
 
