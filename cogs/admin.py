@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands, taks
+from discord.ext import commands, tasks
 
 import traceback
 import psutil
