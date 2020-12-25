@@ -31,6 +31,9 @@ class Timers(commands.Cog):
 
     @commands.group(name="remind", description="Set a reminder", aliases=["timer"], invoke_without_command=True)
     async def remind(self, ctx, time: human_time.TimeConverter, *, content = "..."):
+        if time < ctx.message.created_at:
+            return await ctx.send(":x: That time is in the past")
+
         await self.create_timer("timer", time, [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content], ctx.message.created_at)
         await ctx.send(f":white_check_mark: Set timer for {humanize.naturaldelta(time-ctx.message.created_at)} with message `{content}`")
 
