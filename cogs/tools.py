@@ -142,16 +142,16 @@ class Tools(commands.Cog):
         em.set_image(url=user.avatar_url)
         await ctx.send(embed=em)
 
-    @commands.command(name="charinfo", decription="Get info on a charecter")
+    @commands.command(name="charinfo", description="Get info on a character")
     async def charinfo(self, ctx, *, text):
         if len(text) > 20:
-            return await ctx.send("Your text must be shorter than 20 charecters")
+            return await ctx.send("Your text must be shorter than 20 characters")
 
         info = []
-        for charecter in text:
-            digit = f'{ord(charecter):x}'
-            name = unicodedata.name(charecter, "Name not found")
-            info.append(f'`\\U{digit:>08}`: {name} - {charecter} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>')
+        for character in text:
+            digit = f'{ord(character):x}'
+            name = unicodedata.name(character, "Name not found")
+            info.append(f'`\\U{digit:>08}`: {name} - {character} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>')
         await ctx.send("\n".join(info))
 
     @commands.command(name="poll", description="Create a poll")
