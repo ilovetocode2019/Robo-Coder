@@ -145,7 +145,7 @@ class Tools(commands.Cog):
     @commands.command(name="charinfo", description="Get info on a character")
     async def charinfo(self, ctx, *, text):
         if len(text) > 20:
-            return await ctx.send("Your text must be shorter than 20 characters")
+            return await ctx.send(":x: Your text must be shorter than 20 characters")
 
         info = []
         for character in text:
