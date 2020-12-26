@@ -119,6 +119,8 @@ class Meta(commands.Cog):
 
         if isinstance(error, commands.NoPrivateMessage):
             await ctx.send("This command can not be used in DMs")
+        elif isinstance(error, commands.NoPrivateMessage):
+            await ctx.send("This command can only be used in DMs")
         elif isinstance(error, commands.errors.BotMissingPermissions):
             perms_text = "\n".join([f"- {perm.replace('_', ' ').capitalize()}" for perm in error.missing_perms])
             await ctx.send(f":x: I am missing some permissions:\n {perms_text}") 
@@ -126,14 +128,12 @@ class Meta(commands.Cog):
             await ctx.send(f":x: You are missing a argument: `{error.param.name}`")
         elif isinstance(error, commands.errors.BadArgument) or isinstance(error, commands.errors.BadUnionArgument):
             await ctx.send(f":x: {error}")
+        elif isinstance(error, commands.ArgumentParsingError):
+            await ctx.send(f":x: {error}")
         elif isinstance(error, commands.MaxConcurrencyReached):
             await ctx.send(f":x: {error}")
         elif isinstance(error, commands.errors.CommandOnCooldown):
             await ctx.send(f"You are on cooldown. Try again in {formats.plural(int(error.retry_after)):second}.")
-        elif isinstance(error, commands.errors.CheckFailure):
-            return
-        elif isinstance(error, commands.errors.CommandNotFound):
-            return
 
         if isinstance(error, commands.CommandInvokeError):
             em = discord.Embed(title=":warning: Error", description=f"An unexpected error has occured: \n```py\n{error}```", color=discord.Color.gold())
