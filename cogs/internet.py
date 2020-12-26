@@ -362,7 +362,7 @@ class Internet(commands.Cog):
 
         await ctx.send(embed=em, file=discord.File(output, filename="face.png"))
 
-    @commands.command(name="wikipedia", descroption="Search wikipedia", aliases=["wiki"])
+    @commands.command(name="wikipedia", description="Search wikipedia", aliases=["wiki"])
     @commands.cooldown(2, 20, commands.BucketType.user)
     async def wikipedia(self, ctx, *, search):
         await ctx.channel.trigger_typing()
