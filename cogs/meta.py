@@ -146,7 +146,7 @@ class Meta(commands.Cog):
 
             await self.bot.console.send(embed=em)
 
-    @commands.command(name="hello", aliases=["hi"])
+    @commands.command(name="hello", description="Say hello", aliases=["hi"])
     async def hi(self, ctx):
         await ctx.send(f":wave: Hello, I am Robo Coder!\nTo get more info use {ctx.prefix}help")
 
@@ -176,7 +176,7 @@ class Meta(commands.Cog):
         code = get_lines_of_code()
         await ctx.send(code)
 
-    @commands.group(invoke_without_command=True)
+    @commands.group(name="prefix", description="View your prefixes", invoke_without_command=True)
     async def prefix(self, ctx):
         await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))
 

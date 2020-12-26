@@ -776,7 +776,7 @@ class Music(commands.Cog):
 
         await ctx.send(f"{emoji} Seeked {timestamp}")
 
-    @commands.group(name="loop", descrition="Loop/unloop the music", invoke_without_command=True)
+    @commands.group(name="loop", description="Loop/unloop the music", invoke_without_command=True)
     async def loop(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
 
@@ -1010,7 +1010,7 @@ class Music(commands.Cog):
 
         await ctx.send("\n".join(players))
 
-    @commands.command(name="stopall", descrition="Stop all players")
+    @commands.command(name="stopall", description="Stop all players")
     @commands.is_owner()
     async def stopall(self, ctx):
         for player in self.bot.players.values():
