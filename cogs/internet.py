@@ -235,7 +235,7 @@ class Internet(commands.Cog):
     async def docs_telegram(self, ctx, obj=None):
         await self.do_docs(ctx, "tpy", obj)
 
-    @commands.command(name="roblox", description="Get a Roblox user")
+    @commands.command(name="roblox", description="Get info on a Roblox user")
     @commands.cooldown(2, 20, commands.BucketType.user)
     async def roblox(self, ctx, username):
         await ctx.channel.trigger_typing()
@@ -305,7 +305,7 @@ class Internet(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.command(name="minecraft", description="Get info on a minecraft user", aliases=["mc"])
+    @commands.command(name="minecraft", description="Get info on a Minecraft user", aliases=["mc"])
     @commands.cooldown(1, 20, commands.BucketType.user)
     async def minecraft(self, ctx, username):
         await ctx.channel.trigger_typing()
