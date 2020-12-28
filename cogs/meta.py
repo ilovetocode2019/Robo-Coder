@@ -206,5 +206,9 @@ class Meta(commands.Cog):
         server_prefixes = self.bot.guild_prefixes
         await ctx.send("prefixes: " + ", ".join(server_prefixes))
 
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        await message.channel.send(f":wave: Hello, I am Robo Coder!\nTo get more info use {ctx.prefix}help")
+
 def setup(bot):
     bot.add_cog(Meta(bot))
