@@ -208,7 +208,8 @@ class Meta(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        await message.channel.send(f":wave: Hello, I am Robo Coder!\nTo get more info use {ctx.prefix}help")
+        if message.content == f"<@!{self.bot.user.id}>" and not message.author.bot:
+            await message.channel.send(f":wave: Hello, I am Robo Coder!\nTo get more info use r!help")
 
 def setup(bot):
     bot.add_cog(Meta(bot))
