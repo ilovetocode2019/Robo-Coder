@@ -37,7 +37,7 @@ class Admin(commands.Cog):
         except Exception as e:
             full = "".join(traceback.format_exception(type(e), e, e.__traceback__, 1))
             await ctx.send(f"**:warning: Extension `{extension}` not reloaded.**\n```py\n{full}```")
-asdf
+
     @commands.command(name="process", description="View system stats")
     async def process(self, ctx):
         em = discord.Embed(title="Process", color=0x96c8da)
