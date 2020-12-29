@@ -79,7 +79,6 @@ class GuildConfig:
                    SET mute_role_id=$2, muted=$3;
                 """
         await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
-        self.invalidate()
 
     async def mute_member(self, member):
         self.muted.append(member.id)
@@ -90,7 +89,6 @@ class GuildConfig:
                    SET muted=$3;
                 """
         await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
-        self.invalidate()
 
     async def unmute_member(self, member):
         self.muted.remove(member.id)
@@ -101,7 +99,6 @@ class GuildConfig:
                    SET muted=$3;
                 """
         await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
-        self.invalidate()
 
     async def enable_spam_prevention(self):
         self.spam_prevention = True
@@ -112,7 +109,6 @@ class GuildConfig:
                    SET spam_prevention=$4;
                 """
         await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
-        self.invalidate()
 
     async def disable_spam_prevention(self):
         self.spam_prevention = False
@@ -123,7 +119,6 @@ class GuildConfig:
                    SET spam_prevention=$4;
                 """
         await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
-        self.invalidate()
 
     async def add_ignore_spam_channel(self, channel):
         self.ignore_spam_channels.append(channel.id)
@@ -134,7 +129,6 @@ class GuildConfig:
                    SET ignore_spam_channels=$5;
                 """
         await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
-        self.invalidate()
 
     async def remove_ignore_spam_channel(self, channel):
         self.ignore_spam_channels.remove(channel.id)
@@ -145,10 +139,6 @@ class GuildConfig:
                    SET ignore_spam_channels=$5;
                 """
         await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
-        self.invalidate()
-
-    def invalidate(self):
-        self.cog.get_guild_config.invalidate(self.cog, self.guild)
 
 class ArgumentParser(argparse.ArgumentParser):
     def __init__(self):
