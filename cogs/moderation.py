@@ -250,7 +250,6 @@ class SpamDetector:
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-
         self.emoji = ":police_car:"
 
     @commands.command(name="kick", description="Kick a member from the server")
@@ -374,7 +373,7 @@ class Moderation(commands.Cog):
         if not config.mute_role:
             return await ctx.send(":x: No mute role has been set")
 
-        await ctx.send(f"The mute role set is {config.mute_role.name} ({config.mute_role_id})")
+        await ctx.send(f"The mute role set is `{config.mute_role.name}` ({config.mute_role_id})")
 
     @mute_role.command(name="set", description="Set a mute role")
     @commands.bot_has_permissions(manage_roles=True)
