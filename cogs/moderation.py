@@ -385,7 +385,7 @@ class Moderation(commands.Cog):
 
         await config.set_mute_role(role)
 
-        await ctx.send(f":white_check_mark: Set mute role to {role.name} ({role.id})")
+        await ctx.send(f":white_check_mark: Mute role set to `{role.name}` ({role.id})")
 
     @mute_role.command(name="create", description="Create a mute role")
     @commands.bot_has_permissions(manage_roles=True)
