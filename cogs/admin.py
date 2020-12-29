@@ -28,9 +28,9 @@ class Admin(commands.Cog):
     def cog_check(self, ctx):
         return ctx.author.id == self.bot.owner_id
 
-    @commands.group(name="reload", description="Reload an extension", invoke_without_command=True)
+    @commands.command(name="reload", description="Reload an extension")
     @commands.is_owner()
-    async def _reload(self, ctx, cog):
+    async def reload(self, ctx, cog):
         try:
             self.bot.reload_extension(cog.lower())
             await ctx.send(f"**:repeat: Reloaded** `{cog.lower()}`")
