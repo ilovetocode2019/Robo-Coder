@@ -39,10 +39,9 @@ class UserID(commands.Converter):
 
 class GuildConfig:
     @classmethod
-    def from_record(cls, record, bot, cog):
+    def from_record(cls, record, bot):
         self = cls()
         self.bot = bot
-        self.cog = cog
 
         self.guild_id = record["guild_id"]
         self.mute_role_id = record["mute_role_id"]
@@ -70,7 +69,7 @@ class GuildConfig:
         return self.bot.get_channel(self.log_channel_id)
 
     async def set_mute_role(self, role):
-        self.muted = [member.id for member in role.members]
+        self.muted = [member.id for member in role.members] if role else []
         self.mute_role_id = role.id if role else None
 
         query = """INSERT INTO guild_config (guild_id, mute_role_id, muted, spam_prevention, ignore_spam_channels, log_channel_id)
@@ -748,7 +747,7 @@ class Moderation(commands.Cog):
                 "log_channel_id": None
             }
 
-        return GuildConfig.from_record(dict(record), self.bot, self)
+        return GuildConfig.from_record(dict(record), self.bot)
 
     def get_spam_action(self, config, spammer):
         return SpamAction.MUTE
