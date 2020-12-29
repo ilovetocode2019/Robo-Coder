@@ -30,16 +30,14 @@ class Admin(commands.Cog):
 
     @commands.command(name="reload", description="Reload an extension")
     @commands.is_owner()
-    async def reload(self, ctx, cog):
+    async def reload(self, ctx, extension):
         try:
-            self.bot.reload_extension(cog.lower())
-            await ctx.send(f"**:repeat: Reloaded** `{cog.lower()}`")
-            print(f"Extension '{cog.lower()}' successfully reloaded.")
+            self.bot.reload_extension(extension)
+            await ctx.send(f"**:repeat: Reloaded** `{extension}`")
         except Exception as e:
-            traceback_data = ''.join(traceback.format_exception(type(e), e, e.__traceback__, 1))
-            await ctx.send(f"**:warning: Extension `{cog.lower()}` not reloaded.**\n```py\n{traceback_data}```")
-            print(f"Extension 'cogs.{cog.lower()}' not reloaded.\n{traceback_data}")
-
+            full = "".join(traceback.format_exception(type(e), e, e.__traceback__, 1))
+            await ctx.send(f"**:warning: Extension `{extension}` not reloaded.**\n```py\n{full}```")
+asdf
     @commands.command(name="process", description="View system stats")
     async def process(self, ctx):
         em = discord.Embed(title="Process", color=0x96c8da)
