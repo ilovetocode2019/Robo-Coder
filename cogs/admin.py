@@ -154,7 +154,7 @@ class Admin(commands.Cog):
                 if current_version != pypi_version:
                     outdated.append((package, current_version, pypi_version))
             except Exception as exc:
-                traceback.print_exception(type(exc), exc, exc.__traceback__)
+                traceback.print_exception(type(exc), exc, exc.__traceback__,file=sys.stderr)
 
             await asyncio.sleep(5)
 
