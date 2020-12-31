@@ -35,11 +35,17 @@ def get_lines_of_code():
     return f"I have {total:,} lines of code, spread across {file_amount:,} files"
 
 class RoboCoderHelpCommand(commands.HelpCommand):
+    bottom_text = '\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**. \nFor more help join the [support server]({0}).'
+
     async def send_bot_help(self, mapping):
         ctx = self.context
         bot = ctx.bot
 
-        em = discord.Embed(title=f"{bot.user.name} Help", description=f"Help for Robo Coder Bot. Use `{ctx.prefix}help [command]` or `{ctx.prefix}help [Category]` for more specific help.\n", color=0x96c8da)
+        em = discord.Embed(
+            title=f"{bot.user.name} Help",
+            description=f"Help for Robo Coder Bot. Use `{ctx.prefix}help [command]` or `{ctx.prefix}help [Category]` for more specific help. If you need more help you can join the [support server]({bot.support_server_link}).",
+            color=0x96c8da
+            )
         msg = ""
         for name, cog in sorted(bot.cogs.items()):
             if not getattr(cog, "hidden", False):
@@ -58,7 +64,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             if not command.hidden:
                 em.description += f"\n`{self.get_command_signature(command)}` {'-' if command.description else ''} {command.description}"
 
-        em.description += "\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**."
+        em.description += self.bottom_text.format(bot.support_server_link)
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
 
         await ctx.send(embed=em)
@@ -70,7 +76,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         em = discord.Embed(title=f"{command.name} {command.signature}", description=command.description or "", color=0x96c8da)
         if command.aliases:
             em.description += f"\nAliases: {', '.join(command.aliases)}"
-        em.description += "\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**."
+        em.description += self.bottom_text.format(bot.support_server_link)
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
 
         await ctx.send(embed=em)
@@ -87,7 +93,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         for command in group.walk_commands():
             em.description += f"\n`{self.get_command_signature(command)}` {'-' if command.description else ''} {command.description}"
 
-        em.description += "\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**."
+        em.description += self.bottom_text.format(bot.support_server_link)
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
 
         await ctx.send(embed=em)
@@ -134,7 +140,12 @@ class Meta(commands.Cog):
             await ctx.send(f":x: {error}")
 
         if isinstance(error, commands.CommandInvokeError):
-            em = discord.Embed(title=":warning: Error", description=f"An unexpected error has occured: \n```py\n{error}```", color=discord.Color.gold())
+            em = discord.Embed(
+                title=":warning: Error",
+                description=f"An unexpected error has occured. If your confused or think this is a bug you can join the [support server]({self.bot.support_server_link}). \n```py\n{error}```",
+                color=discord.Color.gold()
+            )
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
             await ctx.send(embed=em)
 
             em = discord.Embed(title=":warning: Error", description="", color=discord.Color.gold())
