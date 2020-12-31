@@ -22,7 +22,7 @@ class LRUDict(collections.OrderedDict):
         self.move_to_end(key)
         return value
 
-def cache(max_legnth = 100):
+def cache(max_legnth = 128):
     def decorator(func):
         cache = LRUDict(max_legnth=max_legnth)
 
