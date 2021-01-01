@@ -1,5 +1,4 @@
 # Robo-Coder
-
 A multipurpose Discord bot.
 [Click here](https://discord.com/oauth2/authorize?client_id=639607732202110977&scope=bot&permissions=805314582) to add Robo Coder to your server.
 
