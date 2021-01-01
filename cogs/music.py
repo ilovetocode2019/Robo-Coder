@@ -1071,7 +1071,7 @@ class Music(commands.Cog):
                 await player.ctx.send(f"Playlist saved to {url}")
             await player.disconnect()
         else:
-            if paused:
+            if not paused:
                 player.resume()
 
 def setup(bot):
