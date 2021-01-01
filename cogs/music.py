@@ -1057,6 +1057,7 @@ class Music(commands.Cog):
         if len(members) > 0:
             return
 
+        paused = player.voice.is_paused()
         player.pause()
 
         def check(member, before, after):
@@ -1070,7 +1071,8 @@ class Music(commands.Cog):
                 await player.ctx.send(f"Playlist saved to {url}")
             await player.disconnect()
         else:
-            player.resume()
+            if paused:
+                player.resume()
 
 def setup(bot):
     bot.add_cog(Music(bot))
