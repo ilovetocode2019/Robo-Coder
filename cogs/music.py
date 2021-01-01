@@ -523,6 +523,30 @@ class Song:
 
         return ":".join([str(x) for x in duration])
 
+class PositionConverter(commands.Converter):
+    async def convert(self, ctx, arg):
+        if ":" not in arg:
+            try:
+                return int(arg)
+            except ValueError as exc:
+                raise commands.BadArgument("Song position is not an integer")
+
+        args = arg.split(":")
+        if len(args) > 3:
+            raise commands.BadArgument("Song position timestamp is invalid")
+
+        position = 0
+        times = [1, 60, 1440]
+
+        for counter, arg in enumerate(reversed(args)):
+            try:
+                arg = int(arg)
+                position += arg * times[counter]
+            except ValueError:
+                raise commands.BadArgument(f"`{arg}` is not an integer")
+
+        return position
+
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -752,7 +776,7 @@ class Music(commands.Cog):
         await ctx.send(f":track_next: Jumped to {song.title}")
 
     @commands.command(name="seek", description="Seek a position in the song")
-    async def seek(self, ctx, position: int):
+    async def seek(self, ctx, position: PositionConverter):
         player = self.bot.players.get(ctx.guild.id)
 
         if not player:
