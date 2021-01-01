@@ -9,7 +9,7 @@ class TimeConverter(commands.Converter):
                 arg = f"in {arg}"
             time = dateparser.parse(arg, settings={"TIMEZONE": "UTC"})
         except:
-            raise commands.BadArgument("Failed to parse time")
+            raise commands.BadArgument("I couldn't parse that time")
         if not time:
-            raise commands.BadArgument("Failed to parse time")
+            raise commands.BadArgument("I couldn't parse that time")
         return time
