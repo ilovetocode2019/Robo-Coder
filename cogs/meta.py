@@ -168,7 +168,7 @@ class Meta(commands.Cog):
         uptime = datetime.datetime.utcnow()-self.bot.startup_time
         await ctx.send(f"I started up {humanize.naturaldelta(uptime)} ago")
     
-    @commands.command(name="invite", description="Get a invite to add me to your server")
+    @commands.command(name="invite", description="Get a invite link to add me to your server")
     async def invite(self, ctx):
         perms  = discord.Permissions.none()
         perms.manage_messages = True
@@ -179,6 +179,10 @@ class Meta(commands.Cog):
         perms.manage_webhooks = True
         invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms, guild=None, redirect_uri=None)
         await ctx.send(f"<{invite}>")
+
+    @commands.command(name="support", description="Get an invite link for my support server")
+    async def support(self, ctx):
+        await ctx.send(self.bot.support_server_link)
 
     @commands.command(name="code", description="Find out what I'm made of")
     async def code(self, ctx):
