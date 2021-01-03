@@ -905,7 +905,7 @@ class Music(commands.Cog):
 
         await ctx.send(embed=player.embed)
 
-    @commands.command(name="next", description="View the next song in the queue")
+    @commands.command(name="next", description="View the next song in the queue", aliases=["nextup"])
     async def next(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
 
