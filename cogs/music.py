@@ -251,7 +251,7 @@ class Player:
         if not exc:
             self.event.set()
         else:
-            traceback.print_exception(type(exc), exc, exc,__traceback__, file=sys.stderr)
+            traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
 
     def pause(self):
         if self.pause_started and self.song_started:
