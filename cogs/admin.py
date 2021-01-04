@@ -25,8 +25,8 @@ class Admin(commands.Cog):
     def cog_unload(self):
         self.update_loop.cancel()
 
-    def cog_check(self, ctx):
-        return ctx.author.id == self.bot.owner_id
+    async def cog_check(self, ctx):
+        return await self.bot.is_owner(ctx.author)
 
     @commands.command(name="reload", description="Reload an extension")
     @commands.is_owner()

@@ -45,7 +45,7 @@ class RoboCoder(commands.Bot):
     def __init__(self):
         intents = discord.Intents.all()
         intents.presences = False
-        super().__init__(command_prefix=get_prefix, description="A multipurpose Discord bot.", case_insensitive=True, owner_id=config.owner_id, intents=intents)
+        super().__init__(command_prefix=get_prefix, description="A multipurpose Discord bot.", case_insensitive=True, intents=intents)
         self.loop.create_task(self.prepare_bot())
 
         self.config = config
