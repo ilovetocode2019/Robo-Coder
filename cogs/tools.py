@@ -48,7 +48,10 @@ class Tools(commands.Cog):
     async def serverinfo(self, ctx):
         await ctx.channel.trigger_typing()
         guild = ctx.guild
-        
+
+        if not guild.chunked:
+            await guild.chunk(cache=True)
+
         try:
             color = await average_image_color(guild.icon_url, self.bot.loop, self.bot.session)
         except:
