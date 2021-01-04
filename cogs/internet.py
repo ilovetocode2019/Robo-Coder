@@ -364,9 +364,6 @@ class Internet(commands.Cog):
                 html = html.decode("utf-8")
                 root = etree.fromstring(html, etree.HTMLParser())
 
-                with open("roblox.html", "w") as file:
-                    file.write(html)
-
             em = discord.Embed(title=profile["Username"], description="", url=f"{base_url}/profile", color=0x96c8da)
 
             avatar = root.find(".//div[@class='thumbnail-holder']/span[@class='thumbnail-span-original hidden']/img")
