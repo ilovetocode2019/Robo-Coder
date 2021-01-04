@@ -638,8 +638,8 @@ class Moderation(commands.Cog):
             parser.add_argument("--embeds", action="store_true")
             parser.add_argument("--files", action="store_true")
             parser.add_argument("--reactions", action="store_true")
-            parser.add_argument("--after", type=int)
-            parser.add_argument("--before", type=int)
+            parser.add_argument("--after")
+            parser.add_argument("--before")
 
             try:
                 args = parser.parse_args(shlex.split(flags))
@@ -678,12 +678,18 @@ class Moderation(commands.Cog):
                 checks.append(lambda message: len(message.reactions) != 0)
 
             if args.before:
-                before = discord.Object(id=args.before)
+                try:
+                    before = await commands.MessageConverter().convert(ctx, args.before)
+                except commands.BadArgument as exc:
+                    return await ctx.send(f":x: {exc}")
             else:
                 before = ctx.message
 
             if args.after:
-                after = discord.Object(id=args.after)
+                try:
+                    after = await commands.MessageConverter().convert(ctx, args.after)
+                except commands.BadArgument as exc:
+                    return await ctx.send(f":x: {exc}")
             else:
                 after = None
 
