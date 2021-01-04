@@ -240,6 +240,11 @@ class Internet(commands.Cog):
                 link = result.find(".//div[@class='yuRUbf']/a")
 
                 span = link.find(".//h3[@class='LC20lb DKV0Md']/span")
+                if span is None:
+                    span = link.find(".//h3[@class='LC20lb DKV0Md']/div[@class='ellip']/span")
+                if span is None:
+                    raise RuntimeError(f"Site name for {link} (result {counter+1}) is None")
+
                 cite = link.find(".//div/cite")
                 description = divs[counter].find(".//span[@class='aCOpRe']/span")
 
