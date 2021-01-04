@@ -186,8 +186,8 @@ class Internet(commands.Cog):
             return
 
         if not hasattr(self, "_docs_cache"):
-            await ctx.trigger_typing()
-            await self.build_docs_lookup_table(page_types)
+            async with ctx.typing():
+                await self.build_docs_lookup_table(page_types)
 
         obj = re.sub(r"^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)", r"\1", obj)
         obj = re.sub(r"^(?:telegrampy\.(?:ext\.)?)?(?:commands\.)?(.+)", r"\1", obj)
@@ -215,6 +215,111 @@ class Internet(commands.Cog):
         pages = menus.MenuPages(source=DocsPages(matches, obj), clear_reactions_after=True)
         await pages.start(ctx)
 
+    @commands.command(name="google", description="Search google", aliases=["g"])
+    @commands.cooldown(1, 20, commands.BucketType.user)
+    async def google(self, ctx, *, query):
+        async with ctx.typing():
+            params = {"safe": "on", "lr": "lang_en", "hl": "en"}
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
+            async with self.bot.session.get(f"https://google.com/search?q={urllib.parse.quote(query)}", params=params, headers=headers) as resp:
+                html = await resp.read()
+                html = html.decode("utf-8")
+
+                with open("google.html", "w", encoding="utf-8") as file:
+                    file.write(html)
+
+                root = etree.fromstring(html, etree.HTMLParser())
+
+            entries = []
+            divs = root.findall(".//div[@class='IsZvec']")
+            results = root.findall(".//div[@class='rc']")
+            if len(results) == 0:
+                return await ctx.send(":x: I couldn't find any results for that query")
+
+            for counter, result in enumerate(results):
+                link = result.find(".//div[@class='yuRUbf']/a")
+
+                span = link.find(".//h3[@class='LC20lb DKV0Md']/span")
+                cite = link.find(".//div/cite")
+                description = divs[counter].find(".//span[@class='aCOpRe']/span")
+
+                href = link.get("href")
+                site = f'`{cite.text}`' if cite is not None else ''
+                entries.append({"title": span.text, "description":  f"`{site}` \n\n{' '.join(description.itertext()) if description is not None else ''}", "url": href})
+
+            calculator = root.find(".//div[@class='tyYmIf']")
+            if calculator is not None:
+                equation = calculator.find(".//span[@class='vUGUtc']")
+                result = calculator.find(".//span[@class='qv3Wpe']")
+                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
+                em = discord.Embed(title="Calculator", description=f"{equation.text}{result.text}", color=0x96c8da)
+                em.add_field(name="Search Results", value=search_results)
+                return await ctx.send(embed=em)
+
+            converter = root.find(".//div[@class='vk_c card obcontainer card-section']")
+            if converter is not None:
+                original, output = converter.findall(".//input[@class='vXQmIe gsrt']")
+                units = converter.findall(".//option[@selected='1']")
+                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
+                em = discord.Embed(title=f"Unit Converter ({units[0].text})", color=0x96c8da)
+                em.add_field(name=units[1].text, value=original.get("value"))
+                em.add_field(name=units[2].text, value=output.get("value"))
+                em.add_field(name="Search Results", value=search_results, inline=False)
+                return await ctx.send(embed=em)
+
+            translator = root.find(".//div[@class='tw-src-ltr']")
+            if translator is not None:
+                langs = root.find(".//div[@class='pcCUmf vCOSGb']")
+                original_language = langs.find(".//div[@class='j1iyq hide-focus-ring']/span[@class='source-language']")
+                output_language = langs.find(".//div[@class='j1iyq hide-focus-ring']/span[@class='target-language']")
+
+                original = translator.find(".//pre[@id='tw-source-text']/span")
+                output = translator.find(".//pre[@id='tw-target-text']/span")
+                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
+                em = discord.Embed(title="Translator", color=0x96c8da)
+                em.add_field(name=original_language.text, value=original.text)
+                em.add_field(name=output_language.text, value=output.text)
+                em.add_field(name="Search Results", value=search_results, inline=False)
+                return await ctx.send(embed=em)
+
+        pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
+        await pages.start(ctx)
+
+    @commands.command(name="wikipedia", description="Search wikipedia", aliases=["wiki"])
+    @commands.cooldown(2, 20, commands.BucketType.user)
+    async def wikipedia(self, ctx, *, search):
+        async with ctx.typing():
+            url = "http://en.wikipedia.org/w/api.php"
+            data = {"prop": "info|pageprops", "inprop": "url", "ppprop": "disambiguation", "redirects": "", "titles": search, "format": "json", "action": "query"}
+
+            async with self.bot.session.get(url, params=data) as resp:
+                if resp.status != 200:
+                    return await ctx.send(f":x: Failed to fetch page data (error code {resp.status})")
+
+                page_data = await resp.json()
+                pages = page_data["query"]["pages"]
+                page_id = list(page_data["query"]["pages"].keys())[0]
+                page = pages[page_id]
+                if "pageid" not in page:
+                    return await ctx.send(f":x: Could not find a page with the name '{search}'")
+
+            data = {"prop": "extracts", "explaintext": "", "pageids": page_id, "format": "json", "action": "query"}
+            async with self.bot.session.get(url, params=data) as resp:
+                if resp.status != 200:
+                    return await ctx.send(f":x: Failed to fetch page data (error code {resp.status})")
+                summary_data = await resp.json()
+                summary = summary_data["query"]["pages"][page_id]["extract"]
+
+        summary = summary.replace("===", "__")
+        summary = summary.replace("==", "**")
+        description = f"{summary[:1000]}{'...' if len(summary) > 1000 else ''}\n\n[Read more]({page['fullurl']})"
+
+        em = discord.Embed(title=f"{page['title']} ({page_id})", description=description, url=page["fullurl"])
+        await ctx.send(embed=em)
+
     @commands.group(name="docs", description="Search Discord.py docs", invoke_without_command=True)
     async def docs(self, ctx, obj=None):
         await self.do_docs(ctx, "latest", obj)
@@ -238,293 +343,182 @@ class Internet(commands.Cog):
     @commands.command(name="roblox", description="Get info on a Roblox user")
     @commands.cooldown(2, 20, commands.BucketType.user)
     async def roblox(self, ctx, username):
-        await ctx.channel.trigger_typing()
+        async with ctx.typing():
+            async with self.bot.session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
+                if resp.status != 200:
+                    return await ctx.send(f":x: Failed to find user (error code {resp.status})")
 
-        async with self.bot.session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
-            if resp.status != 200:
-                return await ctx.send(f":x: Failed to find user (error code {resp.status})")
+                profile = await resp.json()
+                if "Id" not in profile:
+                    return await ctx.send(":x: I couldn't find that user")
 
-            profile = await resp.json()
-            if "Id" not in profile:
-                return await ctx.send(":x: I couldn't find that user")
+                user_id = profile["Id"]
+                base_url = f"https://www.roblox.com/users/{user_id}"
 
-            user_id = profile["Id"]
-            base_url = f"https://www.roblox.com/users/{user_id}"
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
+            async with self.bot.session.get(f"{base_url}/profile", headers=headers) as resp:
+                if resp.status != 200:
+                    return await ctx.send(f":x: Failed to fetch user data (error code {resp.status})")
 
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
-        async with self.bot.session.get(f"{base_url}/profile", headers=headers) as resp:
-            if resp.status != 200:
-                return await ctx.send(f":x: Failed to fetch user data (error code {resp.status})")
+                html = await resp.read()
+                html = html.decode("utf-8")
+                root = etree.fromstring(html, etree.HTMLParser())
 
-            html = await resp.read()
-            html = html.decode("utf-8")
-            root = etree.fromstring(html, etree.HTMLParser())
+                with open("roblox.html", "w") as file:
+                    file.write(html)
 
-            with open("roblox.html", "w") as file:
-                file.write(html)
+            em = discord.Embed(title=profile["Username"], description="", url=f"{base_url}/profile", color=0x96c8da)
 
-        em = discord.Embed(title=profile["Username"], description="", url=f"{base_url}/profile", color=0x96c8da)
+            avatar = root.find(".//div[@class='thumbnail-holder']/span[@class='thumbnail-span-original hidden']/img")
+            if avatar is not None:
+                em.set_thumbnail(url=avatar.get("src"))
 
-        avatar = root.find(".//div[@class='thumbnail-holder']/span[@class='thumbnail-span-original hidden']/img")
-        if avatar is not None:
-            em.set_thumbnail(url=avatar.get("src"))
+            if root.find(".//span[@class='icon-premium-medium']") is not None:
+                em.description += "This user has premium \n\n"
 
-        if root.find(".//span[@class='icon-premium-medium']") is not None:
-            em.description += "This user has premium \n\n"
+            about = root.find(".//span[@class='profile-about-content-text linkify']")
+            if about is not None:
+                em.description += about.text
 
-        about = root.find(".//span[@class='profile-about-content-text linkify']")
-        if about is not None:
-            em.description += about.text
+            details = root.find(".//div[@class='hidden']")
 
-        details = root.find(".//div[@class='hidden']")
+            friends_count = details.get("data-friendscount")
+            if friends_count:
+                url = f"{base_url}/friends#!/friends"
+                em.add_field(name="Friends", value=f"{friends_count} [(view)]({url})")
 
-        friends_count = details.get("data-friendscount")
-        if friends_count:
-            url = f"{base_url}/friends#!/friends"
-            em.add_field(name="Friends", value=f"{friends_count} [(view)]({url})")
+            followers_count = details.get("data-followerscount")
+            if followers_count:
+                url = f"{base_url}/friends#!/followers"
+                em.add_field(name="Followers", value=f"{followers_count} [(view)]({url})")
 
-        followers_count = details.get("data-followerscount")
-        if followers_count:
-            url = f"{base_url}/friends#!/followers"
-            em.add_field(name="Followers", value=f"{followers_count} [(view)]({url})")
+            followings_count = details.get("data-followingscount")
+            if followings_count:
+                url = f"{base_url}/friends#!/following"
+                em.add_field(name="Following", value=f"{followings_count} [(view)]({url})")
 
-        followings_count = details.get("data-followingscount")
-        if followings_count:
-            url = f"{base_url}/friends#!/following"
-            em.add_field(name="Following", value=f"{followings_count} [(view)]({url})")
+            status = details.get("data-statustext")
+            if status:
+                em.add_field(name="Status", value=status, inline=False)
 
-        status = details.get("data-statustext")
-        if status:
-            em.add_field(name="Status", value=status, inline=False)
-
-        stats = root.findall(".//ul[@class='profile-stats-container']/li")
-        for stat in stats:
-            name = stat[0].text
-            value = stat[1].text
-            em.add_field(name=name, value=value)
+            stats = root.findall(".//ul[@class='profile-stats-container']/li")
+            for stat in stats:
+                name = stat[0].text
+                value = stat[1].text
+                em.add_field(name=name, value=value)
 
         await ctx.send(embed=em)
 
     @commands.command(name="minecraft", description="Get info on a Minecraft user", aliases=["mc"])
     @commands.cooldown(1, 20, commands.BucketType.user)
     async def minecraft(self, ctx, username):
-        await ctx.channel.trigger_typing()
+        async with ctx.typing():
+            async with self.bot.session.get(f"https://api.mojang.com/users/profiles/minecraft/{username}") as resp:
+                if resp.status != 200:
+                    return await ctx.send(":x: I couldn't find that user")
 
-        async with self.bot.session.get(f"https://api.mojang.com/users/profiles/minecraft/{username}") as resp:
-            if resp.status != 200:
-                return await ctx.send(":x: I couldn't find that user")
+                data = await resp.json()
+            name = data["name"]
+            uuid = data["id"]
 
-            data = await resp.json()
-        name = data["name"]
-        uuid = data["id"]
+            async with self.bot.session.get(f"https://api.mojang.com/user/profiles/{uuid}/names") as resp:
+                name_history = await resp.json()
+            names = []
+            for name_data in reversed(name_history):
+                timestamp = name_data.get("changedToAt")
+                old_name = name_data["name"]
+                if timestamp:
+                    seconds = timestamp / 1000
+                    time = datetime.datetime.fromtimestamp(seconds + (timestamp % 1000.0) / 1000.0)
+                    time = time.strftime("%m/%d/%y")
+                    names.append(f"{old_name} ({time})")
+                else:
+                    names.append(old_name)
 
-        async with self.bot.session.get(f"https://api.mojang.com/user/profiles/{uuid}/names") as resp:
-            name_history = await resp.json()
-        names = []
-        for name_data in reversed(name_history):
-            timestamp = name_data.get("changedToAt")
-            old_name = name_data["name"]
-            if timestamp:
-                seconds = timestamp / 1000
-                time = datetime.datetime.fromtimestamp(seconds + (timestamp % 1000.0) / 1000.0)
-                time = time.strftime("%m/%d/%y")
-                names.append(f"{old_name} ({time})")
-            else:
-                names.append(old_name)
+            async with self.bot.session.get(f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid}") as resp:
+                data = await resp.json()
+            data = data["properties"][0]["value"]
+            data = json.loads(base64.b64decode(data))
+            url = data["textures"]["SKIN"]["url"]
 
-        async with self.bot.session.get(f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid}") as resp:
-            data = await resp.json()
-        data = data["properties"][0]["value"]
-        data = json.loads(base64.b64decode(data))
-        url = data["textures"]["SKIN"]["url"]
+            async with self.bot.session.get(url) as resp:
+                data = await resp.read()
+                image = io.BytesIO(data)
 
-        async with self.bot.session.get(url) as resp:
-            data = await resp.read()
-            image = io.BytesIO(data)
+            partial = functools.partial(Image.open, image)
+            image = await self.bot.loop.run_in_executor(None, partial)
 
-        partial = functools.partial(Image.open, image)
-        image = await self.bot.loop.run_in_executor(None, partial)
+            partial = functools.partial(image.crop, (8, 8, 16, 16))
+            image = await self.bot.loop.run_in_executor(None, partial)
 
-        partial = functools.partial(image.crop, (8, 8, 16, 16))
-        image = await self.bot.loop.run_in_executor(None, partial)
+            partial = functools.partial(image.resize, (500, 500), resample=Image.NEAREST)
+            image = await self.bot.loop.run_in_executor(None, partial)
 
-        partial = functools.partial(image.resize, (500, 500), resample=Image.NEAREST)
-        image = await self.bot.loop.run_in_executor(None, partial)
+            output = io.BytesIO()
+            image.save(output, format="png")
+            output.seek(0)
 
-        output = io.BytesIO()
-        image.save(output, format="png")
-        output.seek(0)
-
-        em = discord.Embed(title=name)
-        em.set_thumbnail(url="attachment://face.png")
-        em.add_field(name="Names", value="\n".join(names))
-        em.set_footer(text=f"ID: {uuid}")
+            em = discord.Embed(title=name)
+            em.set_thumbnail(url="attachment://face.png")
+            em.add_field(name="Names", value="\n".join(names))
+            em.set_footer(text=f"ID: {uuid}")
 
         await ctx.send(embed=em, file=discord.File(output, filename="face.png"))
-
-    @commands.command(name="wikipedia", description="Search wikipedia", aliases=["wiki"])
-    @commands.cooldown(2, 20, commands.BucketType.user)
-    async def wikipedia(self, ctx, *, search):
-        await ctx.channel.trigger_typing()
-
-        url = "http://en.wikipedia.org/w/api.php"
-        data = {"prop": "info|pageprops", "inprop": "url", "ppprop": "disambiguation", "redirects": "", "titles": search, "format": "json", "action": "query"}
-
-        async with self.bot.session.get(url, params=data) as resp:
-            if resp.status != 200:
-                return await ctx.send(f":x: Failed to fetch page data (error code {resp.status})")
-
-            page_data = await resp.json()
-            pages = page_data["query"]["pages"]
-            page_id = list(page_data["query"]["pages"].keys())[0]
-            page = pages[page_id]
-            if "pageid" not in page:
-                return await ctx.send(f":x: Could not find a page with the name '{search}'")
-
-        data = {"prop": "extracts", "explaintext": "", "pageids": page_id, "format": "json", "action": "query"}
-        async with self.bot.session.get(url, params=data) as resp:
-            if resp.status != 200:
-                return await ctx.send(f":x: Failed to fetch page data (error code {resp.status})")
-            summary_data = await resp.json()
-            summary = summary_data["query"]["pages"][page_id]["extract"]
-
-        summary = summary.replace("===", "__")
-        summary = summary.replace("==", "**")
-        description = f"{summary[:1000]}{'...' if len(summary) > 1000 else ''}\n\n[Read more]({page['fullurl']})"
-
-        em = discord.Embed(title=f"{page['title']} ({page_id})", description=description, url=page["fullurl"])
-        await ctx.send(embed=em)
-
-    @commands.command(name="google", description="Search google", aliases=["g"])
-    @commands.cooldown(1, 20, commands.BucketType.user)
-    async def google(self, ctx, *, query):
-        await ctx.channel.trigger_typing()
-
-        params = {"safe": "on", "lr": "lang_en", "hl": "en"}
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
-        async with self.bot.session.get(f"https://google.com/search?q={urllib.parse.quote(query)}", params=params, headers=headers) as resp:
-            html = await resp.read()
-            html = html.decode("utf-8")
-
-            with open("google.html", "w", encoding="utf-8") as file:
-                file.write(html)
-
-            root = etree.fromstring(html, etree.HTMLParser())
-
-        entries = []
-        divs = root.findall(".//div[@class='IsZvec']")
-        results = root.findall(".//div[@class='rc']")
-        if len(results) == 0:
-            return await ctx.send(":x: I couldn't find any results for that query")
-
-        for counter, result in enumerate(results):
-            link = result.find(".//div[@class='yuRUbf']/a")
-
-            span = link.find(".//h3[@class='LC20lb DKV0Md']/span")
-            cite = link.find(".//div/cite")
-            description = divs[counter].find(".//span[@class='aCOpRe']/span")
-
-            href = link.get("href")
-            site = f'`{cite.text}`' if cite is not None else ''
-            entries.append({"title": span.text, "description":  f"`{site}` \n\n{' '.join(description.itertext()) if description is not None else ''}", "url": href})
-
-        calculator = root.find(".//div[@class='tyYmIf']")
-        if calculator is not None:
-            equation = calculator.find(".//span[@class='vUGUtc']")
-            result = calculator.find(".//span[@class='qv3Wpe']")
-            search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
-
-            em = discord.Embed(title="Calculator", description=f"{equation.text}{result.text}", color=0x96c8da)
-            em.add_field(name="Search Results", value=search_results)
-            return await ctx.send(embed=em)
-
-        converter = root.find(".//div[@class='vk_c card obcontainer card-section']")
-        if converter is not None:
-            original, output = converter.findall(".//input[@class='vXQmIe gsrt']")
-            units = converter.findall(".//option[@selected='1']")
-            search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
-
-            em = discord.Embed(title=f"Unit Converter ({units[0].text})", color=0x96c8da)
-            em.add_field(name=units[1].text, value=original.get("value"))
-            em.add_field(name=units[2].text, value=output.get("value"))
-            em.add_field(name="Search Results", value=search_results, inline=False)
-            return await ctx.send(embed=em)
-
-        translator = root.find(".//div[@class='tw-src-ltr']")
-        if translator is not None:
-            langs = root.find(".//div[@class='pcCUmf vCOSGb']")
-            original_language = langs.find(".//div[@class='j1iyq hide-focus-ring']/span[@class='source-language']")
-            output_language = langs.find(".//div[@class='j1iyq hide-focus-ring']/span[@class='target-language']")
-
-            original = translator.find(".//pre[@id='tw-source-text']/span")
-            output = translator.find(".//pre[@id='tw-target-text']/span")
-            search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
-
-            em = discord.Embed(title="Translator", color=0x96c8da)
-            em.add_field(name=original_language.text, value=original.text)
-            em.add_field(name=output_language.text, value=output.text)
-            em.add_field(name="Search Results", value=search_results, inline=False)
-            return await ctx.send(embed=em)
-
-        pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
-        await pages.start(ctx)
 
     @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
     @commands.cooldown(3, 20, commands.BucketType.user)
     async def github(self, ctx, item):
-        await ctx.channel.trigger_typing()
+        async with ctx.typing():
+            if "/" in item:
+                async with self.bot.session.get(f"https://api.github.com/repos/{item}") as resp:
+                    if resp.status != 200:
+                        return await ctx.send(":x: I couldn't find that GitHub repository")
 
-        if "/" in item:
-            async with self.bot.session.get(f"https://api.github.com/repos/{item}") as resp:
-                if resp.status != 200:
-                    return await ctx.send(":x: I couldn't find that GitHub repository")
+                    data = await resp.json()
+                    owner = data["owner"]
 
-                data = await resp.json()
-                owner = data["owner"]
+                em = discord.Embed(title=data["full_name"], description=f"{data['description'] or ''}\n{data['homepage'] or ''}", url=data["html_url"], timestamp=dateparser.parse(data["created_at"]), color=0x96c8da)
+                em.set_author(name=owner["login"], url=owner["html_url"], icon_url=owner["avatar_url"])
+                em.set_thumbnail(url=owner["avatar_url"])
+                em.add_field(name="Language", value=data["language"])
+                em.add_field(name="Stars", value=data["stargazers_count"])
+                em.add_field(name="Watching", value=data["watchers_count"])
+                em.add_field(name="Forks", value=data["forks_count"])
+                em.set_footer(text="Created")
+            else:
+                async with self.bot.session.get(f"https://api.github.com/users/{item}") as resp:
+                    if resp.status != 200:
+                        return await ctx.send(":x: I couldn't find that GitHub user")
+                    data = await resp.json()
 
-            em = discord.Embed(title=data["full_name"], description=f"{data['description'] or ''}\n{data['homepage'] or ''}", url=data["html_url"], timestamp=dateparser.parse(data["created_at"]), color=0x96c8da)
-            em.set_author(name=owner["login"], url=owner["html_url"], icon_url=owner["avatar_url"])
-            em.set_thumbnail(url=owner["avatar_url"])
-            em.add_field(name="Language", value=data["language"])
-            em.add_field(name="Stars", value=data["stargazers_count"])
-            em.add_field(name="Watching", value=data["watchers_count"])
-            em.add_field(name="Forks", value=data["forks_count"])
-            em.set_footer(text="Created")
-        else:
-            async with self.bot.session.get(f"https://api.github.com/users/{item}") as resp:
-                if resp.status != 200:
-                    return await ctx.send(":x: I couldn't find that GitHub user")
-                data = await resp.json()
-
-            em = discord.Embed(title=data["login"], description=data['bio'], url=data["html_url"], timestamp=dateparser.parse(data["created_at"]), color=0x96c8da)
-            em.set_thumbnail(url=data["avatar_url"])
-            em.add_field(name="Repositories", value=data["public_repos"])
-            em.add_field(name="Gists", value=data["public_gists"])
-            em.add_field(name="Followers", value=data["followers"])
-            em.add_field(name="Following", value=data["following"])
-            if data["blog"]:
-                em.add_field(name="Website", value=data["blog"])
-            em.set_footer(text="Created")
+                em = discord.Embed(title=data["login"], description=data['bio'], url=data["html_url"], timestamp=dateparser.parse(data["created_at"]), color=0x96c8da)
+                em.set_thumbnail(url=data["avatar_url"])
+                em.add_field(name="Repositories", value=data["public_repos"])
+                em.add_field(name="Gists", value=data["public_gists"])
+                em.add_field(name="Followers", value=data["followers"])
+                em.add_field(name="Following", value=data["following"])
+                if data["blog"]:
+                    em.add_field(name="Website", value=data["blog"])
+                em.set_footer(text="Created")
 
         await ctx.send(embed=em)
 
     @commands.command(name="pypi", description="Search for a project on PyPI", aliases=["pip", "project"])
     @commands.cooldown(3, 20, commands.BucketType.user)
     async def pypi(self, ctx, project, release=None):
-        await ctx.channel.trigger_typing()
+        async with ctx.typing():
+            if release:
+                url = f"https://pypi.org/pypi/{project}/{release}/json"
+            else:
+                url = f"https://pypi.org/pypi/{project}/json"
 
-        if release:
-            url = f"https://pypi.org/pypi/{project}/{release}/json"
-        else:
-            url = f"https://pypi.org/pypi/{project}/json"
+            async with self.bot.session.get(url) as resp:
+                if resp.status != 200:
+                    return await ctx.send(f":x: I couldn't find that package")
 
-        async with self.bot.session.get(url) as resp:
-            if resp.status != 200:
-                return await ctx.send(f":x: I couldn't find that package")
-
-            data = await resp.json()
-            info = data["info"]
-            releases = data["releases"]
+                data = await resp.json()
+                info = data["info"]
+                releases = data["releases"]
 
         em = discord.Embed(title=f"{info['name']} {info['version']}", description=info["summary"], url=info["package_url"], color=0x96c8da)
         em.set_thumbnail(url="https://i.imgur.com/6WHMGed.png")
@@ -555,8 +549,6 @@ class Internet(commands.Cog):
     @commands.command(name="strawpoll", description="Create a strawpoll")
     @commands.cooldown(3, 20, commands.BucketType.user)
     async def strawpoll(self, ctx, title=None, *options):
-        await ctx.channel.trigger_typing()
-
         if not title:
             options = []
             check = lambda message: message.channel == ctx.author.dm_channel and message.author == ctx.author
@@ -573,8 +565,6 @@ class Internet(commands.Cog):
                 message = await self.bot.wait_for("message", check=check)
 
                 if message.content == "done":
-                    if len(options) < 2:
-                        return await ctx.author.send(":x: You must have at least 2 options")
                     break
                 elif message.content == "abort":
                     return await ctx.author.send("Aborting")
@@ -585,9 +575,11 @@ class Internet(commands.Cog):
         if len(options) < 2:
             return await ctx.send(":x: You must have at least 2 options")
 
-        data = {"poll": {"title": title, "answers": list(options)}}
-        async with self.bot.session.post("https://strawpoll.com/api/poll", json=data, headers={"Content Type": "application/json"}) as resp:
-            data = await resp.json()
+        async with ctx.typing():
+            data = {"poll": {"title": title, "answers": list(options)}}
+            async with self.bot.session.post("https://strawpoll.com/api/poll", json=data, headers={"Content Type": "application/json"}) as resp:
+                data = await resp.json()
+
         await ctx.send(f"https://strawpoll.com/{data['content_id']}")
 
 def setup(bot):

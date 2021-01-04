@@ -91,20 +91,19 @@ class Admin(commands.Cog):
 
     @commands.command(name="update", description="Update the bot")
     async def update(self, ctx):
-        await ctx.trigger_typing()
+        async with ctx.typing():
+            regex = re.compile(r"\s*(?P<filename>.+?)\s*\|\s*[0-9]+\s*[+-]+")
 
-        regex = re.compile(r"\s*(?P<filename>.+?)\s*\|\s*[0-9]+\s*[+-]+")
+            process = await asyncio.create_subprocess_shell("git pull", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = await process.communicate()
+            text = stdout.decode()
 
-        process = await asyncio.create_subprocess_shell("git pull", stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout, stderr = await process.communicate()
-        text = stdout.decode()
-
-        files = regex.findall(text)
-        cogs = []
-        for file in files:
-            root, ext = os.path.splitext(file)
-            if root.startswith("cogs/") and root.count("/") == 1 and ext == ".py":
-                cogs.append(root.replace("/", "."))
+            files = regex.findall(text)
+            cogs = []
+            for file in files:
+                root, ext = os.path.splitext(file)
+                if root.startswith("cogs/") and root.count("/") == 1 and ext == ".py":
+                    cogs.append(root.replace("/", "."))
 
         if not cogs:
             return await ctx.send("No cogs to update")

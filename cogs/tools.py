@@ -19,26 +19,7 @@ from io import BytesIO
 
 from .utils import formats
 
-async def average_image_color(avatar_url, loop, session=None):
-    session = session or aiohttp.ClientSession()
-    async with session.get(str(avatar_url)) as resp:
-        data = await resp.read()
-        image = BytesIO(data)
-
-    partial = functools.partial(Image.open, image)
-    img = await loop.run_in_executor(None, partial)
-
-    partial = functools.partial(img.resize, (1, 1))
-    img2 = await loop.run_in_executor(None, partial)
-
-    partial = functools.partial(img2.getpixel, (0, 0))
-    color = await loop.run_in_executor(None, partial)
-
-    return(discord.Color(int("0x{:02x}{:02x}{:02x}".format(*color), 16)))
-
 class Tools(commands.Cog):
-    """Tools for Discord."""
-
     def __init__(self, bot):
         self.bot = bot
         self.emoji = ":toolbox:"
@@ -46,16 +27,17 @@ class Tools(commands.Cog):
     @commands.command(name="serverinfo", description="Get info on the server", aliases=["guildinfo"])
     @commands.guild_only()
     async def serverinfo(self, ctx):
-        await ctx.channel.trigger_typing()
         guild = ctx.guild
 
-        if not guild.chunked:
-            await guild.chunk(cache=True)
+        async with ctx.typing():
+            if not guild.chunked:
+                await guild.chunk(cache=True)
 
-        try:
-            color = await average_image_color(guild.icon_url, self.bot.loop, self.bot.session)
-        except:
-            color = discord.Embed.Empty
+            try:
+                color = await self.average_image_color(guild.icon_url_as(format="png"))
+            except:
+                color = discord.Embed.Empty
+
         em = discord.Embed(color=color)
         em.set_author(name=f"{guild.name} ({guild.id})", icon_url=ctx.guild.icon_url)
         em.set_thumbnail(url=guild.icon_url)
@@ -82,8 +64,7 @@ class Tools(commands.Cog):
 
     @commands.command(name="userinfo", description="Get info on a user", aliases=["ui", "whois"])
     @commands.guild_only()
-    async def userinfo(self, ctx, *, user:discord.Member=None):
-        await ctx.channel.trigger_typing()
+    async def userinfo(self, ctx, *, user: discord.Member = None):
         if not user:
             user = ctx.author
 
@@ -105,10 +86,11 @@ class Tools(commands.Cog):
             if emoji:
                 badges += emoji
 
-        try:
-            color = await average_image_color(user.avatar_url, self.bot.loop, session=self.bot.session)
-        except:
-            color = discord.Embed.Empty
+        async with ctx.typing():
+            try:
+                color = await self.average_image_color(user.avatar_url_as(format="png"))
+            except:
+                color = discord.Embed.Empty
 
         em = discord.Embed(description=badges, color=color)
         em.set_author(name=f"{user} {f'({user.nick})' if user.nick else ''} - {user.id}", icon_url=user.avatar_url)
@@ -131,15 +113,15 @@ class Tools(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="avatar", description="Get a users avatar")
-    async def avatar(self, ctx, *, user:discord.Member=None):
-        await ctx.channel.trigger_typing()
+    async def avatar(self, ctx, *, user: discord.Member = None):
         if not user:
             user = ctx.author
 
-        try:
-            color = await average_image_color(user.avatar_url, self.bot.loop, self.bot.session)
-        except:
-            color = discord.Embed.Empty
+        async with ctx.typing():
+            try:
+                color = await self.average_image_color(user.avatar_url_as(format="png"))
+            except:
+                color = discord.Embed.Empty
         em = discord.Embed(color=color)
         em.set_author(name=user.display_name, icon_url=user.avatar_url)
         em.set_image(url=user.avatar_url)
@@ -247,6 +229,21 @@ class Tools(commands.Cog):
     async def snowflake(self, ctx, *, snowflake: int):
         time = discord.utils.snowflake_time(snowflake)
         await ctx.send(time.strftime("%b %d, %Y at %I:%M %p"))
+
+    async def average_image_color(self, icon):
+        data = await icon.read()
+        image = io.BytesIO(data)
+
+        partial = functools.partial(Image.open, image)
+        img = await self.bot.loop.run_in_executor(None, partial)
+
+        partial = functools.partial(img.resize, (1, 1))
+        img2 = await self.bot.loop.run_in_executor(None, partial)
+
+        partial = functools.partial(img2.getpixel, (0, 0))
+        color = await self.bot.loop.run_in_executor(None, partial)
+
+        return(discord.Color(int("0x{:02x}{:02x}{:02x}".format(*color), 16)))
 
 def setup(bot):
     bot.add_cog(Tools(bot))
