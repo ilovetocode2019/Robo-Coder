@@ -483,6 +483,10 @@ class Moderation(commands.Cog):
     async def muted(self, ctx):
         config = await self.get_guild_config(ctx.guild)
 
+        if not ctx.guild.chunked:
+            async with ctx.typing():
+                await ctx.guild.chunk(cache=True)
+
         if len(config.muted_members) == 0:
             return await ctx.send("No muted members")
 
@@ -622,6 +626,10 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def purge(self, ctx, limit: typing.Optional[int] = 100, *, flags = None):
+        if not ctx.guild.chunked:
+            async with ctx.typing():
+                await ctx.guild.chunk(cache=True)
+
         if flags:
             parser = ArgumentParser()
 
