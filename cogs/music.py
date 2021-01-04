@@ -278,7 +278,6 @@ class Player:
         self.stop()
         self.loop.cancel()
         await self.voice.disconnect()
-        self.voice = None
 
         if self.ctx.guild.id in self.bot.players:
             self.bot.players.pop(self.ctx.guild.id)
