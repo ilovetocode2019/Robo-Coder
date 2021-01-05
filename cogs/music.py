@@ -232,6 +232,12 @@ class Player:
                 self.voice.play(source, after=self.after_song)
                 self.song_started = time.time()
 
+                query = """UPDATE songs
+                           SET plays = plays + 1
+                           WHERE songs.song_id=$1;
+                        """
+                await self.ctx.bot.db.execute(query, self.now.id)
+
                 if self.notifications:
                     await self.ctx.send(f":notes: Now playing `{self.now.title}`")
 
@@ -244,6 +250,7 @@ class Player:
                     await self.queue.put(self.now)
                 if not self.looping:
                     self.now = None
+
         except Exception as exc:
             print(f"Exception in player loop for guild ID: {self.ctx.guild.id}", file=sys.stderr)
             traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
@@ -461,10 +468,10 @@ class Song:
         filename = cls.ytdl.prepare_filename(info)
         info["filename"] = filename
 
-        query = """INSERT INTO songs (title, filename, song_id, extractor, data)
-                   VALUES ($1, $2, $3, $4, $5);
+        query = """INSERT INTO songs (title, filename, song_id, extractor, data, plays)
+                   VALUES ($1, $2, $3, $4, $5, $6);
                 """
-        await ctx.bot.db.execute(query, info["title"], filename, info["id"], info["extractor"], info)
+        await ctx.bot.db.execute(query, info["title"], filename, info["id"], info["extractor"], info, 0)
 
         return cls(ctx, data=info)
 
