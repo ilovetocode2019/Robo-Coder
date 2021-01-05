@@ -248,7 +248,6 @@ class Player:
             print(f"Exception in player loop for guild ID: {self.ctx.guild.id}", file=sys.stderr)
             traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
 
-
             if player.queue._queue:
                 url = await self.save_queue(player)
                 await player.ctx.send(f"Sorry! Your player has been crashed. If your confused or want to report this, join <{bot.support_server_link}>. You can start again with `{ctx.prefix}playbin {url}`.")
@@ -262,6 +261,7 @@ class Player:
         if not exc:
             self.event.set()
         else:
+            print(f"Exception in after function for guild ID: {self.ctx.guild.id}", file=sys.stderr)
             traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
 
     def pause(self):
