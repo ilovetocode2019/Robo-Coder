@@ -59,7 +59,7 @@ class SphinxObjectFileReader:
         decompressor = zlib.decompressobj()
         while True:
             chunk = self.stream.read(self.BUFSIZE)
-            if len(chunk) == 0:
+            if not chunk:
                 break
             yield decompressor.decompress(chunk)
         yield decompressor.flush()
@@ -209,7 +209,7 @@ class Internet(commands.Cog):
 
         matches = finder(obj, cache, key=lambda t: t[0], lazy=False)
 
-        if len(matches) == 0:
+        if not matches:
             return await ctx.send("Could not find anything")
         
         pages = menus.MenuPages(source=DocsPages(matches, obj), clear_reactions_after=True)
@@ -233,7 +233,7 @@ class Internet(commands.Cog):
             entries = []
             divs = root.findall(".//div[@class='IsZvec']")
             results = root.findall(".//div[@class='rc']")
-            if len(results) == 0:
+            if not results:
                 return await ctx.send(":x: I couldn't find any results for that query")
 
             for counter, result in enumerate(results):

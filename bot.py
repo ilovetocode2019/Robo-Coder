@@ -139,7 +139,7 @@ class RoboCoder(commands.Bot):
 
     async def logout(self):
         for player in self.players.values():
-            if len(player.queue._queue) != 0:
+            if player.queue._queue:
                 queue = [x.url for x in player.queue._queue]
                 if player.looping_queue:
                     queue = [player.now.url] + queue

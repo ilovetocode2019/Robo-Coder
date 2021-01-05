@@ -45,7 +45,7 @@ class Timers(commands.Cog):
                 """
         timers = await self.bot.db.fetch(query, str(ctx.author.id))
 
-        if len(timers) == 0:
+        if not timers:
             return await ctx.send("No running timers")
 
         em = discord.Embed(title="Timers", description="\n", color=0x96c8da)
@@ -62,7 +62,7 @@ class Timers(commands.Cog):
                 """
         timers = await self.bot.db.fetch(query, str(ctx.author.id), str(ctx.channel.id))
 
-        if len(timers) == 0:
+        if not timers:
             return await ctx.send(":x: No running timers here")
 
         em = discord.Embed(title="Timers Here", description="\n", color=0x96c8da)

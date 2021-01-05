@@ -487,7 +487,7 @@ class Moderation(commands.Cog):
             async with ctx.typing():
                 await ctx.guild.chunk(cache=True)
 
-        if len(config.muted_members) == 0:
+        if not config.muted_members:
             return await ctx.send("No muted members")
 
         muted = [f"[{counter+1}] {str(member)} {f'({member.id})' if isinstance(member, discord.Member) else ''}" for counter, member in enumerate(config.muted_members)]
