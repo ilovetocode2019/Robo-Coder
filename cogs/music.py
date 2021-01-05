@@ -218,34 +218,45 @@ class Player:
         self.loop = self.bot.loop.create_task(self.player_loop())
 
     async def player_loop(self):
-        while True:
-            if not self.now:
-                try:
-                    self.now = await asyncio.wait_for(self.queue.get(), timeout=180)
-                except asyncio.TimeoutError:
-                    await self.voice.disconnect()
+        try:
+            while True:
+                if not self.now:
                     try:
-                        self.bot.players.pop(self.ctx.guild.id)
-                    except:
-                        pass
-                    return
+                        self.now = await asyncio.wait_for(self.queue.get(), timeout=180)
+                    except asyncio.TimeoutError:
+                        await self.voice.disconnect()
+                        if self.ctx.guild.id in self.bot.players:
+                            self.bot.players.pop(self.ctx.guild.id)
 
-            source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.now.filename), self.volume)
-            self.voice.play(source, after=self.after_song)
-            self.song_started = time.time()
+                source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.now.filename), self.volume)
+                self.voice.play(source, after=self.after_song)
+                self.song_started = time.time()
 
-            if self.notifications:
-                await self.ctx.send(f":notes: Now playing {self.now.title}")
+                if self.notifications:
+                    await self.ctx.send(f":notes: Now playing {self.now.title}")
 
-            await self.event.wait()
-            self.event.clear()
-            self.song_started = None
-            self.pause_started = None
+                await self.event.wait()
+                self.event.clear()
+                self.song_started = None
+                self.pause_started = None
 
-            if self.looping_queue and not self.looping:
-                await self.queue.put(self.now)
-            if not self.looping:
-                self.now = None
+                if self.looping_queue and not self.looping:
+                    await self.queue.put(self.now)
+                if not self.looping:
+                    self.now = None
+        except Exception as exc:
+            print(f"Exception in player loop for guild ID: {self.ctx.guild.id}", file=sys.stderr)
+            traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
+
+
+            if player.queue._queue:
+                url = await self.save_queue(player)
+                await player.ctx.send(f"Sorry! Your player has been crashed. If your confused or want to report this, join <{bot.support_server_link}>. You can start again with `{ctx.prefix}playbin {url}`.")
+            elif player.now:
+                await player.ctx.send(f"Sorry! Your player has crashed. If your confused or want to report this, join <{bot.support_server_link}>. You can start your song again with the play command.")
+
+            await self.disconnect()
+            return
 
     def after_song(self, exc):
         if not exc:
@@ -268,6 +279,9 @@ class Player:
 
         self.voice.resume()
 
+    def skip(self):
+        self.voice.stop()
+
     def stop(self):
         self.looping = False
         self.looping_queue = False
@@ -275,10 +289,9 @@ class Player:
         self.voice.stop()
 
     async def disconnect(self):
-        self.stop()
         self.loop.cancel()
+        self.stop()
         await self.voice.disconnect()
-
         if self.ctx.guild.id in self.bot.players:
             self.bot.players.pop(self.ctx.guild.id)
 
@@ -473,7 +486,7 @@ class Song:
                 if entry:
                     data_list.append(entry)
 
-            if len(data_list) == 0:
+            if not data_list:
                 raise YTDLError("Playlist is empty")
 
         songs = []
@@ -583,9 +596,11 @@ class Music(commands.Cog):
 
         if not ctx.author.voice:
             return await ctx.send(":x: You are not in any voice channel")
-        if ctx.guild.id in self.bot.players or ctx.guild.id in [voice.guild.id for voice in self.bot.voice_clients]:
+        elif ctx.guild.id in self.bot.players or ctx.guild.id in [voice.guild.id for voice in self.bot.voice_clients]:
             return await ctx.send(":x: Already connected to a voice channel")
-        if channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.guild.me.guild_permissions.move_members:
+        elif not channel.permissions_for(ctx.me).connect:
+            return await ctx.send(f":x: I don't have permissions to connect to `{channel}`")
+        elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.guild.me.guild_permissions.move_members:
             return await ctx.send(f":x: I can't connect to `{channel}` because it's full")
 
         try:
@@ -603,12 +618,19 @@ class Music(commands.Cog):
     async def summon(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
 
+        try:
+            channel = ctx.author.voice.channel
+        except AttributeError:
+            return await ctx.send(":x: You are not connected to a voice channel")
+
         if not player:
             return
-        if not ctx.author.voice:
-            return await ctx.send("You are not in any voice channel")
+        elif not channel.permissions_for(ctx.me).connect:
+            return await ctx.send(f":x: I don't have permissions to connect to `{channel}`")
+        elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.guild.me.guild_permissions.move_members:
+            return await ctx.send(f":x: I can't connect to `{channel}` because it's full")
 
-        await player.voice.move_to(ctx.author.voice.channel)
+        await player.voice.move_to(channel)
         player.ctx = ctx
 
         await ctx.send(f"Now connected to `{ctx.author.voice.channel.name}` and bound to `{ctx.channel.name}`")
@@ -701,7 +723,7 @@ class Music(commands.Cog):
             return
         if not ctx.author in player.voice.channel.members:
             return
-        if not player.now or not player.voice.is_playing():
+        if not player.now or player.voice.is_paused():
             return
 
         player.pause()
@@ -749,7 +771,7 @@ class Music(commands.Cog):
         if not player.now:
             return
 
-        player.voice.stop()
+        player.skip()
         await ctx.send(":track_next: Skipped current song")
 
     @commands.command(name="skipto", description="Jump to a song in the queue")
@@ -763,6 +785,9 @@ class Music(commands.Cog):
         if not player.now:
             return
 
+        if position == 0 or position > len(player.queue._queue):
+            return await ctx.send(":x: That is not a song in the playlist")
+
         position = position - 1
 
         for x in range(position):
@@ -770,7 +795,7 @@ class Music(commands.Cog):
             if player.looping_queue:
                 await player.queue.put(current)
 
-        player.voice.stop()
+        player.skip()
         song = player.queue._queue[0]
         await ctx.send(f":track_next: Jumped to {song.title}")
 
@@ -788,7 +813,7 @@ class Music(commands.Cog):
         if position > player.now.total_seconds or position < 0:
             return await ctx.send(":x: That is not a valid position")
 
-        emoji = ":fast_forward:" if position > player.duration else ":rewind:"
+        emoji = ":fast_forward:" if position >= player.duration else ":rewind:"
 
         timestamp = Song.timestamp_duration(position)
         source = discord.FFmpegPCMAudio(player.now.filename, before_options=f"-ss {timestamp}")
@@ -799,7 +824,7 @@ class Music(commands.Cog):
 
         await ctx.send(f"{emoji} Seeked {timestamp}")
 
-    @commands.group(name="loop", description="Loop/unloop the music", invoke_without_command=True)
+    @commands.group(name="loop", description="Loop the song", aliases=["repeat"], invoke_without_command=True)
     async def loop(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
 
@@ -810,12 +835,12 @@ class Music(commands.Cog):
 
         if player.looping:
             player.looping = False
-            await ctx.send(":x::repeat_one: Unloopd song")
+            await ctx.send(":x::repeat_one: Unlooped song")
         else:
             player.looping = True
             await ctx.send(":repeat_one: Looped song")
 
-    @loop.command(name="queue", description="Loop/unloop the queue")
+    @loop.command(name="queue", description="Loop the queue")
     async def loop_queue(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
 
@@ -912,7 +937,7 @@ class Music(commands.Cog):
             return
         if not ctx.author in player.voice.channel.members:
             return
-        if len(player.queue._queue) == 0:
+        if not player.queue._queue:
             return await ctx.send("Queue is empty")
 
         song = player.queue._queue[0]
@@ -926,24 +951,24 @@ class Music(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.group(name="queue", description="View the song queue", invoke_without_command=True)
-    async def queue(self, ctx, song: int = None):
+    @commands.group(name="queue", description="View the queue", invoke_without_command=True)
+    async def queue(self, ctx, position: int = None):
         player = self.bot.players.get(ctx.guild.id)
 
         if not player:
             return
         if not ctx.author in player.voice.channel.members:
             return
-        if len(player.queue._queue) == 0:
+        if not player.queue._queue:
             return await ctx.send("Queue is empty")
 
-        if not song:
+        if not position:
             pages = menus.MenuPages(source=Pages(player), clear_reactions_after=True)
             await pages.start(ctx)
         else:
-            if song == 0 or song > len(player.queue._queue):
+            if position == 0 or position > len(player.queue._queue):
                 return await ctx.send("That is not a song in the playlist")
-            song = player.queue._queue[song-1]
+            song = player.queue._queue[position-1]
 
             em = discord.Embed(title=song.title, color=0x66FFCC)
             em.add_field(name="Duration", value=str(song.timestamp_duration))
@@ -963,25 +988,25 @@ class Music(commands.Cog):
         if not ctx.author in player.voice.channel.members:
             return
 
-        if len(player.queue._queue) != 0:
+        if player.queue._queue:
             url = await self.save_queue(player)
             await ctx.send(f"Playlist saved to {url}")
         else:
             await ctx.send("No queue to save")
 
     @queue.command(name="remove", description="Remove a song from the queue")
-    async def queue_remove(self, ctx, song: int):
+    async def queue_remove(self, ctx, position: int):
         player = self.bot.players.get(ctx.guild.id)
 
         if not player:
             return
         if not ctx.author in player.voice.channel.members:
             return
-        if song == 0 or song > len(player.queue._queue):
-            return await ctx.send("That is not a song in the playlist")
+        if position == 0 or position > len(player.queue._queue):
+            return await ctx.send(":x: That is not a song in the playlist")
 
-        to_remove = player.queue._queue[song-1]
-        player.queue._queue.remove(to_remove)
+        song = player.queue._queue[position-1]
+        player.queue._queue.remove(song)
         await ctx.send(f":wastebasket: Removed `{to_remove.title}` from queue")
 
     @queue.command(name="clear", description="Clear the queue")
@@ -992,7 +1017,7 @@ class Music(commands.Cog):
             return
         if not ctx.author in player.voice.channel.members:
             return
-        if len(player.queue._queue) == 0:
+        if not player.queue._queue:
             return await ctx.send(":x: Queue is empty")
 
         player.queue._queue.clear()
@@ -1006,7 +1031,7 @@ class Music(commands.Cog):
             if not ctx.author in player.voice.channel.members:
                 return
 
-            if len(player.queue._queue) != 0:
+            if player.queue._queue:
                 url = await self.save_queue(player)
                 await ctx.send(f"Playlist saved to {url}")
 
@@ -1037,7 +1062,7 @@ class Music(commands.Cog):
     @commands.is_owner()
     async def stopall(self, ctx):
         for player in self.bot.players.values():
-            if len(player.queue._queue) != 0:
+            if player.queue._queue:
                 url = await self.save_queue(player)
                 await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{ctx.prefix}playbin {url}`.")
             elif player.now:
@@ -1056,14 +1081,13 @@ class Music(commands.Cog):
 
         player = self.bot.players[player]
 
-        if len(player.queue._queue) != 0:
+        if player.queue._queue:
             url = await self.save_queue(player)
             await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{ctx.prefix}playbin {url}`.")
         elif player.now:
             await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
 
         await player.disconnect()
-
         await ctx.send("Player has been stopped")
 
     @commands.Cog.listener()
@@ -1076,8 +1100,8 @@ class Music(commands.Cog):
         if not player or not player.voice:
             return
 
-        members = [x for x in player.voice.channel.members if not x.bot]
-        if len(members) > 0:
+        members = [member for member in player.voice.channel.members if not member.bot]
+        if members:
             return
 
         paused = player.voice.is_paused()
@@ -1089,7 +1113,7 @@ class Music(commands.Cog):
         try:
             await self.bot.wait_for("voice_state_update", timeout=180, check=check)
         except asyncio.TimeoutError:
-            if len(player.queue._queue) != 0:
+            if player.queue._queue:
                 url = await self.save_queue(player)
                 await player.ctx.send(f"Playlist saved to {url}")
             await player.disconnect()
