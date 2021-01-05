@@ -109,6 +109,9 @@ class Games(commands.Cog):
         self.hangman_games = {}
         self.tic_tac_toe_games = {}
 
+    def cog_check(self, ctx):
+        return ctx.guild
+
     @commands.group(name="hangman", description="Play hangman in Discord", invoke_without_command=True)
     @commands.max_concurrency(1, commands.BucketType.channel)
     async def hangman(self, ctx):
@@ -168,6 +171,9 @@ class Games(commands.Cog):
 
     @commands.command(name="tictactoe", description="Play a tic tac toe", aliases=["ttt"])
     async def ttt(self, ctx, *, opponent: discord.Member):
+        if opponent.bot:
+            return await ctx.send(":x: You can't play tic tac toe against a bot")
+
         players = [ctx.author, opponent]
         random.shuffle(players)
         game = TicTacToe(ctx, players)
