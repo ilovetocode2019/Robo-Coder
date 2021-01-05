@@ -2,11 +2,12 @@ import discord
 from discord.ext import commands, menus
 
 import asyncio
-import functools
 import youtube_dl
-import random
+import functools
+import asyncpg
 import re
 import time
+import random
 import urllib
 import traceback
 import sys
@@ -399,7 +400,7 @@ class Song:
 
         query = """SELECT *
                    FROM songs
-                   WHERE songs.title=$1;
+                   WHERE songs.title=$1 or (song.song_id=$1 AND song.extractor='youtube');
                 """
         song = await ctx.bot.db.fetchrow(query, search)
         if song:
@@ -412,7 +413,7 @@ class Song:
             data = await loop.run_in_executor(None, partial)
 
             if data is None:
-                raise YTDLError("Couldn't find anything that matches `{}`".format(search))
+                raise YTDLError(f"Couldn't find anything that matches `{search}`")
 
             if "entries" not in data:
                 process_info = data
@@ -424,7 +425,7 @@ class Song:
                         break
 
                 if process_info is None:
-                    raise YTDLError("Couldn't find anything that matches `{}`".format(search))
+                    raise YTDLError(f"Couldn't find anything that matches `{search}`")
 
             try:
                 webpage_url = process_info["webpage_url"]
@@ -456,7 +457,7 @@ class Song:
         processed_info = await loop.run_in_executor(None, partial)
 
         if processed_info is None:
-            raise YTDLError("Couldn't fetch `{}`".format(webpage_url))
+            raise YTDLError(f"Couldn't fetch `{webpage_url}`".format(webpage_url))
 
         if "entries" not in processed_info:
             info = processed_info
@@ -466,7 +467,7 @@ class Song:
                 try:
                     info = processed_info["entries"].pop(0)
                 except IndexError:
-                    raise YTDLError("Couldn't retrieve any matches for `{}`".format(webpage_url))
+                    raise YTDLError(f"Couldn't retrieve any matches for `{webpage_url}`")
 
         filename = cls.ytdl.prepare_filename(info)
         info["filename"] = filename
@@ -474,7 +475,10 @@ class Song:
         query = """INSERT INTO songs (title, filename, song_id, extractor, data, plays)
                    VALUES ($1, $2, $3, $4, $5, $6);
                 """
-        await ctx.bot.db.execute(query, info["title"], filename, info["id"], info["extractor"], info, 0)
+        try:
+            await ctx.bot.db.execute(query, info["title"], filename, info["id"], info["extractor"], info, 0)
+        except asyncpg.UniqueViolationError:
+            pass
 
         return cls(ctx, data=info)
 
@@ -486,7 +490,7 @@ class Song:
         data = await loop.run_in_executor(None, partial)
 
         if data is None:
-            raise YTDLError("Couldn't find anything that matches `{}`".format(search))
+            raise YTDLError(f"Couldn't find anything that matches `{search}`")
 
         if "entries" not in data:
             data_list = data
@@ -643,14 +647,16 @@ class Music(commands.Cog):
 
         if "list=" in query:
             await ctx.send(":globe_with_meridians: Fetching playlist")
-            songs = await Song.from_list(ctx, query, loop=self.bot.loop)
-            for song in songs:
-                await player.queue.put(song)
+
+            async with ctx.typing():
+                songs = await Song.from_list(ctx, query, loop=self.bot.loop)
+                for song in songs:
+                    await player.queue.put(song)
+
             await ctx.send(":white_check_mark: Finished downloading songs")
         else:
-            song = await Song.from_query(ctx, query, loop=self.bot.loop)
-            if not song:
-                return
+            async with ctx.typing():
+                song = await Song.from_query(ctx, query, loop=self.bot.loop)
 
             if player.is_playing:
                 await ctx.send(f":page_facing_up: Enqueued {song.title}")
@@ -670,14 +676,16 @@ class Music(commands.Cog):
         await ctx.send(":globe_with_meridians: Fetching playlist")
 
         url = url.strip("<>")
-        try:
-            songs = await self.get_bin(url=url)
-        except:
-            return await ctx.send(":x: I couldn't fetch that bin. Make sure the URL is valid.")
 
-        for url in songs:
-            song = await Song.from_query(ctx, url, loop=self.bot.loop)
-            await player.queue.put(song)
+        async with ctx.typing():
+            try:
+                songs = await self.get_bin(url=url)
+            except:
+                return await ctx.send(":x: I couldn't fetch that bin. Make sure the URL is valid.")
+
+            for url in songs:
+                song = await Song.from_query(ctx, url, loop=self.bot.loop)
+                await player.queue.put(song)
 
         await ctx.send(":white_check_mark: Finished downloading songs")
 
@@ -691,7 +699,8 @@ class Music(commands.Cog):
             if not player:
                 return
 
-        songs = await Song.from_list(ctx, f"ytsearch3:{query}", loop=self.bot.loop, download=False)
+        async with ctx.typing():
+            songs = await Song.from_list(ctx, f"ytsearch3:{query}", loop=self.bot.loop, download=False)
 
         pages = SongSelectorMenuPages(songs, clear_reactions_after=True)
         result = await pages.prompt(ctx)
