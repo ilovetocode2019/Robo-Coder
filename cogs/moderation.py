@@ -9,7 +9,7 @@ import typing
 import re
 import humanize
 
-from .utils import cache, human_time, menus, formats
+from .utils import cache, formats, human_time, menus
 
 class BannedMember(commands.Converter):
     async def convert(self, ctx, arg):

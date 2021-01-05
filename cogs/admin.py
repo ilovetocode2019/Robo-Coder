@@ -14,7 +14,7 @@ import io
 import pkg_resources
 from jishaku.codeblocks import codeblock_converter
 
-from .utils import menus, formats
+from .utils import formats, menus
 
 class Admin(commands.Cog):
     def __init__(self, bot):
