@@ -233,7 +233,7 @@ class Player:
                 self.song_started = time.time()
 
                 if self.notifications:
-                    await self.ctx.send(f":notes: Now playing {self.now.title}")
+                    await self.ctx.send(f":notes: Now playing `{self.now.title}`")
 
                 await self.event.wait()
                 self.event.clear()
