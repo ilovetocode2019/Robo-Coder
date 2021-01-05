@@ -1028,6 +1028,8 @@ class Music(commands.Cog):
         player = self.bot.players.get(ctx.guild.id)
 
         if player:
+            channel = player.voice.channel
+
             if not ctx.author in player.voice.channel.members:
                 return
 
@@ -1036,13 +1038,15 @@ class Music(commands.Cog):
                 await ctx.send(f"Playlist saved to {url}")
 
             await player.disconnect()
-            await ctx.send("Disconnected from voice")
+            await ctx.send(f"Disconnected from `{channel}`")
 
         elif ctx.guild.voice_client:
+            channel = ctx.guild.voice_client.channel
+
             await ctx.guild.voice_client.disconnect()
             if ctx.guild.id in self.bot._connection._voice_clients:
                 self.bot._connection._voice_clients.pop(ctx.guild.id)
-            await ctx.send("Disconnected from voice")
+            await ctx.send(f"Disconnected from `{channel}`")
 
     @commands.command(name="allplayers", description="View all players")
     @commands.is_owner()
