@@ -57,7 +57,7 @@ class Tools(commands.Cog):
         animated_emojis_percentage = int((animated_emojis/guild.emoji_limit)*100)
         animated_text = f"{animated_emojis}/{guild.emoji_limit} ({animated_emojis_percentage}%)"
         emoji_percentage = int((len(guild.emojis)/(guild.emoji_limit*2))*100)
-        em.add_field(name=":slight_smile: Emojis", value=f"Static: {static_text} \nAnimated: {animated_text} \nTotal: {len(guild.emojis)}/{guild.emoji_limit*2} ({emoji_percentage}%)")
+        em.add_field(name=":pencil: Emojis", value=f"Static: {static_text} \nAnimated: {animated_text} \nTotal: {len(guild.emojis)}/{guild.emoji_limit*2} ({emoji_percentage}%)")
         em.add_field(name=":bookmark: Roles", value=str(len(guild.roles)))
 
         await ctx.send(embed=em)
