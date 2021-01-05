@@ -11,6 +11,8 @@ import urllib
 import traceback
 import sys
 
+from .utils import formats
+
 class SongPages(menus.ListPageSource):
     def __init__(self, songs):
         self.songs = songs
@@ -512,13 +514,13 @@ class Song:
 
         duration_str = []
         if days > 0:
-            duration_str.append("{} days".format(days))
+            duration_str.append(f"{formats.plural(days):dat}")
         if hours > 0:
-            duration_str.append("{} hours".format(hours))
+            duration_str.append(f"{formats.plural(hours):hour}")
         if minutes > 0:
-            duration_str.append("{} minutes".format(minutes))
+            duration_str.append(f"{formats.plural(minutes):minute}")
         if seconds > 0:
-            duration_str.append("{} seconds".format(seconds))
+            duration_str.append(f"{formats.plural(seconds):second}")
 
         return ", ".join(duration_str)
 
