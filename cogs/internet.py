@@ -152,6 +152,9 @@ class Internet(commands.Cog):
 
             if projname == 'discord.py':
                 key = key.replace('discord.ext.commands.', '').replace('discord.', '')
+            elif projname == 'telegram.py':
+                key = key.replace('discord.ext.commands.', '').replace('telegrampy.', '')
+
 
             result[f'{prefix}{key}'] = os.path.join(url, location)
 
@@ -189,8 +192,8 @@ class Internet(commands.Cog):
             async with ctx.typing():
                 await self.build_docs_lookup_table(page_types)
 
-        obj = re.sub(r"^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)", r"\1", obj)
         obj = re.sub(r"^(?:telegrampy\.(?:ext\.)?)?(?:commands\.)?(.+)", r"\1", obj)
+        obj = re.sub(r"^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)", r"\1", obj)
 
         if key.startswith("latest") or key.startswith("stable"):
             # point the abc.Messageable types properly:
