@@ -600,7 +600,7 @@ class Music(commands.Cog):
             return await ctx.send(":x: Already connected to a voice channel")
         elif not channel.permissions_for(ctx.me).connect:
             return await ctx.send(f":x: I don't have permissions to connect to `{channel}`")
-        elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.guild.me.guild_permissions.move_members:
+        elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.me.guild_permissions.move_members:
             return await ctx.send(f":x: I can't connect to `{channel}` because it's full")
 
         try:
@@ -627,7 +627,7 @@ class Music(commands.Cog):
             return
         elif not channel.permissions_for(ctx.me).connect:
             return await ctx.send(f":x: I don't have permissions to connect to `{channel}`")
-        elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.guild.me.guild_permissions.move_members:
+        elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.me.guild_permissions.move_members:
             return await ctx.send(f":x: I can't connect to `{channel}` because it's full")
 
         await player.voice.move_to(channel)

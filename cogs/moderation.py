@@ -372,7 +372,7 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: Cannot use the default role")
         elif role > ctx.author.top_role:
             return await ctx.send(":x: This role is higher than your highest role")
-        elif role > ctx.guild.me.top_role:
+        elif role > ctx.me.top_role:
             return await ctx.send(":x: This role is higher than my highest role")
 
         config = await self.get_guild_config(ctx.guild)
@@ -721,7 +721,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def cleanup(self, ctx, limit=100):
-        if ctx.guild.me.guild_permissions.manage_messages:
+        if ctx.me.guild_permissions.manage_messages:
             method = self.complex_cleanup
         else:
             method = self.basic_cleanup
