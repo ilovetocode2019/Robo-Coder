@@ -229,6 +229,7 @@ class Player:
                         await self.voice.disconnect()
                         if self.ctx.guild.id in self.bot.players:
                             self.bot.players.pop(self.ctx.guild.id)
+                        return
 
                 source = discord.PCMVolumeTransformer(discord.FFmpegPCMAudio(self.now.filename), self.volume)
                 self.voice.play(source, after=self.after_song)
@@ -257,10 +258,10 @@ class Player:
             print(f"Exception in player loop for guild ID: {self.ctx.guild.id}", file=sys.stderr)
             traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
 
-            if player.queue._queue:
+            if self.queue._queue:
                 url = await self.save_queue(player)
-                await player.ctx.send(f"Sorry! Your player has been crashed. If your confused or want to report this, join <{bot.support_server_link}>. You can start again with `{ctx.prefix}playbin {url}`.")
-            elif player.now:
+                await player.ctx.send(f"Sorry! Your player has crashed. If your confused or want to report this, join <{bot.support_server_link}>. You can start again with `{ctx.prefix}playbin {url}`.")
+            elif self.now:
                 await player.ctx.send(f"Sorry! Your player has crashed. If your confused or want to report this, join <{bot.support_server_link}>. You can start your song again with the play command.")
 
             await self.disconnect()
@@ -575,26 +576,6 @@ class Music(commands.Cog):
 
     def cog_check(self, ctx):
         return ctx.guild
-
-    async def get_bin(self, url):
-        parsed = urllib.parse.urlparse(url)
-        newpath = "/raw" + parsed.path
-        url = parsed.scheme + "://" + parsed.netloc + newpath
-        async with self.bot.session.get(url) as response:
-            data = await response.read()
-            data = data.decode("utf-8")
-            return data.split("\n")
-
-    async def post_bin(self, content):
-        async with self.bot.session.post("https://mystb.in/documents", data=content.encode("utf-8")) as resp:
-            data = await resp.json()
-            return f"https://mystb.in/{data['key']}"
-
-    async def save_queue(self, player):
-        queue = [song.url for song in player.queue._queue]
-        if player.looping_queue:
-            queue = [player.now.url] + queue
-        return await self.post_bin("\n".join(queue))
 
     @commands.command(name="connect", description="Connect the bot to a voice channel", aliases=["join"])
     async def connect(self, ctx):
@@ -1133,6 +1114,26 @@ class Music(commands.Cog):
         else:
             if not paused:
                 player.resume()
+
+    async def get_bin(self, url):
+        parsed = urllib.parse.urlparse(url)
+        newpath = "/raw" + parsed.path
+        url = parsed.scheme + "://" + parsed.netloc + newpath
+        async with self.bot.session.get(url) as response:
+            data = await response.read()
+            data = data.decode("utf-8")
+            return data.split("\n")
+
+    async def post_bin(self, content):
+        async with self.bot.session.post("https://mystb.in/documents", data=content.encode("utf-8")) as resp:
+            data = await resp.json()
+            return f"https://mystb.in/{data['key']}"
+
+    async def save_queue(self, player):
+        queue = [song.url for song in player.queue._queue]
+        if player.looping_queue:
+            queue = [player.now.url] + queue
+        return await self.post_bin("\n".join(queue))
 
 def setup(bot):
     bot.add_cog(Music(bot))
