@@ -921,7 +921,7 @@ class Music(commands.Cog):
             return
 
         player.stop()
-        await ctx.send(":stop_button: Stopped music, cleared queue")
+        await ctx.send(":stop_button: Stopped music and cleared queue")
 
     @commands.command(name="now", description="Get the current playing song", aliases=["np"])
     async def now(self, ctx):
