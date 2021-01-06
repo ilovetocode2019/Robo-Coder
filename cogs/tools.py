@@ -113,7 +113,7 @@ class Tools(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="avatar", description="Get a users avatar")
-    async def avatar(self, ctx, *, user: discord.Member = None, *, flags = None):
+    async def avatar(self, ctx, *, user: discord.Member = None):
         if not user:
             user = ctx.author
 

@@ -14,7 +14,7 @@ def join(iterable, seperator=", ", last="or"):
     if len(iterable) == 1:
         return iterable[0]
 
-    return seperator.join(iterable[:-1]) + f" {last} {iterable[-1]}"
+    return seperator.join(iterable[:-1]) + f"{seperator}{last} {iterable[-1]}"
 
 class Tabulate:
     def __init__(self):
