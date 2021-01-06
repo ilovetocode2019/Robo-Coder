@@ -400,7 +400,7 @@ class Song:
 
         query = """SELECT *
                    FROM songs
-                   WHERE songs.title=$1 or (song.song_id=$1 AND song.extractor='youtube');
+                   WHERE songs.title=$1 or (songs.song_id=$1 AND songs.extractor='youtube');
                 """
         song = await ctx.bot.db.fetchrow(query, search)
         if song:

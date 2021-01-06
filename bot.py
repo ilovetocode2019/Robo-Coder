@@ -101,7 +101,9 @@ class RoboCoder(commands.Bot):
                    filename TEXT,
                    extractor TEXT,
                    plays INT,
-                   data jsonb DEFAULT ('{}'::jsonb)
+                   data jsonb DEFAULT ('{}'::jsonb),
+                   created_at TIMESTAMP DEFAULT (now() at time zone 'utc'),
+                   updated_at TIMESTAMP DEFAULT (now() at time zone 'utc')
                    );
 
                    CREATE TABLE IF NOT EXISTS autoroles (
