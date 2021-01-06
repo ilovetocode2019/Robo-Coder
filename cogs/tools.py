@@ -113,7 +113,7 @@ class Tools(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="avatar", description="Get a users avatar")
-    async def avatar(self, ctx, *, user: discord.Member = None):
+    async def avatar(self, ctx, *, user: discord.Member = None, *, flags = None):
         if not user:
             user = ctx.author
 
@@ -134,9 +134,9 @@ class Tools(commands.Cog):
 
         info = []
         for character in text:
-            digit = f'{ord(character):x}'
+            digit = f"{ord(character):x}"
             name = unicodedata.name(character, "Name not found")
-            info.append(f'`\\U{digit:>08}`: {name} - {character} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>')
+            info.append(f"`\\U{digit:>08}`: {name} - {character} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>")
         await ctx.send("\n".join(info))
 
     @commands.command(name="poll", description="Create a poll")

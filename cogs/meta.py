@@ -35,7 +35,7 @@ def get_lines_of_code():
     return f"I have {total:,} lines of code, spread across {file_amount:,} files"
 
 class RoboCoderHelpCommand(commands.HelpCommand):
-    bottom_text = '\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**. \nFor more help join the [support server]({0}).'
+    bottom_text = "\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**. \nFor more help join the [support server]({0})."
 
     async def send_bot_help(self, mapping):
         ctx = self.context
