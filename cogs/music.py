@@ -600,6 +600,9 @@ class Music(commands.Cog):
         try:
             voice_client = await channel.connect()
         except:
+            if self.bot.players[ctx.guild.id]:
+                return
+
             if ctx.guild.voice_client:
                 await ctx.guild.voice_client.disconnect()
             return await ctx.send(f":x: I couldn't connect to `{channel}`")
