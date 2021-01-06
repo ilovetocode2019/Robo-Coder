@@ -13,11 +13,11 @@ class Fun(commands.Cog):
         self.emoji = ":tada:"
 
     @commands.command(name="flipcoin", description="Flip a coin")
-    async def flipcion(self, ctx):
+    async def flipcoin(self, ctx):
         result = random.choice(["Heads", "Tails"])
-        await ctx.send(f":coin: {result}")
+        await ctx.send(f":coin: You flipped {result}")
 
-    @commands.command(name="rolldice", description="Role some dice")
+    @commands.command(name="rolldice", description="Role some dice", aliases=["rolldie"])
     async def rolldice(self, ctx, dice=1, sides=6):
         if not dice:
             return await ctx.send(":x: You must roll at least 1 die")
