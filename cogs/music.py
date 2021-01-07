@@ -1009,7 +1009,7 @@ class Music(commands.Cog):
 
         song = player.queue._queue[position-1]
         player.queue._queue.remove(song)
-        await ctx.send(f":wastebasket: Removed `{to_remove.title}` from queue")
+        await ctx.send(f":wastebasket: Removed `{song.title}` from queue")
 
     @queue.command(name="clear", description="Clear the queue")
     async def queue_clear(self, ctx):
