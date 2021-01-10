@@ -5,12 +5,18 @@ import asyncio
 import random
 
 class Hangman:
+    __slots__ = ("ctx", "message", "word", "incorrect", "correct", "owner")
     def __init__(self, ctx, word):
+        self.ctx = ctx
+        self.message = None
         self.word = word
         self.incorrect = []
         self.correct = []
-        self.bot = ctx.bot
         self.owner = ctx.author
+
+    @property
+    def bot(self):
+        return self.ctx.bot
 
     @property
     def guessed(self):
@@ -46,13 +52,18 @@ class Hangman:
         return em
 
 class TicTacToe:
+    __slots__ = ("ctx", "message", "players", "turn", "next", "board")
     def __init__(self, ctx, players):
-        self.bot = ctx.bot
         self.ctx = ctx
+        self.message = None
         self.players = players
         self.turn = players[0]
         self.next = players[1]
         self.board = [None, None, None, None, None, None, None, None, None]
+
+    @property
+    def bot(self):
+        return self.ctx.bot
 
     @property
     def winner(self):
@@ -114,12 +125,12 @@ class Games(commands.Cog):
     @commands.max_concurrency(1, commands.BucketType.channel)
     async def hangman(self, ctx):
         if ctx.channel.id in self.hangman_games:
-            return await ctx.send(":x: A hangman game is already running in this channel")
+            return await ctx.send(":x: A hangman game already exists in this channel")
 
         try:
-            await ctx.author.send("What is your hangman word?")
+            await ctx.author.send("What is your word?")
         except discord.Forbidden:
-            return await ctx.send(":x: You need to have DMs enabled")
+            return await ctx.send(":x: You need to have DMs enabled to send me your word")
 
         try:
             msg = await self.bot.wait_for("message", check=lambda message: message.channel == ctx.author.dm_channel and message.author.id == ctx.author.id, timeout=180)
@@ -168,7 +179,7 @@ class Games(commands.Cog):
         await ctx.send(":white_check_mark: Hangman game stopped")
 
     @commands.command(name="tictactoe", description="Play a tic tac toe", aliases=["ttt"])
-    async def ttt(self, ctx, *, opponent: discord.Member):
+    async def tictactoe(self, ctx, *, opponent: discord.Member):
         if opponent.bot:
             return await ctx.send(":x: You can't play tic tac toe against a bot")
 
@@ -180,9 +191,16 @@ class Games(commands.Cog):
         def check(reaction, user):
             return user == game.turn and reaction.message.id == game.message.id and str(reaction.emoji) in emojis
 
-        emojis = {"1\N{combining enclosing keycap}": 1, "2\N{combining enclosing keycap}": 2, "3\N{combining enclosing keycap}": 3,
-                    "4\N{combining enclosing keycap}": 4, "5\N{combining enclosing keycap}": 5, "6\N{combining enclosing keycap}": 6,
-                    "7\N{combining enclosing keycap}": 7, "8\N{combining enclosing keycap}": 8, "9\N{combining enclosing keycap}": 9
+        emojis = {
+            "1\N{combining enclosing keycap}": 1,
+            "2\N{combining enclosing keycap}": 2,
+            "3\N{combining enclosing keycap}": 3,
+            "4\N{combining enclosing keycap}": 4,
+            "5\N{combining enclosing keycap}": 5,
+            "6\N{combining enclosing keycap}": 6,
+            "7\N{combining enclosing keycap}": 7,
+            "8\N{combining enclosing keycap}": 8,
+            "9\N{combining enclosing keycap}": 9
         }
         for emoji in emojis:
             await game.message.add_reaction(emoji)
