@@ -69,13 +69,7 @@ class RoboCoder(commands.Bot):
             self.default_emojis = json.load(file)
 
         async def init(conn):
-            await conn.set_type_codec(
-                "jsonb",
-                schema="pg_catalog",
-                encoder=json.dumps,
-                decoder=json.loads,
-                format="text",
-            )
+            await conn.set_type_codec("jsonb", schema="pg_catalog", encoder=json.dumps, decoder=json.loads, format="text")
         self.db = await asyncpg.create_pool(config.database_uri, init=init)
 
         query = """CREATE TABLE IF NOT EXISTS guild_config (
@@ -87,6 +81,11 @@ class RoboCoder(commands.Bot):
                    log_channel_id BIGINT
                    );
 
+                   CREATE TABLE IF NOT EXISTS autoroles (
+                   guild_id BIGINT,
+                   role_id BIGINT PRIMARY KEY
+                   );
+
                    CREATE TABLE IF NOT EXISTS timers (
                    id SERIAL PRIMARY KEY,
                    event TEXT,
@@ -96,7 +95,8 @@ class RoboCoder(commands.Bot):
                    );
 
                    CREATE TABLE IF NOT EXISTS songs (
-                   song_id TEXT PRIMARY KEY,
+                   id SERIAL PRIMARY KEY,
+                   song_id TEXT,
                    title TEXT,
                    filename TEXT,
                    extractor TEXT,
@@ -106,10 +106,13 @@ class RoboCoder(commands.Bot):
                    updated_at TIMESTAMP DEFAULT (now() at time zone 'utc')
                    );
 
-                   CREATE TABLE IF NOT EXISTS autoroles (
-                   guild_id BIGINT,
-                   role_id BIGINT PRIMARY KEY
+                   CREATE TABLE IF NOT EXISTS song_searches (
+                   search TEXT PRIMARY KEY,
+                   song_id INT,
+                   expires_at TIMESTAMP
                    );
+
+                   CREATE UNIQUE INDEX IF NOT EXISTS unique_songs_index ON songs (song_id, extractor);
                 """
         await self.db.execute(query)
 

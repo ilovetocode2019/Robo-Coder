@@ -13,7 +13,7 @@ import os
 import codecs
 import pathlib
 
-from .utils import formats
+from .utils import errors, formats
 
 def get_lines_of_code():
     total = 0
@@ -137,6 +137,11 @@ class Meta(commands.Cog):
         elif isinstance(error, commands.errors.CommandOnCooldown):
             await ctx.send(f"You are on cooldown. Try again in {formats.plural(int(error.retry_after)):second}.")
         elif isinstance(error, commands.MaxConcurrencyReached):
+            await ctx.send(f":x: {error}")
+
+        if isinstance(error, errors.SongError):
+            await ctx.send(f":x: {error}")
+        elif isinstance(error, errors.VoiceError) and str(error):
             await ctx.send(f":x: {error}")
 
         if isinstance(error, commands.CommandInvokeError):
