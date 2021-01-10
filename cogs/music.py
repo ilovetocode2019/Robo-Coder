@@ -697,8 +697,8 @@ class Music(commands.Cog):
             raise errors.VoiceError(f":x: I don't have permissions to connect to `{channel}`")
         elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.me.guild_permissions.move_members:
             raise errors.VoiceError(f"I can't connect to `{channel}` because it's full")
-        log.info("Attempting to connect to channel ID %s (guild ID %s)", channel.id, ctx.guild.id)
 
+        log.info("Attempting to connect to channel ID %s (guild ID %s)", channel.id, ctx.guild.id)
         try:
             voice_client = await channel.connect()
         except:
@@ -723,14 +723,14 @@ class Music(commands.Cog):
             return await ctx.send(":x: You are not connected to a voice channel")
 
         if not channel.permissions_for(ctx.me).connect:
-            raise errors.VoiceError(f"I don't have permissions to connect to `{channel}`")
+            await ctx.send(f"I don't have permissions to connect to `{channel}`")
         elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.me.guild_permissions.move_members:
-            raise errors.VoiceError(f"I can't connect to `{channel}` because it's full")
+            await ctx.send(f"I can't connect to `{channel}` because it's full")
 
         log.info("Moving player in %s to channel ID %s", ctx.player, channel.id)
         await ctx.player.update_voice(channel)
         log.info("Successfully moved player to %s", ctx.player)
-        player.ctx = ctx
+        ctx.player.ctx = ctx
         await ctx.send(f"Now connected to `{channel}` and bound to `{ctx.channel}`")
 
     @commands.command(name="play", description="Play a song", aliases=["p"])
@@ -1251,7 +1251,7 @@ class Music(commands.Cog):
             player = ctx.player
         else:
             log.info("Connecting to voice before playing music")
-            ctx.player = await ctx.invoke(self.connect)
+            ctx.player = await self.connect(ctx)
 
     @summon.before_invoke
     @pause.before_invoke
