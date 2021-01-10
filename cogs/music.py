@@ -1248,7 +1248,7 @@ class Music(commands.Cog):
     async def create_player(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
         if player:
-            player = ctx.player
+            ctx.player = player
         else:
             log.info("Connecting to voice before playing music")
             ctx.player = await self.connect(ctx)
