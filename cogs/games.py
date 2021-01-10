@@ -28,8 +28,6 @@ class Hangman:
             return True
         elif 10-len(self.incorrect) == 0:
             return False
-        else:
-            return None
 
     @property
     def embed(self):

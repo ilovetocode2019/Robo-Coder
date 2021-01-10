@@ -113,7 +113,9 @@ class Timers(commands.Cog):
 
     @tasks.loop(seconds=30)
     async def loop(self):
-        query = """SELECT * FROM timers;"""
+        query = """SELECT *
+                   FROM timers;
+                """
         timers = await self.bot.db.fetch(query)
         for timer in timers:
             time = timer["time"]-datetime.datetime.utcnow()
