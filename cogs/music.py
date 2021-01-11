@@ -580,7 +580,7 @@ class Song:
 
         duration_str = []
         if days > 0:
-            duration_str.append(f"{formats.plural(days):dat}")
+            duration_str.append(f"{formats.plural(days):day}")
         if hours > 0:
             duration_str.append(f"{formats.plural(hours):hour}")
         if minutes > 0:
