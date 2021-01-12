@@ -30,7 +30,7 @@ class Fun(commands.Cog):
             return await ctx.send(":x: Your dice can't have more than 100 sides") 
 
         numbers = [str(random.randint(1, sides)) for x in range(dice)]
-        await ctx.send(f":game_die: You rolled a {formats.join(numbers, last='and a')}")
+        await ctx.send(f":game_die: You rolled {formats.join(numbers)}")
 
     @commands.command(name="8ball", description="Ask me a question", aliases=["eightball"])
     async def eightball(self, ctx, *, question):
