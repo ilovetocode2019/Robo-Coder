@@ -409,8 +409,6 @@ class Song:
 
         # Resolve the query into a full Song, so we can search the database
         song = await cls.resolve_query(ctx, search)
-        info = song._data
-
         query = """SELECT *
                    FROM songs
                    WHERE (songs.title=$1 OR songs.song_id=$2) AND songs.extractor=$3;
@@ -421,17 +419,18 @@ class Song:
             return cls.from_record(record, ctx)
 
         # We shouldn't get here unless the song isn't in the database
-        await cls.download_song(ctx, song)
+        song = await cls.download_song(ctx, song)
+        data = song._data
 
         # Cache the song and search in the database
         query = """INSERT INTO songs (song_id, title, filename, extractor, plays, data)
                    VALUES ($1, $2, $3, $4, $5, $6)
                    RETURNING id;
                 """
-        value = await ctx.bot.db.fetchval(query, info["id"], info["title"], song.filename, info["extractor"], 0, info)
+        value = await ctx.bot.db.fetchval(query, song.song_id, song.title, song.filename, song.extractor, 0, data)
         await cls.create_alias(ctx, search, value)
 
-        return cls(ctx, data=info, filename=song.filename)
+        return cls(ctx, data=data, filename=song.filename)
 
     @classmethod
     async def resolve_query(cls, ctx, search):
@@ -448,21 +447,26 @@ class Song:
             if not entries:
                 raise errors.SongError(f"I Couldn't find any results for `{search}`")
             info = entries[0]
-
         return cls(ctx, data=info, filename=cls.ytdl.prepare_filename(info))
 
     @classmethod
     async def download_song(cls, ctx, song):
         try:
-            # The reason I process info here is because youtube_dl won't let me download a song without processing
             partial = functools.partial(cls.ytdl.extract_info, song.url)
-            result = await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
+            info = await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
         except youtube_dl.DownloadError as exc:
             raise errors.SongError(str(exc)) from exc
         except asyncio.TimeoutError as exc:
             raise errors.SongError(f"It took too long to download `{song.url}") from exc
-        if not result:
+
+        if not info:
             raise errors.SongError(f"I Couldn't download `{song.url}`")
+        if "entries" in info:
+            entries = info["entries"]
+            if not entries:
+                raise errors.SongError(f"I Couldn't find any results for `{search}`")
+            info = entries[0]
+        return cls(ctx, data=info, filename=cls.ytdl.prepare_filename(info))
 
     @classmethod
     async def from_database(cls, ctx, search):
@@ -530,7 +534,7 @@ class Song:
 
     @classmethod
     async def playlist(cls, ctx, search, *, download=True):
-        # Extract the list
+        # Extract the songs
         partial = functools.partial(cls.ytdl.extract_info, search, download=download)
         try:
             info = await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
@@ -647,10 +651,6 @@ class Queue(asyncio.Queue):
     def shuffle(self):
         random.shuffle(self._queue)
 
-class PossibleURL(commands.Converter):
-    async def convert(self, ctx, arg):
-        return arg.strip("<>")
-
 class PositionConverter(commands.Converter):
     async def convert(self, ctx, arg):
         if ":" not in arg:
@@ -673,6 +673,10 @@ class PositionConverter(commands.Converter):
                 raise commands.BadArgument(f"`{arg}` is not an integer")
 
         return position
+
+class PossibleURL(commands.Converter):
+    async def convert(self, ctx, arg):
+        return arg.strip("<>")
 
 class Music(commands.Cog):
     def __init__(self, bot):
@@ -1071,7 +1075,7 @@ class Music(commands.Cog):
         songs = [Song.from_record(song, ctx) for song in songs]
 
         if not songs:
-            return await ctx.send(f":x: I couldn't find any songs in the database that matched `{search}`")
+            return await ctx.send(f":x: I don't have any songs in my database")
 
         songs ="\n".join([f"[{song.id}] {song.title} # {song.song_id} ({song.extractor}) | {song.plays} plays | last updated {humanize.naturaldelta(song.updated_at-datetime.datetime.utcnow())} ago" for song in songs])
         await ctx.send(f"```ini\n{songs}\n```")
