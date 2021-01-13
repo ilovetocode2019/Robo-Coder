@@ -114,7 +114,7 @@ class Player:
         self.ctx = ctx
         self.voice = voice
         self.queue = Queue()
-        self._event = asyncio.Event()
+        self._event = asyncio.Event(loop=self.bot.loop)
 
         self.now = None
         self.notifications = True
