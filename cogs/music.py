@@ -113,7 +113,7 @@ class Player:
     def __init__(self, ctx, voice):
         self.ctx = ctx
         self.voice = voice
-        self.queue = Queue()
+        self.queue = Queue(loop=self.bot.loop)
         self._event = asyncio.Event(loop=self.bot.loop)
 
         self.now = None
