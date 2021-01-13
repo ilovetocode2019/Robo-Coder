@@ -1126,7 +1126,7 @@ class Music(commands.Cog):
         async with ctx.typing():
             # Resolve the song info, then download the song
             song = await Song.resolve_query(ctx, song.url)
-            await Song.download_song(ctx, song)
+            song = await Song.download_song(ctx, song)
             query = """UPDATE songs
                        SET title=$1, filename=$2, data=$3, updated_at=$4
                        WHERE songs.id=$5;
