@@ -1237,7 +1237,7 @@ class Music(commands.Cog):
         # Wait for the player to reconnect (10 seconds *should* be enough)
         try:
             await asyncio.wait_for(self.bot.loop.run_in_executor(None, player.voice._connected.wait), timeout=10, loop=self.bot.loop)
-            log.info("successfully rejoined %s", player)
+            log.info("Successfully rejoined %s", player)
         # If it times out then we can assume that we aren't going to reconnect and clean up the player
         except asyncio.TimeoutError:
             log.info("Didn't rejoin %s. Cleaning up player.", player)
