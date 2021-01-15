@@ -81,17 +81,17 @@ class RoboCoder(commands.Bot):
                    log_channel_id BIGINT
                    );
 
-                   CREATE TABLE IF NOT EXISTS autoroles (
-                   guild_id BIGINT,
-                   role_id BIGINT PRIMARY KEY
-                   );
-
                    CREATE TABLE IF NOT EXISTS timers (
                    id SERIAL PRIMARY KEY,
                    event TEXT,
-                   time TIMESTAMP,
-                   extra jsonb DEFAULT ('{}'::jsonb),
+                   data jsonb DEFAULT ('{}'::jsonb),
+                   expires_at TIMESTAMP,
                    created_at TIMESTAMP DEFAULT (now() at time zone 'utc')
+                   );
+
+                   CREATE TABLE IF NOT EXISTS autoroles (
+                   guild_id BIGINT,
+                   role_id BIGINT PRIMARY KEY
                    );
 
                    CREATE TABLE IF NOT EXISTS songs (

@@ -38,6 +38,8 @@ class UserID(commands.Converter):
             raise BadArgument()
 
 class GuildConfig:
+    __slots__ = ("bot", "guild_id", "mute_role_id", "muted", "spam_prevention", "ignore_spam_channels", "log_channel_id")
+
     @classmethod
     def from_record(cls, record, bot):
         self = cls()
@@ -262,12 +264,7 @@ class Moderation(commands.Cog):
         else:
             reason = f"Banned by {ctx.author}"
 
-        query = """DELETE FROM timers
-                   WHERE event = 'tempban'
-                   AND extra #>> '{0}' = $1
-                   AND extra #>> '{1}' = $2;
-                """
-        await self.bot.db.execute(query, str(ctx.guild.id), str(user.id))
+        await self.delete_timer("tempban", [ctx.guild.id, user.id])
 
         if isinstance(user, discord.User):
             await ctx.guild.ban(user, reason=reason)
@@ -279,30 +276,28 @@ class Moderation(commands.Cog):
     @commands.command(name="tempban", description="Temporarily ban a member from the server")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
-    async def tempban(self, ctx, user: typing.Union[discord.Member, UserID], time: human_time.TimeConverter, *, reason=None):
-        if reason:
-            reason = f"Tempban by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())} with reason {reason}"
-        else:
-            reason = f"Tempban by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}"
+    async def tempban(self, ctx, user: typing.Union[discord.Member, UserID], time: human_time.FutureTime, *, reason=None):
+        expires_at = time.time
+        created_at = ctx.message.created_at
 
-        query = """DELETE FROM timers
-                   WHERE event = 'tempban'
-                   AND extra #>> '{0}' = $1
-                   AND extra #>> '{1}' = $2;
-                """
-        await self.bot.db.execute(query, str(ctx.guild.id), str(user.id))
+        if reason:
+            reason = f"Tempban by {ctx.author} for {humanize.naturaldelta(expires_at-datetime.datetime.utcnow())} with reason {reason}"
+        else:
+            reason = f"Tempban by {ctx.author} for {humanize.naturaldelta(expires_at-datetime.datetime.utcnow())}"
+
+        await self.delete_timer("tempban", [ctx.guild.id, user.id])
 
         timers = self.bot.get_cog("Timers")
         if not timers:
             return await ctx.send(":x: This feature is temporarily unavailable")
-        await timers.create_timer("tempban", time, [ctx.guild.id, user.id], ctx.message.created_at)
+        await timers.create_timer("tempban", [ctx.guild.id, user.id], expires_at, created_at)
 
         if isinstance(user, discord.User):
             await ctx.guild.ban(user, reason=reason)
         elif isinstance(user, discord.Member):
             await user.ban(reason=reason)
 
-        await ctx.send(f":white_check_mark: Temporarily banned {user} for {humanize.naturaldelta(time-ctx.message.created_at)}")
+        await ctx.send(f":white_check_mark: Temporarily banned {user} for {humanize.naturaldelta(time-created_at)}")
 
     @commands.command(name="softban", description="Ban a user and unban them right away")
     @commands.bot_has_permissions(ban_members=True)
@@ -498,38 +493,37 @@ class Moderation(commands.Cog):
     @commands.command(name="tempmute", description="Temporarily mute a member")
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
-    async def tempmute(self, ctx, user: discord.Member, time: human_time.TimeConverter, *, reason=None):
+    async def tempmute(self, ctx, user: discord.Member, time: human_time.FutureTime, *, reason=None):
         config = await self.get_guild_config(ctx.guild)
+        expires_at = time.time
+        created_at = ctx.message.created_at
 
         if not config.mute_role:
             return await ctx.send(":x: Muted role not set")
 
         if reason:
-            reason = f"Tempmute by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())} with reason {reason}"
+            reason = f"Tempmute by {ctx.author} for {humanize.naturaldelta(expires_at-datetime.datetime.utcnow())} with reason {reason}"
         else:
-            reason = f"Tempmute by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}"
+            reason = f"Tempmute by {ctx.author} for {humanize.naturaldelta(expires_at-datetime.datetime.utcnow())}"
 
-        query = """DELETE FROM timers
-                   WHERE event = 'tempmute'
-                   AND extra #>> '{0}' = $1
-                   AND extra #>> '{1}' = $2;
-                """
-        await self.bot.db.execute(query, str(ctx.guild.id), str(user.id))
+        await self.delete_timer("tempmute", [ctx.guild.id, user.id])
 
         timers = self.bot.get_cog("Timers")
         if not timers:
             return await ctx.send(":x: This feature is temporarily unavailable")
-        await timers.create_timer("tempmute", time, [ctx.guild.id, user.id], ctx.message.created_at)
+        await timers.create_timer("tempmute", [ctx.guild.id, user.id], expires_at, created_at)
 
         await user.add_roles(config.mute_role, reason=reason)
-        await ctx.send(f":white_check_mark: Temporarily muted {user} for {humanize.naturaldelta(time-ctx.message.created_at)}")
+        await ctx.send(f":white_check_mark: Temporarily muted {user} for {humanize.naturaldelta(expires_at-created_at)}")
 
     @commands.command(name="selfmute", description="Mute yourself")
     @commands.bot_has_permissions(manage_roles=True)
-    async def selfmute(self, ctx, time: human_time.TimeConverter, *, reason=None):
+    async def selfmute(self, ctx, time: human_time.FutureTime, *, reason=None):
         config = await self.get_guild_config(ctx.guild)
+        expires_at = time.time
+        created_at = ctx.message.created_at
 
-        delta = time-datetime.datetime.utcnow()
+        delta = expires_at-datetime.datetime.utcnow()
         if delta > datetime.timedelta(days=1):
             return await ctx.send(":x: You cannot mute yourself for more than a day")
         if delta+datetime.timedelta(seconds=1) <= datetime.timedelta(minutes=5):
@@ -541,21 +535,21 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: You are already muted")
 
         if reason:
-            reason = f"Selfmute by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())} with reason {reason}"
+            reason = f"Selfmute by {ctx.author} for {humanize.naturaldelta(expires_at-datetime.datetime.utcnow())} with reason {reason}"
         else:
-            reason = f"Selfmute by {ctx.author} for {humanize.naturaldelta(time-datetime.datetime.utcnow())}"
+            reason = f"Selfmute by {ctx.author} for {humanize.naturaldelta(expires_at-datetime.datetime.utcnow())}"
 
         timers = self.bot.get_cog("Timers")
         if not timers:
             return await ctx.send(":x: This feature is temporarily unavailable")
-        await timers.create_timer("tempmute", time, [ctx.guild.id, ctx.author.id], ctx.message.created_at)
+        await timers.create_timer("tempmute", [ctx.guild.id, ctx.author.id], expires_at, created_at)
 
         result = await menus.Confirm("Are you sure you want to mute yourself?").prompt(ctx)
         if not result:
             return await ctx.send("Aborting")
 
         await ctx.author.add_roles(config.mute_role, reason=reason)
-        await ctx.send(f":white_check_mark: You have been muted for {humanize.naturaldelta(time-ctx.message.created_at)}")
+        await ctx.send(f":white_check_mark: You have been muted for {humanize.naturaldelta(expires_at-ctx.message.created_at)}")
 
     @commands.group(name="spam", description="View the current spam prevention settings", invoke_without_command=True)
     @commands.has_permissions(manage_guild=True)
@@ -763,6 +757,19 @@ class Moderation(commands.Cog):
 
         return GuildConfig.from_record(dict(record), self.bot)
 
+    async def delete_timer(self, event, data):
+        timers = self.bot.get_cog("Timers")
+        query = """DELETE FROM timers
+                   WHERE timers.event=$1 AND timers.data=$2;
+                """
+        result = await self.bot.db.execute(query, event, data)
+
+        if timers and timers.current_timer and timers.current_timer.event == "reminder" and timers.current_timer.data == data:
+            # The timer running is the one we canceled, so we need to restart the loop
+            self.restart_loop()
+
+        return result != "DELETE 0"
+
     def get_spam_action(self, config, spammer):
         return SpamAction.MUTE
 
@@ -797,7 +804,9 @@ class Moderation(commands.Cog):
             if action == SpamAction.MUTE:
                 timers = self.bot.get_cog("Timers")
                 if timers:
-                    await timers.create_timer("tempmute", datetime.datetime.utcnow()+spammer.mute_time, [message.guild.id, message.author.id], datetime.datetime.utcnow())
+                    expires_at = datetime.datetime.utcnow()+spammer.mute_time
+                    created_at = datetime.datetime.utcnow()
+                    await timers.create_timer("tempmute", [message.guild.id, message.author.id], expires_at, created_at)
                     await message.author.add_roles(config.mute_role, reason=f"Automatic mute for spamming ({humanize.naturaldelta(spammer.mute_time)})")
             else:
                 await message.author.ban(reason=f"Automatic ban for spamming")
@@ -812,22 +821,12 @@ class Moderation(commands.Cog):
             await config.mute_member(after)
 
         elif config.mute_role_id not in [role.id for role in after.roles] and after.id in config.muted:
-            query = """DELETE FROM timers
-                       WHERE event = 'tempmute'
-                       AND extra #>> '{0}' = $1
-                       AND extra #>> '{1}' = $2;
-                    """
-            await self.bot.db.execute(query, str(after.guild.id), str(after.id))
+            await self.delete_timer("tempmute", [after.guild.id, after.id])
             await config.unmute_member(after)
 
     @commands.Cog.listener()
     async def on_member_unban(self, guild, user):
-        query = """DELETE FROM timers
-                   WHERE event = 'tempban'
-                   AND extra #>> '{0}' = $1
-                   AND extra #>> '{1}' = $2;
-                """
-        await self.bot.db.execute(query, str(guild.id), str(user.id))
+        await self.delete_timer("tempban", [guild.id, user.id])
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -852,21 +851,18 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_tempban_complete(self, timer):
-        guild = self.bot.get_guild(timer["extra"][0])
-        user = discord.Object(id=timer["extra"][1])
-
+        guild = self.bot.get_guild(timer.extra[0])
+        user = discord.Object(id=timer.extra[1])
         await guild.unban(user, reason="Tempban is over")
 
     @commands.Cog.listener()
     async def on_tempmute_complete(self, timer):
-        guild = self.bot.get_guild(timer["extra"][0])
-        user = guild.get_member(timer["extra"][1])
-
         config = await self.get_guild_config(guild)
+        guild = self.bot.get_guild(timer.data[0])
+        user = guild.get_member(timer.data[1])
 
         if user:
             await user.remove_roles(config.mute_role, reason=f"Tempmute is over")
-
         else:
             await config.unmute_member(discord.Object(id=timer["extra"][1]))
 

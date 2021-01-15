@@ -2,15 +2,15 @@ import discord
 from discord.ext import commands, menus
 
 import datetime
-import dateparser
+import functools
 import json
 import base64
-import functools
 import urllib
 import io
-import os
-import re
 import zlib
+import re
+import os
+import dateutil.parser
 from lxml import etree
 from PIL import Image
 
@@ -482,7 +482,7 @@ class Internet(commands.Cog):
                     data = await resp.json()
                     owner = data["owner"]
 
-                em = discord.Embed(title=data["full_name"], description=f"{data['description'] or ''}\n{data['homepage'] or ''}", url=data["html_url"], timestamp=dateparser.parse(data["created_at"]), color=0x96c8da)
+                em = discord.Embed(title=data["full_name"], description=f"{data['description'] or ''}\n{data['homepage'] or ''}", url=data["html_url"], timestamp=dateutil.parser.isoparse(data["created_at"]), color=0x96c8da)
                 em.set_author(name=owner["login"], url=owner["html_url"], icon_url=owner["avatar_url"])
                 em.set_thumbnail(url=owner["avatar_url"])
                 em.add_field(name="Language", value=data["language"])
@@ -496,7 +496,7 @@ class Internet(commands.Cog):
                         return await ctx.send(":x: I couldn't find that GitHub user")
                     data = await resp.json()
 
-                em = discord.Embed(title=data["login"], description=data['bio'], url=data["html_url"], timestamp=dateparser.parse(data["created_at"]), color=0x96c8da)
+                em = discord.Embed(title=data["login"], description=data["bio"], url=data["html_url"], timestamp=dateutil.parse.isoparse(data["created_at"]), color=0x96c8da)
                 em.set_thumbnail(url=data["avatar_url"])
                 em.add_field(name="Repositories", value=data["public_repos"])
                 em.add_field(name="Gists", value=data["public_gists"])

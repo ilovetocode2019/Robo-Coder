@@ -3,8 +3,9 @@ jishaku
 asyncpg
 youtube_dl
 Pillow
-dateparser
+parsedatetime
 humanize
+python-dateutil
 psutil
 lxml
 git+https://github.com/Rapptz/discord-ext-menus

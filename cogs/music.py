@@ -16,7 +16,7 @@ import traceback
 import sys
 import logging
 
-from .utils import errors, formats
+from .utils import errors, formats, human_time
 
 log = logging.getLogger("robo_coder.music")
 
@@ -653,6 +653,12 @@ class Queue(asyncio.Queue):
 
 class PositionConverter(commands.Converter):
     async def convert(self, ctx, arg):
+        try:
+            position = human_time.ShortTime(arg, now=ctx.message.created_at)
+            return position.delta
+        except commands.BadArgument:
+            pass
+
         if ":" not in arg:
             try:
                 return int(arg)

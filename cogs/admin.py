@@ -136,8 +136,9 @@ class Admin(commands.Cog):
             "asyncpg",
             "youtube_dl",
             "Pillow",
-            "dateparser",
+            "parsedatetime",
             "humanize",
+            "python-dateutil",
             "psutil",
             "lxml"
         ]
