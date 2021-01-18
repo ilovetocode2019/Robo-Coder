@@ -851,20 +851,20 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_tempban_complete(self, timer):
-        guild = self.bot.get_guild(timer.extra[0])
-        user = discord.Object(id=timer.extra[1])
+        guild = self.bot.get_guild(timer.data[0])
+        user = discord.Object(id=timer.data[1])
         await guild.unban(user, reason="Tempban is over")
 
     @commands.Cog.listener()
     async def on_tempmute_complete(self, timer):
-        config = await self.get_guild_config(guild)
         guild = self.bot.get_guild(timer.data[0])
         user = guild.get_member(timer.data[1])
+        config = await self.get_guild_config(guild)
 
         if user:
             await user.remove_roles(config.mute_role, reason=f"Tempmute is over")
         else:
-            await config.unmute_member(discord.Object(id=timer["extra"][1]))
+            await config.unmute_member(discord.Object(id=timer.data[1]))
 
 def setup(bot):
     bot.add_cog(Moderation(bot))
