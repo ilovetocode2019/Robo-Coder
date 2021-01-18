@@ -279,11 +279,12 @@ class Moderation(commands.Cog):
     async def tempban(self, ctx, user: typing.Union[discord.Member, UserID], time: human_time.FutureTime, *, reason=None):
         expires_at = time.time
         created_at = ctx.message.created_at
+        delta = human_time.timedelta(expires_at, when=created_at)
 
         if reason:
-            reason = f"Tempban by {ctx.author} for {humanize.naturaldelta(expires_at-datetime.datetime.utcnow())} with reason {reason}"
+            reason = f"Tempban by {ctx.author} for {delta} with reason {reason}"
         else:
-            reason = f"Tempban by {ctx.author} for {humanize.naturaldelta(expires_at-datetime.datetime.utcnow())}"
+            reason = f"Tempban by {ctx.author} for {delta}"
 
         await self.delete_timer("tempban", [ctx.guild.id, user.id])
 
@@ -297,7 +298,7 @@ class Moderation(commands.Cog):
         elif isinstance(user, discord.Member):
             await user.ban(reason=reason)
 
-        await ctx.send(f":white_check_mark: Temporarily banned {user} for {humanize.naturaldelta(time-created_at)}")
+        await ctx.send(f":white_check_mark: Temporarily banned {user} for {delta}")
 
     @commands.command(name="softban", description="Ban a user and unban them right away")
     @commands.bot_has_permissions(ban_members=True)
@@ -497,14 +498,15 @@ class Moderation(commands.Cog):
         config = await self.get_guild_config(ctx.guild)
         expires_at = time.time
         created_at = ctx.message.created_at
+        delta = human_time.timedelta(expires_at, when=created_at)
 
         if not config.mute_role:
             return await ctx.send(":x: Muted role not set")
 
         if reason:
-            reason = f"Tempmute by {ctx.author} for {humanize.naturaldelta(expires_at-datetime.datetime.utcnow())} with reason {reason}"
+            reason = f"Tempmute by {ctx.author} for {delta} with reason {reason}"
         else:
-            reason = f"Tempmute by {ctx.author} for {humanize.naturaldelta(expires_at-datetime.datetime.utcnow())}"
+            reason = f"Tempmute by {ctx.author} for {delta}"
 
         await self.delete_timer("tempmute", [ctx.guild.id, user.id])
 
@@ -514,7 +516,7 @@ class Moderation(commands.Cog):
         await timers.create_timer("tempmute", [ctx.guild.id, user.id], expires_at, created_at)
 
         await user.add_roles(config.mute_role, reason=reason)
-        await ctx.send(f":white_check_mark: Temporarily muted {user} for {humanize.naturaldelta(expires_at-created_at)}")
+        await ctx.send(f":white_check_mark: Temporarily muted {user} for {delta}")
 
     @commands.command(name="selfmute", description="Mute yourself")
     @commands.bot_has_permissions(manage_roles=True)
@@ -534,10 +536,12 @@ class Moderation(commands.Cog):
         if ctx.author.id in config.muted:
             return await ctx.send(":x: You are already muted")
 
+        human_delta = human_time.timedelta(expires_at, when=created_at)
+
         if reason:
-            reason = f"Selfmute by {ctx.author} for {humanize.naturaldelta(expires_at-datetime.datetime.utcnow())} with reason {reason}"
+            reason = f"Selfmute by {ctx.author} for {human_delta} with reason {reason}"
         else:
-            reason = f"Selfmute by {ctx.author} for {humanize.naturaldelta(expires_at-datetime.datetime.utcnow())}"
+            reason = f"Selfmute by {ctx.author} for {human_delta}"
 
         timers = self.bot.get_cog("Timers")
         if not timers:
@@ -549,7 +553,7 @@ class Moderation(commands.Cog):
             return await ctx.send("Aborting")
 
         await ctx.author.add_roles(config.mute_role, reason=reason)
-        await ctx.send(f":white_check_mark: You have been muted for {humanize.naturaldelta(expires_at-ctx.message.created_at)}")
+        await ctx.send(f":white_check_mark: You have been muted for {human_delta}")
 
     @commands.group(name="spam", description="View the current spam prevention settings", invoke_without_command=True)
     @commands.has_permissions(manage_guild=True)
@@ -807,7 +811,7 @@ class Moderation(commands.Cog):
                     expires_at = datetime.datetime.utcnow()+spammer.mute_time
                     created_at = datetime.datetime.utcnow()
                     await timers.create_timer("tempmute", [message.guild.id, message.author.id], expires_at, created_at)
-                    await message.author.add_roles(config.mute_role, reason=f"Automatic mute for spamming ({humanize.naturaldelta(spammer.mute_time)})")
+                    await message.author.add_roles(config.mute_role, reason=f"Automatic mute for spamming ({human_time.timedelta(spammer.mute_time)})")
             else:
                 await message.author.ban(reason=f"Automatic ban for spamming")
 

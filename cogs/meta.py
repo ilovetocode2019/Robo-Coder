@@ -13,7 +13,7 @@ import os
 import codecs
 import pathlib
 
-from .utils import errors, formats
+from .utils import errors, human_time, formats
 
 def get_lines_of_code():
     total = 0
@@ -170,8 +170,7 @@ class Meta(commands.Cog):
 
     @commands.group(name="uptime", description="Get the uptime", aliases=["up"], invoke_without_command=True)
     async def uptime(self, ctx):
-        uptime = datetime.datetime.utcnow()-self.bot.startup_time
-        await ctx.send(f"I started up {humanize.naturaldelta(uptime)} ago")
+        await ctx.send(f"I started up {human_time.timedelta(self.bot.startup_time)}")
     
     @commands.command(name="invite", description="Get a invite link to add me to your server")
     async def invite(self, ctx):

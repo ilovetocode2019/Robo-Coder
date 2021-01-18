@@ -13,6 +13,8 @@ def join(iterable, seperator=", ", last="or"):
         return ""
     if len(iterable) == 1:
         return iterable[0]
+    if len(iterable) == 2:
+        return f"{iterable[0]} and {iterable[1]}"
 
     return seperator.join(iterable[:-1]) + f"{seperator}{last} {iterable[-1]}"
 

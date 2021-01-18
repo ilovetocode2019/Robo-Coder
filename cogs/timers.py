@@ -39,7 +39,7 @@ class Timers(commands.Cog):
         created_at = ctx.message.created_at
 
         timer = await self.create_timer("reminder", [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content], expires_at, created_at)
-        await ctx.send(f":white_check_mark: Set a timer for `{humanize.naturaldelta(expires_at-created_at)}` with the message `{content}`")
+        await ctx.send(f":white_check_mark: Set a timer for `{human_time.timedelta(expires_at, when=created_at)}` with the message `{content}`")
 
     @remind.command(name="list", description="View your reminders")
     async def remind_list(self, ctx):
@@ -54,7 +54,7 @@ class Timers(commands.Cog):
 
         em = discord.Embed(title="Reminders", description="\n", color=0x96c8da)
         for timer in timers:
-            em.description += f"\n{timer.data[3]} `({timer.id})` in {humanize.naturaldelta(timer.expires_at-datetime.datetime.utcnow())}"
+            em.description += f"\n{timer.data[3]} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=timer.created_at)}"
         await ctx.send(embed=em)
 
     @remind.command(name="here", description="View your reminders in this channel")
@@ -72,7 +72,7 @@ class Timers(commands.Cog):
 
         em = discord.Embed(title="Timers Here", description="\n", color=0x96c8da)
         for timer in timers:
-            em.description += f"\n{timer.data[3]} `({timer.id})` in {humanize.naturaldelta(timer.expires_at-datetime.datetime.utcnow())}"
+            em.description += f"\n{timer.data[3]} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=timer.created_at)}"
         await ctx.send(embed=em)
 
     @remind.command(name="cancel", description="Cancel a reminder", aliases=["delete", "remove"])
@@ -173,7 +173,7 @@ class Timers(commands.Cog):
         jump_url = timer.data[2]
 
         em = discord.Embed(title=content, description=f"\n[Jump]({jump_url})", color=0x96c8da)
-        em.add_field(name="When", value=f"{humanize.naturaldelta(datetime.datetime.utcnow()-created_at)} ago")
+        em.add_field(name="When", value=f"{human_time.timedelta(datetime.datetime.utcnow(), when=timer.created_at)} ago")
         await channel.send(content=user.mention, embed=em)
 
 def setup(bot):

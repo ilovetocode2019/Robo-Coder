@@ -1,25 +1,25 @@
+from discord.ext import commands
+
 import datetime
 import re
 
 import dateutil
+import humanize
 import parsedatetime
-from discord.ext import commands
 
-units = parsedatetime.pdtLocales["en_US"].units
-units["minutes"].append("mins")
-units["seconds"].append("secs")
+from . import formats
 
 class ShortTime:
     """Attempts to parse a time using regex."""
 
     regex = re.compile(
-        """(?:(?P<years>[0-9])(?:years?|y))?
-           (?:(?P<months>[0-9])(?:months?|mo))?
-           (?:(?P<weeks>[0-9])(?:weeks?|w))?
-           (?:(?P<days>[0-9])(?:days?|d))?
-           (?:(?P<hours>[0-9])(?:hours?|h))?
-           (?:(?P<minutes>[0-9])(?:minutes?|m))?
-           (?:(?P<seconds>[0-9])(?:seconds?|s))?""",
+        """(?:(?P<years>[0-9])(?:years?|year|y))?\s?
+           (?:(?P<months>[0-9])(?:months?|month|mo))?\s?
+           (?:(?P<weeks>[0-9])(?:weeks?|week|w))?\s?
+           (?:(?P<days>[0-9])(?:days?|day|d))?\s?
+           (?:(?P<hours>[0-9])(?:hours?|hour|h))?\s?
+           (?:(?P<minutes>[0-9])(?:minutes?|minute|min|m))?\s?
+           (?:(?P<seconds>[0-9])(?:seconds?|second|secs|s))?\s?""",
            re.VERBOSE)
 
     def __init__(self, argument, *, now=None):
@@ -32,7 +32,7 @@ class ShortTime:
         delta = dateutil.relativedelta.relativedelta(**data)
 
         self.delta = delta
-        self.time = datetime.datetime.utcnow()+delta
+        self.time = now+delta
         self.past = self.time < now
 
     @classmethod
@@ -135,3 +135,46 @@ class TimeWithContent(Time):
         self.time = time
         self.past = time < now
         self.content = content
+
+def timedelta(time, *, when=None):
+    now = when or datetime.datetime.utcnow()
+
+    # Get rid of microseconds
+    now = now.replace(microsecond=0)
+    time = time.replace(microsecond=0)
+
+    # Delta and suffix stuff
+    if time > now:
+        delta = dateutil.relativedelta.relativedelta(time, now)
+        suffix = ""
+    else:
+        delta = dateutil.relativedelta.relativedelta(now, time)
+        suffix = " ago"
+
+    units = ["year", "month", "day", "hour", "minute", "second"]
+    output = []
+
+    for unit in units:
+        item = getattr(delta, f"{unit}s")
+        if item and unit == "day":
+            weeks = delta.weeks
+            if weeks:
+                item -= weeks * 7
+                output.append(format(formats.plural(weeks), "week"))
+
+        if item:
+            output.append(format(formats.plural(item), unit))
+
+    if len(output) == 0:
+        return "now"
+    else:
+        return formats.join(output, last="and") + suffix
+
+def format_time(time):
+    return time.strftime("%b %d, %Y at %H:%M:%S")
+
+def fulltime(time, use_humanize=True):
+    if use_humanize:
+        return f"{humanize.naturaldate(time)} ({humanize.naturaltime(time)})"
+    else:
+        return f"{format_time(time)} ({timedelta(time)})"

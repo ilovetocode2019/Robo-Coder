@@ -1,7 +1,6 @@
 import discord
 from discord.ext import commands
 
-import humanize
 import inspect
 import os
 import functools
@@ -17,7 +16,7 @@ import datetime
 from PIL import Image
 from io import BytesIO
 
-from .utils import formats
+from .utils import human_time, formats
 
 class Tools(commands.Cog):
     def __init__(self, bot):
@@ -43,7 +42,7 @@ class Tools(commands.Cog):
         em.set_thumbnail(url=guild.icon_url)
 
         em.add_field(name=":crown: Owner", value=guild.owner.mention)
-        em.add_field(name=":clock3: Created at", value=f"{humanize.naturaldate(guild.created_at)} ({humanize.naturaltime(guild.created_at)})")
+        em.add_field(name=":clock3: Created", value=f"{human_time.fulltime(guild.created_at)}")
         em.add_field(name="<:nitro:725730843930132560> Nitro Boosts", value=guild.premium_tier)
         bots = len([member for member in guild.members if member.bot])
         em.add_field(name=":earth_americas: Region", value=str(guild.region).upper().replace("-", " "))
@@ -101,8 +100,8 @@ class Tools(commands.Cog):
         if user.bot:
             em.description += "\n:robot: This user is a bot"
 
-        em.add_field(name=":clock3: Created at", value=f"{humanize.naturaldate(user.created_at)} ({humanize.naturaltime(user.created_at)})")
-        em.add_field(name=":arrow_right: Joined at", value=f"{humanize.naturaldate(user.joined_at)} ({humanize.naturaltime(user.joined_at)})")
+        em.add_field(name=":clock3: Created", value=human_time.fulltime(user.created_at))
+        em.add_field(name=":arrow_right: Joined", value=f"{human_time.fulltime(user.joined_at)}")
 
         for x in enumerate(sorted(ctx.guild.members, key=lambda x: x.joined_at)):
             if x[1] == user:
@@ -228,7 +227,7 @@ class Tools(commands.Cog):
     @commands.command(name="snowflake", description="Get the timestamp from a Discord snowflake")
     async def snowflake(self, ctx, *, snowflake: int):
         time = discord.utils.snowflake_time(snowflake)
-        await ctx.send(time.strftime("%b %d, %Y at %I:%M %p"))
+        await ctx.send(human_time.format_time(time))
 
     async def average_image_color(self, icon):
         data = await icon.read()

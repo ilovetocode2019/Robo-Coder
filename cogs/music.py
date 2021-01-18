@@ -655,7 +655,8 @@ class PositionConverter(commands.Converter):
     async def convert(self, ctx, arg):
         try:
             position = human_time.ShortTime(arg, now=ctx.message.created_at)
-            return position.delta
+            delta = position.time-ctx.message.created_at
+            return delta.total_seconds()
         except commands.BadArgument:
             pass
 
@@ -873,7 +874,7 @@ class Music(commands.Cog):
         await ctx.send(f":track_next: Jumped to `{song.title}`")
 
     @commands.command(name="seek", description="Seek a position in the song")
-    async def seek(self, ctx, position: PositionConverter):
+    async def seek(self, ctx, *, position: PositionConverter):
         if ctx.author not in ctx.player.channel.members:
             return
         if not ctx.player.now:
