@@ -5,6 +5,9 @@ import dateutil
 import parsedatetime
 from discord.ext import commands
 
+units = parsedatetime.pdtLocales["en_US"].units
+units["minutes"].append("mins")
+units["seconds"].append("secs")
 
 class ShortTime:
     """Attempts to parse a time using regex."""
@@ -114,7 +117,7 @@ class TimeWithContent(Time):
                 time = time.replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=now.microsecond)
             if context.accuracy == parsedatetime.pdtContext.ACU_HALFDAY:
                 time = time.replace(day=now.day+1)
-    
+
             if start != 0 and end != len(argument):
                 # Time does not start at the start but it doesn't end at the end either
                 raise commands.BadArgument("The time must be at the start or end of the argument not the middle, like `do homework in 3 hours` or `in 3 hours do homework`")
