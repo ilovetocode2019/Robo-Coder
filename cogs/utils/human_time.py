@@ -22,7 +22,7 @@ class ShortTime:
     def __init__(self, argument, *, now=None):
         now = now or datetime.datetime.utcnow()
         match = self.regex.fullmatch(argument)
-        if not match and match.group(0):
+        if not match or not match.group(0):
             raise commands.BadArgument("You provided an invalid time")
 
         data = {key: int(value) for key, value in match.groupdict(default=0).items()}
@@ -48,7 +48,7 @@ class HumanTime:
             # No date or time data
             raise commands.BadArgument("I couldn't recognize your time. Try something like `tomorrow` or `3 days`.")
         if not context.hasTime:
-            # We have date data data, but not time, so replace it with time data
+            # We have the date, but not the time, so replace it with the time
             time = time.replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=now.microsecond)
 
         self.time = time
@@ -62,6 +62,7 @@ class Time:
     """Attempts to parse the time using HumanTime and then ShortTime."""
 
     def __init__(self, argument, *, now=None):
+        now = now or datetime.datetime.utcnow()
         try:
             # Attempt to parse the time through ShortTime
             parsed = ShortTime(argument, now=now)
