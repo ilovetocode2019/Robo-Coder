@@ -32,7 +32,7 @@ def get_lines_of_code():
                     for i, l in enumerate(f):
                         total += 1
 
-    return f"I have {total:,} lines of code, spread across {file_amount:,} files"
+    return f"I am made of {total:,} lines of code, spread across {file_amount:,} files!"
 
 class RoboCoderHelpCommand(commands.HelpCommand):
     bottom_text = "\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**. \nFor more help join the [support server]({0})."
@@ -172,7 +172,7 @@ class Meta(commands.Cog):
     async def uptime(self, ctx):
         await ctx.send(f"I started up {human_time.timedelta(self.bot.startup_time)}")
     
-    @commands.command(name="invite", description="Get a invite link to add me to your server")
+    @commands.command(name="invite", description="Get a link to add me to your server")
     async def invite(self, ctx):
         perms  = discord.Permissions.none()
         perms.manage_messages = True
