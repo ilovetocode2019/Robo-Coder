@@ -1171,20 +1171,11 @@ class Music(commands.Cog):
     @commands.command(name="stopall", description="Stop all players")
     @commands.is_owner()
     async def stopall(self, ctx):
-        for player in self.bot.players.values():
-            if player.queue:
-                url = await self.save_queue(player)
-                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{ctx.prefix}playbin {url}`.")
-            elif player.now:
-                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
-
-            await player.cleanup()
-
-        self.bot.players = {}
+        await self.bot.stop_players()
         await ctx.send("All players have been stopped")
         log.info("Stopped all players")
 
-    @commands.command(name="endplayer", description="Stops a single player")
+    @commands.command(name="endplayer", description="Stop a player")
     @commands.is_owner()
     async def endplayer(self, ctx, player: int):
         if player not in self.bot.players:

@@ -116,6 +116,16 @@ class RoboCoder(commands.Bot):
                 """
         await self.db.execute(query)
 
+    async def stop_players(self):
+        for player in self.players.copy().values():
+            if player.queue:
+                url = await self.get_cog("Music").save_queue(player)
+                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{ctx.prefix}playbin {url}`.")
+            elif player.now:
+                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
+
+            await player.cleanup()
+
     async def on_ready(self):
         logging.info(f"Logged in as {self.user.name} - {self.user.id}")
         await self.status_webhook("Logged into Discord")
@@ -143,23 +153,10 @@ class RoboCoder(commands.Bot):
         super().run(config.token)
 
     async def logout(self):
-        for player in self.players.values():
-            if player.queue._queue:
-                queue = [x.url for x in player.queue._queue]
-                if player.looping_queue:
-                    queue = [player.now.url] + queue
-                url = await self.get_cog("Music").post_bin(str("\n".join(queue)))
-                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{player.ctx.prefix}playbin {url}`.")
-            elif player.now:
-                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
-
-            player.loop.cancel()
-            await player.voice.disconnect()
-
-        self.players = {}
-
         if config.status_hook:
             await self.status_webhook.send("Logging out of Discord")
+
+        await self.stop_players()
         await self.db.close()
         await self.session.close()
         await super().logout()
