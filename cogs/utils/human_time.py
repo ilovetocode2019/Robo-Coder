@@ -18,8 +18,8 @@ class ShortTime:
            (?:(?P<weeks>[0-9])(?:weeks?|week|w))?\s?
            (?:(?P<days>[0-9])(?:days?|day|d))?\s?
            (?:(?P<hours>[0-9])(?:hours?|hour|h))?\s?
-           (?:(?P<minutes>[0-9])(?:minutes?|minute|min|m))?\s?
-           (?:(?P<seconds>[0-9])(?:seconds?|second|secs|s))?\s?""",
+           (?:(?P<minutes>[0-9])(?:minutes?|minute|mins|min|m))?\s?
+           (?:(?P<seconds>[0-9])(?:seconds?|second|secs|sec|s))?\s?""",
            re.VERBOSE)
 
     def __init__(self, argument, *, now=None):
