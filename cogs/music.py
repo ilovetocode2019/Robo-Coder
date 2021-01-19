@@ -375,7 +375,7 @@ class Song:
 
     def source(self, volume, **options):
         self.FFMPEG_OPTIONS.update(options)
-        source = discord.FFmpegPCMAudio(self.filename, **options)
+        source = discord.FFmpegPCMAudio(self.filename, self.FFMPEG_OPTIONS)
         transformed = discord.PCMVolumeTransformer(source, volume)
         return transformed
 
