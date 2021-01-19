@@ -323,7 +323,7 @@ class Song:
                  "updated_at")
 
     FFMPEG_OPTIONS = {
-        "options": "-vc"
+        "options": "-vn"
     }
 
     YTDL_OPTIONS = {
@@ -374,8 +374,9 @@ class Song:
         self.updated_at = None
 
     def source(self, volume, **options):
-        self.FFMPEG_OPTIONS.update(options)
-        source = discord.FFmpegPCMAudio(self.filename, self.FFMPEG_OPTIONS)
+        options = {**self.FFMPEG_OPTIONS, **options}
+        print(options)
+        source = discord.FFmpegPCMAudio(self.filename, **options)
         transformed = discord.PCMVolumeTransformer(source, volume)
         return transformed
 
