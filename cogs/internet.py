@@ -235,7 +235,7 @@ class Internet(commands.Cog):
 
             entries = []
             divs = root.findall(".//div[@class='IsZvec']")
-            results = root.findall(".//div[@class='rc']")
+            results = root.findall(".//div[@class='g']")
             if not results:
                 return await ctx.send(":x: I couldn't find any results for that query")
 
