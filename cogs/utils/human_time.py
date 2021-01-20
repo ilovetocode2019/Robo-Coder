@@ -136,7 +136,7 @@ class TimeWithContent(Time):
         self.past = time < now
         self.content = content
 
-def timedelta(time, *, when=None):
+def timedelta(time, *, when=None, accuracy=3):
     now = when or datetime.datetime.utcnow()
 
     # Get rid of microseconds
@@ -164,6 +164,9 @@ def timedelta(time, *, when=None):
 
         if item:
             output.append(format(formats.plural(item), unit))
+
+    if accuracy:
+        output = output[:accuracy]
 
     if len(output) == 0:
         return "now"

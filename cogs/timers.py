@@ -54,7 +54,7 @@ class Timers(commands.Cog):
 
         em = discord.Embed(title="Reminders", description="\n", color=0x96c8da)
         for timer in timers:
-            em.description += f"\n{timer.data[3]} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=timer.created_at)}"
+            em.description += f"\n{timer.data[3]} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=ctx.message.created_at)}"
         await ctx.send(embed=em)
 
     @remind.command(name="here", description="View your reminders in this channel")
