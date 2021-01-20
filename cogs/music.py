@@ -257,9 +257,9 @@ class Player:
 
             if self.queue:
                 url = await self.save_queue(player)
-                await player.ctx.send(f"Sorry! Your player has crashed. If your confused or want to report this, join <{bot.support_server_link}>. You can start again with `{ctx.prefix}playbin {url}`.")
+                await self.ctx.send(f"Sorry! Your player has crashed. If your confused or want to report this, join <{bot.support_server_link}>. You can start again with `{ctx.prefix}playbin {url}`.")
             elif self.now:
-                await player.ctx.send(f"Sorry! Your player has crashed. If your confused or want to report this, join <{bot.support_server_link}>. You can start your song again with the play command.")
+                await self.ctx.send(f"Sorry! Your player has crashed. If your confused or want to report this, join <{bot.support_server_link}>. You can start your song again with the play command.")
 
             log.info("Stopping music for %s", self)
             self.stop()
