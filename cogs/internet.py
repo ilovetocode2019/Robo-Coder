@@ -37,7 +37,7 @@ class GoogleResultPages(menus.ListPageSource):
         super().__init__(data, per_page=1)
 
     async def format_page(self, menu, entry):
-        em = discord.Embed(title=entry["title"], description=entry["description"], url=entry["url"], color=0x96c8da)
+        em = discord.Embed(title=entry["title"], description=entry["description"], url=entry["url"], color=0x4284F3)
         em.set_author(name=f"Results for '{self.query}'")
         em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{len(self.data)}")
 
@@ -267,7 +267,7 @@ class Internet(commands.Cog):
                 result = calculator.find(".//span[@class='qv3Wpe']")
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
-                em = discord.Embed(title="Calculator", description=f"{equation.text}{result.text}", color=0x96c8da)
+                em = discord.Embed(title="Calculator", description=f"{equation.text}{result.text}", color=0x4284F3)
                 em.add_field(name="Search Results", value=search_results)
                 return await ctx.send(embed=em)
 
@@ -278,7 +278,7 @@ class Internet(commands.Cog):
                 units = converter.findall(".//option[@selected='1']")
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
-                em = discord.Embed(title=f"Unit Converter ({units[0].text})", color=0x96c8da)
+                em = discord.Embed(title=f"Unit Converter ({units[0].text})", color=0x4284F3)
                 em.add_field(name=units[1].text, value=src.get("value"))
                 em.add_field(name=units[2].text, value=dest.get("value"))
                 em.add_field(name="Search Results", value=search_results, inline=False)
@@ -295,7 +295,7 @@ class Internet(commands.Cog):
                 dest = translator.find(".//pre[@id='tw-target-text']/span")
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
-                em = discord.Embed(title="Translator", color=0x96c8da)
+                em = discord.Embed(title="Translator", color=0x4284F3)
                 em.add_field(name=src_language.text, value=src.text)
                 em.add_field(name=dest_language.text, value=dest.text)
                 em.add_field(name="Search Results", value=search_results, inline=False)
@@ -315,7 +315,7 @@ class Internet(commands.Cog):
             src = googletrans.LANGUAGES.get(result.src, "???").title()
             dest = googletrans.LANGUAGES.get(result.dest, "???").title()
 
-            em = discord.Embed(title="Translator", color=0x96c8da)
+            em = discord.Embed(title="Translator", color=0x4284F3)
             em.add_field(name=f"From {src}", value=result.origin)
             em.add_field(name=f"To {dest}", value=result.text, inline=False)
             await ctx.send(embed=em)
