@@ -7,6 +7,7 @@ import aiohttp
 import datetime
 import logging
 import json
+import googletrans
 
 import config
 
@@ -64,6 +65,8 @@ class RoboCoder(commands.Bot):
         self.session = aiohttp.ClientSession(loop=self.loop)
         if config.status_hook:
             self.status_webhook = Webhook.from_url(config.status_hook, adapter=AsyncWebhookAdapter(self.session))
+
+        self.translator = googletrans.Translator()
 
         with open("assets/emojis.json") as file:
             self.default_emojis = json.load(file)

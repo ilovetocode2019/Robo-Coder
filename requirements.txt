@@ -7,5 +7,6 @@ parsedatetime
 humanize
 python-dateutil
 psutil
+googletrans==3.0.0
 lxml
 git+https://github.com/Rapptz/discord-ext-menus

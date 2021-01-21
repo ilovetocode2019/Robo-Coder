@@ -10,6 +10,7 @@ import io
 import zlib
 import re
 import os
+import googletrans
 import dateutil.parser
 from lxml import etree
 from PIL import Image
@@ -295,6 +296,21 @@ class Internet(commands.Cog):
 
         pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
         await pages.start(ctx)
+
+    @commands.command(name="translate", description="Translate something using google translate")
+    @commands.cooldown(1, 20, commands.BucketType.user)
+    async def translate(self, ctx, *, query):
+        async with ctx.typing():
+            partial = functools.partial(self.bot.translator.translate, query)
+            result = await self.bot.loop.run_in_executor(None, partial)
+
+            src = googletrans.LANGUAGES.get(result.src, "???").title()
+            dest = googletrans.LANGUAGES.get(result.dest, "???").title()
+
+            em = discord.Embed(title="Translator", color=0x96c8da)
+            em.add_field(name=f"From {src}", value=result.origin)
+            em.add_field(name=f"To {dest}", value=result.text, inline=False)
+            await ctx.send(embed=em)
 
     @commands.command(name="wikipedia", description="Search wikipedia", aliases=["wiki"])
     @commands.cooldown(2, 20, commands.BucketType.user)
