@@ -223,9 +223,10 @@ class Internet(commands.Cog):
     @commands.cooldown(1, 20, commands.BucketType.user)
     async def google(self, ctx, *, query):
         async with ctx.typing():
-            params = {"safe": "on", "lr": "lang_en", "hl": "en"}
+            params = {"safe": "on", "lr": "lang_en", "hl": "en", "q": query}
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
-            async with self.bot.session.get(f"https://google.com/search?q={urllib.parse.quote(query)}", params=params, headers=headers) as resp:
+
+            async with self.bot.session.get(f"https://google.com/search", params=params, headers=headers) as resp:
                 html = await resp.read()
                 html = html.decode("utf-8")
 
@@ -234,28 +235,32 @@ class Internet(commands.Cog):
 
                 root = etree.fromstring(html, etree.HTMLParser())
 
-            entries = []
             divs = root.findall(".//div[@class='IsZvec']")
-            results = root.findall(".//div[@class='g']")
+            # For some reason some g div tags aren't valid for me
+            # So I have to check for the a tag I need and then filter out all the resuls that are None
+            results = [result.find(".//div[@class='yuRUbf']/a") for result in root.findall(".//div[@class='g']")]
+            results = [result for result in results if result]
+
             if not results:
                 return await ctx.send(":x: I couldn't find any results for that query")
 
+            entries = []
+
+            # Search results
             for counter, result in enumerate(results):
-                link = result.find(".//div[@class='yuRUbf']/a")
-
-                span = link.find(".//h3[@class='LC20lb DKV0Md']/span")
+                span = result.find(".//h3[@class='LC20lb DKV0Md']/span")
                 if span is None:
-                    span = link.find(".//h3[@class='LC20lb DKV0Md']/div[@class='ellip']/span")
-                if span is None:
-                    raise RuntimeError(f"Site name for {link} (result {counter+1}) is None")
+                    span = result.find(".//h3[@class='LC20lb DKV0Md']/div[@class='ellip']/span")
 
-                cite = link.find(".//div/cite")
+                cite = result.find(".//div/cite")
                 description = divs[counter].find(".//span[@class='aCOpRe']/span")
 
-                href = link.get("href")
+                href = result.get("href")
                 site = f'`{cite.text}`' if cite is not None else ''
+
                 entries.append({"title": span.text, "description":  f"`{site}` \n\n{' '.join(description.itertext()) if description is not None else ''}", "url": href})
 
+            # Calculator card
             calculator = root.find(".//div[@class='tyYmIf']")
             if calculator is not None:
                 equation = calculator.find(".//span[@class='vUGUtc']")
@@ -266,31 +271,33 @@ class Internet(commands.Cog):
                 em.add_field(name="Search Results", value=search_results)
                 return await ctx.send(embed=em)
 
+            # Converter card
             converter = root.find(".//div[@class='vk_c card obcontainer card-section']")
             if converter is not None:
-                original, output = converter.findall(".//input[@class='vXQmIe gsrt']")
+                src, dest = converter.findall(".//input[@class='vXQmIe gsrt']")
                 units = converter.findall(".//option[@selected='1']")
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title=f"Unit Converter ({units[0].text})", color=0x96c8da)
-                em.add_field(name=units[1].text, value=original.get("value"))
-                em.add_field(name=units[2].text, value=output.get("value"))
+                em.add_field(name=units[1].text, value=src.get("value"))
+                em.add_field(name=units[2].text, value=dest.get("value"))
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
+            # Translator card
             translator = root.find(".//div[@class='tw-src-ltr']")
             if translator is not None:
                 langs = root.find(".//div[@class='pcCUmf vCOSGb']")
-                original_language = langs.find(".//div[@class='j1iyq hide-focus-ring']/span[@class='source-language']")
-                output_language = langs.find(".//div[@class='j1iyq hide-focus-ring']/span[@class='target-language']")
+                src_language = langs.find(".//div[@class='j1iyq hide-focus-ring']/span[@class='source-language']")
+                dest_language = langs.find(".//div[@class='j1iyq hide-focus-ring']/span[@class='target-language']")
 
-                original = translator.find(".//pre[@id='tw-source-text']/span")
-                output = translator.find(".//pre[@id='tw-target-text']/span")
+                src = translator.find(".//pre[@id='tw-source-text']/span")
+                dest = translator.find(".//pre[@id='tw-target-text']/span")
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title="Translator", color=0x96c8da)
-                em.add_field(name=original_language.text, value=original.text)
-                em.add_field(name=output_language.text, value=output.text)
+                em.add_field(name=src_language.text, value=src.text)
+                em.add_field(name=dest_language.text, value=dest.text)
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
@@ -299,6 +306,7 @@ class Internet(commands.Cog):
 
     @commands.command(name="translate", description="Translate something using google translate")
     @commands.cooldown(1, 20, commands.BucketType.user)
+    @commands.is_owner()
     async def translate(self, ctx, *, query):
         async with ctx.typing():
             partial = functools.partial(self.bot.translator.translate, query)
