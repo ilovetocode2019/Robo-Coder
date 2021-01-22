@@ -306,18 +306,27 @@ class Internet(commands.Cog):
 
     @commands.command(name="translate", description="Translate something using google translate")
     @commands.cooldown(1, 20, commands.BucketType.user)
-    @commands.is_owner()
     async def translate(self, ctx, *, query):
         async with ctx.typing():
-            partial = functools.partial(self.bot.translator.translate, query)
-            result = await self.bot.loop.run_in_executor(None, partial)
+            params = {"client": "dict-chrome-ex", "sl": "auto", "tl": "auto", "q": query}
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
 
-            src = googletrans.LANGUAGES.get(result.src, "???").title()
-            dest = googletrans.LANGUAGES.get(result.dest, "???").title()
+            async with self.bot.session.get(f"https://clients5.google.com/translate_a/t", params=params, headers=headers) as resp:
+                data = await resp.json()
+
+            sentence = data["sentences"][0]
+            src = sentence["orig"]
+            dest = sentence["trans"]
+
+            src_lang = googletrans.LANGUAGES.get(data["src"], "???")
+            dest_lang = googletrans.LANGUAGES.get("en", "???")
+
+            confidence = data["confidence"]
 
             em = discord.Embed(title="Translator", color=0x4285F3)
-            em.add_field(name=f"From {src}", value=result.origin)
-            em.add_field(name=f"To {dest}", value=result.text, inline=False)
+            em.add_field(name=f"From {src_lang}", value=src)
+            em.add_field(name=f"To {dest_lang}", value=dest)
+            em.add_field(name="Confidence", value=f"{int(confidence*100)}%", inline=False)
             await ctx.send(embed=em)
 
     @commands.command(name="wikipedia", description="Search wikipedia", aliases=["wiki"])
@@ -376,7 +385,9 @@ class Internet(commands.Cog):
     @commands.cooldown(2, 20, commands.BucketType.user)
     async def roblox(self, ctx, username):
         async with ctx.typing():
-            async with self.bot.session.get(f"http://api.roblox.com/users/get-by-username/?username={username}") as resp:
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
+
+            async with self.bot.session.get(f"http://api.roblox.com/users/get-by-username?username={username}", headers=headers) as resp:
                 if resp.status != 200:
                     return await ctx.send(f":x: Failed to find user (error code {resp.status})")
 
@@ -447,15 +458,18 @@ class Internet(commands.Cog):
                     return await ctx.send(":x: I couldn't find that user")
 
                 data = await resp.json()
+
             name = data["name"]
             uuid = data["id"]
 
             async with self.bot.session.get(f"https://api.mojang.com/user/profiles/{uuid}/names") as resp:
                 name_history = await resp.json()
+
             names = []
             for name_data in reversed(name_history):
                 timestamp = name_data.get("changedToAt")
-                old_name = name_data["name"]
+                old_name = discord.utils.escape_markdown(name_data["name"])
+
                 if timestamp:
                     seconds = timestamp / 1000
                     time = datetime.datetime.fromtimestamp(seconds + (timestamp % 1000.0) / 1000.0)
@@ -466,6 +480,7 @@ class Internet(commands.Cog):
 
             async with self.bot.session.get(f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid}") as resp:
                 data = await resp.json()
+
             data = data["properties"][0]["value"]
             data = json.loads(base64.b64decode(data))
             url = data["textures"]["SKIN"]["url"]
@@ -487,7 +502,7 @@ class Internet(commands.Cog):
             image.save(output, format="png")
             output.seek(0)
 
-            em = discord.Embed(title=name)
+            em = discord.Embed(title=name, color=0x96c8da)
             em.set_thumbnail(url="attachment://face.png")
             em.add_field(name="Names", value="\n".join(names))
             em.set_footer(text=f"ID: {uuid}")
