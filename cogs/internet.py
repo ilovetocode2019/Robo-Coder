@@ -308,7 +308,7 @@ class Internet(commands.Cog):
     @commands.cooldown(1, 20, commands.BucketType.user)
     async def translate(self, ctx, *, query):
         async with ctx.typing():
-            params = {"client": "dict-chrome-ex", "sl": "auto", "tl": "auto", "q": query}
+            params = {"client": "dict-chrome-ex", "sl": "auto", "tl": "en", "q": query}
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
 
             async with self.bot.session.get(f"https://clients5.google.com/translate_a/t", params=params, headers=headers) as resp:
