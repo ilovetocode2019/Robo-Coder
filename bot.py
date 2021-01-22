@@ -6,6 +6,7 @@ import asyncpg
 import aiohttp
 import datetime
 import logging
+import traceback
 import json
 
 import config
@@ -41,6 +42,8 @@ extensions = [
 "cogs.roles"
 ]
 
+log.info("Starting")
+
 class RoboCoder(commands.Bot):
     def __init__(self):
         intents = discord.Intents.all()
@@ -50,23 +53,32 @@ class RoboCoder(commands.Bot):
 
         self.config = config
         self.startup_time = datetime.datetime.utcnow()
+        self.support_server_link = "https://discord.gg/eHxvStNJb7"
         self.players = {}
         self.spam_detectors = {}
-        self.support_server_link = "https://discord.gg/eHxvStNJb7"
 
+        log.info("Loading extensions")
         self.load_extension("jishaku")
         self.get_cog("Jishaku").hidden = True
 
         for cog in extensions:
-            self.load_extension(cog)
+            try:
+                self.load_extension(cog)
+            except Exception as exc:
+                log.info(f"Couldn't load {cog}")
+                traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
 
     async def prepare_bot(self):
+        log.info("Creating aiohttp session")
         self.session = aiohttp.ClientSession(loop=self.loop)
         if config.status_hook:
             self.status_webhook = Webhook.from_url(config.status_hook, adapter=AsyncWebhookAdapter(self.session))
 
+        log.info("Loading emojis")
         with open("assets/emojis.json") as file:
             self.default_emojis = json.load(file)
+
+        log.info("Creating database pool")
 
         async def init(conn):
             await conn.set_type_codec("jsonb", schema="pg_catalog", encoder=json.dumps, decoder=json.loads, format="text")
@@ -154,6 +166,8 @@ class RoboCoder(commands.Bot):
         super().run(config.token)
 
     async def logout(self):
+        log.info("Logging out of Discord")
+
         if config.status_hook:
             await self.status_webhook.send("Logging out of Discord")
 
