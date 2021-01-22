@@ -191,6 +191,7 @@ class Admin(commands.Cog):
             "humanize",
             "python-dateutil",
             "psutil",
+            "googletrans",
             "lxml"
         ]
 
