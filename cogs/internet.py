@@ -15,6 +15,19 @@ import dateutil.parser
 from lxml import etree
 from PIL import Image
 
+class GoogleResultPages(menus.ListPageSource):
+    def __init__(self, data, query):
+        self.query = query
+        self.data = data
+        super().__init__(data, per_page=1)
+
+    async def format_page(self, menu, entry):
+        em = discord.Embed(**entry, color=0x4285F3)
+        em.set_author(name=f"Results for '{self.query}'")
+        em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{len(self.data)}")
+
+        return em
+
 class DocsPages(menus.ListPageSource):
     def __init__(self, data, query):
         self.query = query
@@ -27,19 +40,6 @@ class DocsPages(menus.ListPageSource):
         for i, v in enumerate(entries, start=offset):
             em.description += "\n[`"+v[0]+"`]("+v[1]+")"
         em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{int(len(self.data)/10)+1}")
-
-        return em
-
-class GoogleResultPages(menus.ListPageSource):
-    def __init__(self, data, query):
-        self.query = query
-        self.data = data
-        super().__init__(data, per_page=1)
-
-    async def format_page(self, menu, entry):
-        em = discord.Embed(title=entry["title"], description=entry["description"], url=entry["url"], color=0x4285F3)
-        em.set_author(name=f"Results for '{self.query}'")
-        em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{len(self.data)}")
 
         return em
 
@@ -235,11 +235,10 @@ class Internet(commands.Cog):
 
                 root = etree.fromstring(html, etree.HTMLParser())
 
-            divs = root.findall(".//div[@class='IsZvec']")
-            # For some reason some g div tags aren't valid for me
-            # So I have to check for the a tag I need and then filter out all the resuls that are None
+            # Get all the search results and filter out the bad ones
             results = [result.find(".//div[@class='yuRUbf']/a") for result in root.findall(".//div[@class='g']")]
             results = [result for result in results if result is not None]
+            divs = root.findall(".//div[@class='IsZvec']")
 
             if not results:
                 return await ctx.send(":x: I couldn't find any results for that query")
