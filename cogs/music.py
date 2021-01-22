@@ -314,6 +314,12 @@ class Player:
         if self.guild.id in self.bot.players:
             self.bot.players.pop(self.guild.id)
 
+    async def save_queue(self, player):
+        queue = [song.url for song in player.queue]
+        if player.looping_queue:
+            queue = [player.now.url] + queue
+        return await self.bot.post_bin("\n".join(queue))
+
 class Song:
     __slots__ = ("_data", "filename", "requester", "song_id", "extractor",
                  "uploader", "uploader_url", "date", "total_seconds", "upload_date",
@@ -375,7 +381,6 @@ class Song:
 
     def source(self, volume, **options):
         options = {**self.FFMPEG_OPTIONS, **options}
-        print(options)
         source = discord.FFmpegPCMAudio(self.filename, **options)
         transformed = discord.PCMVolumeTransformer(source, volume)
         return transformed
@@ -992,7 +997,7 @@ class Music(commands.Cog):
     @queue.command(name="save", description="Save the queue")
     async def queue_save(self, ctx):
         if ctx.player.queue:
-            url = await self.save_queue(ctx.player)
+            url = await ctx.playersave_queue(ctx.player)
             await ctx.send(f"I saved the queue to {url}")
         else:
             await ctx.send("No queue to save")
@@ -1031,7 +1036,7 @@ class Music(commands.Cog):
             log.info("Disconnecting from %s normally", player)
 
             if player.queue:
-                url = await self.save_queue(player)
+                url = await player.save_queue(player)
                 await ctx.send(f"I saved the queue to {url}")
 
             await player.cleanup()
@@ -1175,24 +1180,6 @@ class Music(commands.Cog):
         await ctx.send("All players have been stopped")
         log.info("Stopped all players")
 
-    @commands.command(name="endplayer", description="Stop a player")
-    @commands.is_owner()
-    async def endplayer(self, ctx, player: int):
-        if player not in self.bot.players:
-            return await ctx.send(":x: Could not find a player with that guild ID")
-
-        player = self.bot.players[player]
-
-        if player.queue:
-            url = await self.save_queue(player)
-            await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{ctx.prefix}playbin {url}`.")
-        elif player.now:
-            await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
-
-        await player.cleanup()
-        await ctx.send("Player has been stopped")
-        log.info("Stopped player %s", player)
-
     @commands.Cog.listener("on_voice_state_update")
     async def disconnect_on_inactivity(self, member, before, after):
         player = self.bot.players.get(member.guild.id)
@@ -1219,7 +1206,7 @@ class Music(commands.Cog):
             log.info("Timed out while waiting for someone to join %s", player)
             # If the voice channel is empty for 3 minutes then disconnect
             if player.queue:
-                url = await self.save_queue(player)
+                url = await player.save_queue(player)
                 await player.ctx.send(f"I left `{player.voice.channel}` because it was empty. The queue has been saved to {url}.")
             await player.cleanup()
 
@@ -1241,7 +1228,7 @@ class Music(commands.Cog):
         except asyncio.TimeoutError:
             log.info("Didn't rejoin %s. Cleaning up player.", player)
             if player.queue:
-                url = await self.save_queue(player)
+                url = await player.save_queue(player)
                 await player.ctx.send(f"I was disconnected from `{player.voice.channel}`! The queue has been saved to {url}.")
             await player.cleanup()
 
@@ -1289,17 +1276,6 @@ class Music(commands.Cog):
             data = await response.read()
             data = data.decode("utf-8")
             return data.split("\n")
-
-    async def post_bin(self, content):
-        async with self.bot.session.post("https://mystb.in/documents", data=content.encode("utf-8")) as resp:
-            data = await resp.json()
-            return f"https://mystb.in/{data['key']}"
-
-    async def save_queue(self, player):
-        queue = [song.url for song in player.queue]
-        if player.looping_queue:
-            queue = [player.now.url] + queue
-        return await self.post_bin("\n".join(queue))
 
 def setup(bot):
     bot.add_cog(Music(bot))

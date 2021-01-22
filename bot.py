@@ -116,19 +116,12 @@ class RoboCoder(commands.Bot):
                 """
         await self.db.execute(query)
 
-    async def stop_players(self):
-        for player in self.players.copy().values():
-            if player.queue:
-                url = await self.get_cog("Music").save_queue(player)
-                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with `{ctx.prefix}playbin {url}`.")
-            elif player.now:
-                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
-
-            await player.cleanup()
-
     async def on_ready(self):
-        logging.info(f"Logged in as {self.user.name} - {self.user.id}")
-        await self.status_webhook("Logged into Discord")
+        log.info(f"Logged in as {self.user.name} - {self.user.id}")
+
+        self.console = bot.get_channel(config.console)
+        if config.status_hook:
+            await self.status_webhook.send("Recevied READY event")
 
     async def on_connect(self):
         if config.status_hook:
@@ -142,12 +135,20 @@ class RoboCoder(commands.Bot):
         if config.status_hook:
             await self.status_webhook.send("Resumed connection with Discord")
 
-    async def on_ready(self):
-        log.info(f"Logged in as {self.user.name} - {self.user.id}")
+    async def stop_players(self):
+        for player in self.players.copy().values():
+            if player.queue:
+                url = await player.save_queue(player)
+                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with r!playbin {url}.")
+            elif player.now:
+                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
 
-        self.console = bot.get_channel(config.console)
-        if config.status_hook:
-            await self.status_webhook.send("Recevied READY event")
+            await player.cleanup()
+
+    async def post_bin(self, content):
+        async with self.session.post("https://mystb.in/documents", data=content.encode("utf-8")) as resp:
+            data = await resp.json()
+            return f"https://mystb.in/{data['key']}"
 
     def run(self):
         super().run(config.token)
