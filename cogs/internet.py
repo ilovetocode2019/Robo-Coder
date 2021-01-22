@@ -51,7 +51,7 @@ class SphinxObjectFileReader:
         self.stream = io.BytesIO(buffer)
 
     def readline(self):
-        return self.stream.readline().decode('utf-8')
+        return self.stream.readline().decode("utf-8")
 
     def skipline(self):
         self.stream.readline()
@@ -66,19 +66,19 @@ class SphinxObjectFileReader:
         yield decompressor.flush()
 
     def read_compressed_lines(self):
-        buf = b''
+        buf = b""
         for chunk in self.read_compressed_chunks():
             buf += chunk
-            pos = buf.find(b'\n')
+            pos = buf.find(b"\n")
             while pos != -1:
-                yield buf[:pos].decode('utf-8')
+                yield buf[:pos].decode("utf-8")
                 buf = buf[pos + 1:]
-                pos = buf.find(b'\n')
+                pos = buf.find(b"\n")
 
 def finder(text, collection, *, key=None, lazy=True):
     suggestions = []
     text = str(text)
-    pat = '.*?'.join(map(re.escape, text))
+    pat = ".*?".join(map(re.escape, text))
     regex = re.compile(pat, flags=re.IGNORECASE)
     for item in collection:
         to_search = key(item) if key else item
@@ -111,29 +111,29 @@ class Internet(commands.Cog):
         # first line is version info
         inv_version = stream.readline().rstrip()
 
-        if inv_version != '# Sphinx inventory version 2':
-            raise RuntimeError('Invalid objects.inv file version.')
+        if inv_version != "# Sphinx inventory version 2":
+            raise RuntimeError("Invalid objects.inv file version.")
 
         # next line is "# Project: <name>"
         # then after that is "# Version: <version>"
         projname = stream.readline().rstrip()[11:]
         version = stream.readline().rstrip()[11:]
 
-        # next line says if it's a zlib header
+        # next line says if it"s a zlib header
         line = stream.readline()
-        if 'zlib' not in line:
-            raise RuntimeError('Invalid objects.inv file, not z-lib compatible.')
+        if "zlib" not in line:
+            raise RuntimeError("Invalid objects.inv file, not z-lib compatible.")
 
         # This code mostly comes from the Sphinx repository.
-        entry_regex = re.compile(r'(?x)(.+?)\s+(\S*:\S*)\s+(-?\d+)\s+(\S+)\s+(.*)')
+        entry_regex = re.compile(r"(?x)(.+?)\s+(\S*:\S*)\s+(-?\d+)\s+(\S+)\s+(.*)")
         for line in stream.read_compressed_lines():
             match = entry_regex.match(line.rstrip())
             if not match:
                 continue
 
             name, directive, prio, location, dispname = match.groups()
-            domain, _, subdirective = directive.partition(':')
-            if directive == 'py:module' and name in result:
+            domain, _, subdirective = directive.partition(":")
+            if directive == "py:module" and name in result:
                 # From the Sphinx Repository:
                 # due to a bug in 1.1 and below,
                 # two inventory entries are created
@@ -142,22 +142,22 @@ class Internet(commands.Cog):
                 continue
 
             # Most documentation pages have a label
-            if directive == 'std:doc':
-                subdirective = 'label'
+            if directive == "std:doc":
+                subdirective = "label"
 
-            if location.endswith('$'):
+            if location.endswith("$"):
                 location = location[:-1] + name
 
-            key = name if dispname == '-' else dispname
-            prefix = f'{subdirective}:' if domain == 'std' else ''
+            key = name if dispname == "-" else dispname
+            prefix = f"{subdirective}:" if domain == "std" else ""
 
-            if projname == 'discord.py':
-                key = key.replace('discord.ext.commands.', '').replace('discord.', '')
-            elif projname == 'telegram.py':
-                key = key.replace('telegrampy.ext.commands.', '').replace('telegrampy.', '')
+            if projname == "discord.py":
+                key = key.replace("discord.ext.commands.", "").replace("discord.", "")
+            elif projname == "telegram.py":
+                key = key.replace("telegrampy.ext.commands.", "").replace("telegrampy.", "")
 
 
-            result[f'{prefix}{key}'] = os.path.join(url, location)
+            result[f"{prefix}{key}"] = os.path.join(url, location)
 
         return result
 
