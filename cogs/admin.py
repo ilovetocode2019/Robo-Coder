@@ -18,6 +18,8 @@ from jishaku import codeblocks, paginators, shell
 
 from .utils import formats, menus
 
+# Test change
+
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
