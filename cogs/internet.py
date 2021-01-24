@@ -317,8 +317,8 @@ class Internet(commands.Cog):
             src = sentence["orig"]
             dest = sentence["trans"]
 
-            src_lang = googletrans.LANGUAGES.get(data["src"], "???")
-            dest_lang = googletrans.LANGUAGES.get("en", "???")
+            src_lang = googletrans.LANGUAGES.get(data["src"], "???").title()
+            dest_lang = googletrans.LANGUAGES.get("en", "???").title()
 
             confidence = data["confidence"]
 
