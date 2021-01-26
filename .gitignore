@@ -1,7 +1,9 @@
 
 *.pyc
-songs/*
-prefixes.json
-ffmpeg.exe
-config.py
 *.html
+*.json
+*.html
+
+ffmpeg.exe
+/config.py
+songs/*

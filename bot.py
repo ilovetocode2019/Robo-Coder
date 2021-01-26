@@ -11,23 +11,19 @@ import json
 
 import config
 
+from cogs.utils.config import Config
+
 log = logging.getLogger("robo_coder")
+logging.basicConfig(level=logging.INFO, format="(%(asctime)s) %(levelname)s %(message)s", datefmt="%m/%d/%y - %H:%M:%S %Z")
+log.info("Starting bot.py")
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="(%(asctime)s) %(levelname)s %(message)s",
-    datefmt="%m/%d/%y - %H:%M:%S %Z"
-)
-
-def get_prefix(client, message):
-    prefixes = ["r!"]
-    if not isinstance(message.channel, discord.DMChannel) and hasattr(bot, "guild_prefixes"):
-        if str(message.guild.id) in client.guild_prefixes.keys():
-            prefixes = client.guild_prefixes[str(message.guild.id)]
-        else:
-            client.guild_prefixes[str(message.guild.id)] = ["r!"]
-
-    return commands.when_mentioned_or(*prefixes)(client, message)
+def get_prefix(bot, message):
+    prefixes = [f"<@!{bot.user.id}> ", f"<@{bot.user.id}> "]
+    if message.guild:
+        prefixes.extend(bot.prefixes.get(message.guild.id, ["r!", "r."]))
+    else:
+        prefixes.extend(["r!", "r.", "!"])
+    return prefixes
 
 extensions = [
 "cogs.meta",
@@ -42,12 +38,10 @@ extensions = [
 "cogs.roles"
 ]
 
-log.info("Starting")
-
 class RoboCoder(commands.Bot):
     def __init__(self):
-        intents = discord.Intents.all()
-        intents.presences = False
+        intents = discord.Intents.default()
+        intents.members = True
         super().__init__(command_prefix=get_prefix, description="A multipurpose Discord bot.", case_insensitive=True, intents=intents)
         self.loop.create_task(self.prepare_bot())
 
@@ -58,6 +52,7 @@ class RoboCoder(commands.Bot):
         self.spam_detectors = {}
 
         log.info("Loading extensions")
+
         self.load_extension("jishaku")
         self.get_cog("Jishaku").hidden = True
 
@@ -68,7 +63,9 @@ class RoboCoder(commands.Bot):
                 log.info(f"Couldn't load {cog}")
                 traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
 
-    async def prepare_bot(self):
+        log.info("Loading prefixes")
+        self.prefixes = Config("prefixes.json", loop=self.loop)
+
         log.info("Creating aiohttp session")
         self.session = aiohttp.ClientSession(loop=self.loop)
         if config.status_hook:
@@ -79,7 +76,6 @@ class RoboCoder(commands.Bot):
             self.default_emojis = json.load(file)
 
         log.info("Creating database pool")
-
         async def init(conn):
             await conn.set_type_codec("jsonb", schema="pg_catalog", encoder=json.dumps, decoder=json.loads, format="text")
         self.db = await asyncpg.create_pool(config.database_uri, init=init)
@@ -128,6 +124,28 @@ class RoboCoder(commands.Bot):
                 """
         await self.db.execute(query)
 
+    def get_guild_prefix(self, guild):
+        return self.prefixes.get(guild.id, [self.user.mention])[0]
+
+    def get_guild_prefixes(self, guild):
+        return self.prefixes.get(guild.id, ["r!", "r."])
+
+    async def stop_players(self):
+        for player in self.players.copy().values():
+            if player.queue:
+                url = await player.save_queue(player)
+                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with {player.ctx.prefix}playbin {url}.")
+
+            elif player.now:
+                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
+
+            await player.cleanup()
+
+    async def post_bin(self, content):
+        async with self.session.post("https://mystb.in/documents", data=content.encode("utf-8")) as resp:
+            data = await resp.json()
+            return f"https://mystb.in/{data['key']}"
+
     async def on_ready(self):
         log.info(f"Logged in as {self.user.name} - {self.user.id}")
 
@@ -147,22 +165,8 @@ class RoboCoder(commands.Bot):
         if config.status_hook:
             await self.status_webhook.send("Resumed connection with Discord")
 
-    async def stop_players(self):
-        for player in self.players.copy().values():
-            if player.queue:
-                url = await player.save_queue(player)
-                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with r!playbin {url}.")
-            elif player.now:
-                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
-
-            await player.cleanup()
-
-    async def post_bin(self, content):
-        async with self.session.post("https://mystb.in/documents", data=content.encode("utf-8")) as resp:
-            data = await resp.json()
-            return f"https://mystb.in/{data['key']}"
-
     def run(self):
+        log.info("Running bot")
         super().run(config.token)
 
     async def logout(self):
