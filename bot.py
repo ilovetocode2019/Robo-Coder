@@ -63,6 +63,7 @@ class RoboCoder(commands.Bot):
                 log.info(f"Couldn't load {cog}")
                 traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
 
+    async def prepare_bot(self):
         log.info("Loading prefixes")
         self.prefixes = Config("prefixes.json", loop=self.loop)
 
