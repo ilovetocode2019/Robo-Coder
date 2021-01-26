@@ -15,12 +15,6 @@ import pathlib
 
 from .utils import errors, human_time, formats
 
-class Prefix(commands.Converter):
-    async def convert(self, ctx, prefix):
-        if discord.utils.escape_mentions(prefix) != prefix:
-            raise commands.BadArgument("Prefix can't include a mention")
-        return prefix
-
 def get_lines_of_code():
     total = 0
     file_amount = 0
@@ -49,7 +43,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
 
         em = discord.Embed(
             title=f"{bot.user.name} Help",
-            description=f"Help for Robo Coder Bot. Use `{self.clean_prefix}help [command]` or `{self.clean_prefix}help [Category]` for more specific help. If you need more help you can join the [support server]({bot.support_server_link}).",
+            description=f"Help for Robo Coder Bot. Use `{ctx.prefix}help [command]` or `{ctx.prefix}help [Category]` for more specific help. If you need more help you can join the [support server]({bot.support_server_link}).",
             color=0x96c8da
             )
         msg = ""
@@ -105,7 +99,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         await ctx.send(embed=em)
 
 class Meta(commands.Cog):
-    """Stuff related to the bot itself."""
+    """Everything about the bot itself."""
 
     def __init__(self, bot):
         self.bot = bot
@@ -114,6 +108,12 @@ class Meta(commands.Cog):
         self._original_help_command = bot.help_command
         bot.help_command = RoboCoderHelpCommand()
         bot.help_command.cog = self
+
+        if os.path.exists("prefixes.json"):
+            with open("prefixes.json", "r") as f:
+                self.bot.guild_prefixes = json.load(f)
+        else:
+            self.bot.guild_prefixes = {}
 
     def cog_unload(self):
         self.bot.help_command = self._original_help_command
@@ -193,61 +193,40 @@ class Meta(commands.Cog):
         code = get_lines_of_code()
         await ctx.send(code)
 
-    @commands.group(name="prefix", description="Manage custom prefixes", invoke_without_command=True)
+    @commands.group(name="prefix", description="View your prefixes", invoke_without_command=True)
     async def prefix(self, ctx):
-        await ctx.send_help(ctx.command)
+        await ctx.send("prefixes: " + ", ".join(self.bot.guild_prefixes[str(ctx.guild.id)]))
 
-    @prefix.command(name="add", description="Add a prefix")
+    @prefix.command(name="add", description="add a prefix")
     @commands.has_permissions(manage_guild=True)
-    async def prefix_add(self, ctx, *, prefix: Prefix):
-        prefixes = self.bot.get_guild_prefixes(ctx.guild)
-        if prefix in prefixes:
-            return await ctx.send(":x: That prefix is already added")
-
-        if len(prefixes) >= 10:
-            return await ctx.send(":x: You cannot have more than 10 prefixes")
-
-        prefixes.append(prefix)
-        await self.bot.prefixes.add(ctx.guild.id, prefixes)
-
-        await ctx.send(f":white_check_mark: Added the prefix `{prefix}`")
+    async def add(self, ctx, *, arg):
+        self.bot.guild_prefixes[str(ctx.guild.id)].append(arg)
+        with open("prefixes.json", "w") as f:
+            json.dump(self.bot.guild_prefixes, f)
+        await ctx.send("Added prefix: " + arg)
     
-    @prefix.command(name="remove", description="Remove a prefix")
+    @prefix.command(name="remove", description="remove prefix")
     @commands.has_permissions(manage_guild=True)
-    async def prefix_remove(self, ctx, *, prefix: Prefix):
-        prefixes = self.bot.get_guild_prefixes(ctx.guild)
-        if prefix not in prefixes:
-            return await ctx.send(":x: That prefix is not added")
+    async def remove(self, ctx, *, arg):
+        if arg in self.bot.guild_prefixes[str(ctx.guild.id)]:
+            self.bot.guild_prefixes[str(ctx.guild.id)].remove(arg)
+            await ctx.send("Removed prefix: " + arg)
+        else:
+            await ctx.send(f"That prefix does not exist. Try '{ctx.prefix}prefixes' to get a list of prefixes")
 
-        prefixes.remove(prefix)
-        await self.bot.prefixes.add(ctx.guild.id, prefixes)
+        with open("prefixes.json", "w") as f:
+            json.dump(self.bot.guild_prefixes, f)
 
-        await ctx.send(f":white_check_mark: Removed the prefix `{prefix}`")
-
-    @prefix.command(name="clear", description="Clear all the prefixes in this server")
-    @commands.has_permissions(manage_guild=True)
-    async def prefix_clear(self, ctx):
-        await self.bot.prefixes.add(ctx.guild.id, [])
-        await ctx.send(f":white_check_mark: Removed all prefixes")
-
-    @prefix.command(name="list", description="View the prefixes in this server")
-    async def prefix_list(self, ctx):
-        prefixes = await self.bot.get_prefix(ctx.message)
-        prefixes.pop(0)
-
-        em = discord.Embed(title="Prefixes", description="\n".join(prefixes), color=0x96c8da)
-        em.set_footer(text=f"{formats.plural(len(prefixes)):prefix}")
-        await ctx.send(embed=em)
-
-    @commands.command(name="prefixes", description="View the prefixes in this server")
+    @prefix.command(name="prefixes", description="veiw a list of prefixes")
+    @commands.guild_only()
     async def prefixes(self, ctx):
-        await ctx.invoke(self.prefix_list)
+        server_prefixes = self.bot.guild_prefixes
+        await ctx.send("prefixes: " + ", ".join(server_prefixes))
 
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.content == f"<@!{self.bot.user.id}>" and not message.author.bot:
-            prefix = self.bot.get_guild_prefix(message.guild)
-            await message.channel.send(f":wave: Hello, I am Robo Coder!\nTo get more info use {prefix}help")
+            await message.channel.send(f":wave: Hello, I am Robo Coder!\nTo get more info use r!help")
 
 def setup(bot):
     bot.add_cog(Meta(bot))
