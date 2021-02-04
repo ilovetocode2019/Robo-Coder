@@ -9,16 +9,21 @@ import logging
 import traceback
 import json
 
+import config
+
 from cogs.utils.config import Config
 
 log = logging.getLogger("robo_coder")
-logging.basicConfig(
-    level=logging.INFO,
-    format="(%(asctime)s) %(levelname)s %(message)s",
-    datefmt="%m/%d/%y - %H:%M:%S %Z"
-)
+logging.basicConfig(level=logging.INFO, format="(%(asctime)s) %(levelname)s %(message)s", datefmt="%m/%d/%y - %H:%M:%S %Z")
+log.info("Starting bot.py")
 
-log.info("Starting Robo Coder")
+def get_prefix(bot, message):
+    prefixes = [f"<@!{bot.user.id}> ", f"<@{bot.user.id}> "]
+    if message.guild:
+        prefixes.extend(bot.prefixes.get(message.guild.id, ["r!", "r."]))
+    else:
+        prefixes.extend(["r!", "r.", "!"])
+    return prefixes
 
 extensions = [
 "cogs.meta",
@@ -33,23 +38,20 @@ extensions = [
 "cogs.roles"
 ]
 
-def get_prefix(bot, message):
-    prefixes = [f"<@!{bot.user.id}> ", f"<@{bot.user.id}> "]
-    if message.guild:
-        prefixes.extend(bot.prefixes.get(message.guild.id, ["r!", "r."]))
-    else:
-        prefixes.extend(["r!", "r.", "!"])
-    return prefixes
-
 class RoboCoder(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.members = True
         super().__init__(command_prefix=get_prefix, description="A multipurpose Discord bot.", case_insensitive=True, intents=intents)
+        self.loop.create_task(self.prepare_bot())
 
+        self.config = config
+        self.startup_time = datetime.datetime.utcnow()
         self.support_server_link = "https://discord.gg/eHxvStNJb7"
         self.players = {}
         self.spam_detectors = {}
+
+        log.info("Loading extensions")
 
         self.load_extension("jishaku")
         self.get_cog("Jishaku").hidden = True
@@ -61,22 +63,23 @@ class RoboCoder(commands.Bot):
                 log.info(f"Couldn't load {cog}")
                 traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
 
+    async def prepare_bot(self):
         log.info("Loading prefixes")
         self.prefixes = Config("prefixes.json", loop=self.loop)
 
         log.info("Creating aiohttp session")
         self.session = aiohttp.ClientSession(loop=self.loop)
-        if self.config.status_hook:
-            self.status_webhook = Webhook.from_url(self.config.status_hook, adapter=AsyncWebhookAdapter(self.session))
+        if config.status_hook:
+            self.status_webhook = Webhook.from_url(config.status_hook, adapter=AsyncWebhookAdapter(self.session))
 
         log.info("Loading emojis")
         with open("assets/emojis.json") as file:
             self.default_emojis = json.load(file)
 
-    async def create_pool(self):
+        log.info("Creating database pool")
         async def init(conn):
             await conn.set_type_codec("jsonb", schema="pg_catalog", encoder=json.dumps, decoder=json.loads, format="text")
-        self.db = await asyncpg.create_pool(self.config.database_uri, init=init)
+        self.db = await asyncpg.create_pool(config.database_uri, init=init)
 
         query = """CREATE TABLE IF NOT EXISTS guild_config (
                    guild_id BIGINT PRIMARY KEY,
@@ -128,65 +131,55 @@ class RoboCoder(commands.Bot):
     def get_guild_prefixes(self, guild):
         return self.prefixes.get(guild.id, ["r!", "r."])
 
+    async def stop_players(self):
+        for player in self.players.copy().values():
+            if player.queue:
+                url = await player.save_queue(player)
+                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start again with {player.ctx.prefix}playbin {url}.")
+
+            elif player.now:
+                await player.ctx.send(f"Sorry! Your player has been stopped for maintenance. You can start your song again with the play command.")
+
+            await player.cleanup()
+
     async def post_bin(self, content):
         async with self.session.post("https://mystb.in/documents", data=content.encode("utf-8")) as resp:
             data = await resp.json()
             return f"https://mystb.in/{data['key']}"
 
-    async def get_bin(self, url):
-        parsed = urllib.parse.urlparse(url)
-        newpath = "/raw" + parsed.path
-        url = parsed.scheme + "://" + parsed.netloc + newpath
-        async with self.bot.session.get(url) as response:
-            data = await response.read()
-            data = data.decode("utf-8")
-            return data.split("\n")
-
     async def on_ready(self):
-        if not hasattr(self, "db"):
-            self.db = await self.create_pool()
-        if not hasattr(self, "uptime"):
-            self.uptime = datetime.datetime.utcnow()
-
-        self.console = bot.get_channel(self.config.console)
-        if self.config.status_hook:
-            await self.status_webhook.send("Logged into Discord")
-
         log.info(f"Logged in as {self.user.name} - {self.user.id}")
 
+        self.console = bot.get_channel(config.console)
+        if config.status_hook:
+            await self.status_webhook.send("Recevied READY event")
+
     async def on_connect(self):
-        if self.config.status_hook:
+        if config.status_hook:
             await self.status_webhook.send("Connected to Discord")
 
     async def on_disconnect(self):
-        if self.config.status_hook and not self.session.closed:
+        if config.status_hook and not self.session.closed:
             await self.status_webhook.send("Disconnected from Discord")
 
     async def on_resumed(self):
-        if self.config.status_hook:
+        if config.status_hook:
             await self.status_webhook.send("Resumed connection with Discord")
 
     def run(self):
         log.info("Running bot")
-        super().run(self.config.token)
+        super().run(config.token)
 
     async def logout(self):
         log.info("Logging out of Discord")
 
-        if self.config.status_hook:
+        if config.status_hook:
             await self.status_webhook.send("Logging out of Discord")
 
-        music = self.bot.get_cog("Music"):
-        if music:
-            await self.stop_players()
-
+        await self.stop_players()
         await self.db.close()
         await self.session.close()
         await super().logout()
-
-    @property
-    def config(self):
-        return __import__("config")
 
 bot = RoboCoder()
 bot.run()

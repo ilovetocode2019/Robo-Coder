@@ -534,7 +534,7 @@ class Internet(commands.Cog):
                         return await ctx.send(":x: I couldn't find that GitHub user")
                     data = await resp.json()
 
-                em = discord.Embed(title=data["login"], description=data["bio"], url=data["html_url"], timestamp=dateutil.parser.isoparse(data["created_at"]), color=0x96c8da)
+                em = discord.Embed(title=data["login"], description=data["bio"], url=data["html_url"], timestamp=dateutil.parse.isoparse(data["created_at"]), color=0x96c8da)
                 em.set_thumbnail(url=data["avatar_url"])
                 em.add_field(name="Repositories", value=data["public_repos"])
                 em.add_field(name="Gists", value=data["public_gists"])
