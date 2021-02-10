@@ -26,6 +26,11 @@ class AnyUser(commands.Converter):
             pass
 
         try:
+            return await commands.UserConverter().convert(ctx, arg)
+        except commands.BadArgument:
+            pass
+
+        try:
             return await ctx.bot.fetch_user(arg)
         except:
             raise commands.BadArgument(f"User `{arg}` not found")
