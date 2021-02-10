@@ -59,12 +59,12 @@ class Tools(commands.Cog):
         em.set_thumbnail(url=guild.icon_url)
 
         em.add_field(name=":crown: Owner", value=guild.owner.mention)
-        em.add_field(name=":clock3: Created", value=f"{human_time.fulltime(guild.created_at)}")
-        em.add_field(name="<:nitro:725730843930132560> Nitro Boosts", value=guild.premium_tier)
+        em.add_field(name=":clock1: Created", value=f"{human_time.fulltime(guild.created_at)}")
+        em.add_field(name="<:nitro:808884446739693609> Nitro Boosts", value=guild.premium_tier)
         bots = len([member for member in guild.members if member.bot])
         em.add_field(name=":earth_americas: Region", value=str(guild.region).upper().replace("-", " "))
-        em.add_field(name=":speaking_head: Channels", value=f"<:textchannel:725730867644858518> {str(len(guild.text_channels))} \N{BULLET} <:voicechannel:725730883872751666> {str(len(guild.voice_channels))}")
         em.add_field(name=":family: Members", value=f"{len(guild.members)} ({formats.plural(bots):bot})")
+        em.add_field(name=":speech_balloon: Channels", value=f"<:textchannel:725730867644858518> {str(len(guild.text_channels))} \N{BULLET} <:voicechannel:725730883872751666> {str(len(guild.voice_channels))}")
 
         static_emojis = len([emoji for emoji in guild.emojis if not emoji.animated])
         static_emojis_percentage = int((static_emojis/guild.emoji_limit)*100)
