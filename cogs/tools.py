@@ -12,12 +12,11 @@ import unicodedata
 import collections
 import typing
 import datetime
-import shlex
 
 from PIL import Image
 from io import BytesIO
 
-from .utils import human_time, formats, parsers
+from .utils import human_time, formats
 
 class Tools(commands.Cog):
     def __init__(self, bot):
