@@ -18,6 +18,18 @@ from io import BytesIO
 
 from .utils import human_time, formats
 
+class AnyUser(commands.Converter):
+    async def convert(self, ctx, arg):
+        try:
+            return await commands.MemberConverter().convert(ctx, arg)
+        except commands.BadArgument:
+            pass
+
+        try:
+            return await ctx.bot.fetch_user(arg)
+        except:
+            raise commands.BadArgument(f"User `{arg}` not found")
+
 class Tools(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -63,20 +75,22 @@ class Tools(commands.Cog):
 
     @commands.command(name="userinfo", description="Get info on a user", aliases=["ui", "whois"])
     @commands.guild_only()
-    async def userinfo(self, ctx, *, user: discord.Member = None):
+    async def userinfo(self, ctx, *, user: AnyUser = None):
         if not user:
             user = ctx.author
+        is_member = isinstance(user, discord.Member)
 
         pubilic_flags_mapping = {
-        discord.UserFlags.staff: "<:staff:726131232534036572>",
-        discord.UserFlags.partner: "<:partner:726131508330496170>",
-        discord.UserFlags.hypesquad: "<:hypesquad:726131852427001887>",
-        discord.UserFlags.bug_hunter: "<:bughunter:726132004604608553>",
-        discord.UserFlags.hypesquad_bravery: "<:hypesquad_bravery:726132273082007659>",
-        discord.UserFlags.hypesquad_brilliance: "<:hypesquad_brilliance:726132442343145583>",
-        discord.UserFlags.hypesquad_balance: "<:hypesquad_balance:726132611084320879>",
-        discord.UserFlags.early_supporter: "<:earlysupporter:726132986516471918>",
-        discord.UserFlags.verified_bot_developer: "<:verified:726134370544386189>",
+            discord.UserFlags.staff: "<:staff:808882362820984853>",
+            discord.UserFlags.partner: "<:partner:808882401085227059>",
+            discord.UserFlags.hypesquad: "<:hypersquad:808882441460252702>",
+            discord.UserFlags.bug_hunter: "<:bug_hunter:808882493163962398>",
+            discord.UserFlags.bug_hunter_level_2: "<:bug_hunter_2:808884426306093076>",
+            discord.UserFlags.hypesquad_bravery: "<:hypesquad_bravery:808882576928407593>",
+            discord.UserFlags.hypesquad_brilliance: "<:hypesquad_balance:808882618912735243>",
+            discord.UserFlags.hypesquad_balance: "<:hypesquad_balance:808882618912735243>",
+            discord.UserFlags.early_supporter: "<:early_supporter:808883560752742430>",
+            discord.UserFlags.verified_bot_developer: "<:verified_bot_developer:808884369053581323>",
         }
 
         badges = ""
@@ -86,28 +100,66 @@ class Tools(commands.Cog):
                 badges += emoji
 
         async with ctx.typing():
+            if is_member and not ctx.guild.chunked:
+                await ctx.guild.chunk(cache=True)
+
             try:
                 color = await self.average_image_color(user.avatar_url_as(format="png"))
             except:
-                color = discord.Embed.Empty
+                color = user.color
+
+        if is_member:
+            name = f"{user}{f' ({user.nick})' if user.nick else ''} - {user.id}"
+        else:
+            name = f"{user} - {user.id}"
 
         em = discord.Embed(description=badges, color=color)
-        em.set_author(name=f"{user} {f'({user.nick})' if user.nick else ''} - {user.id}", icon_url=user.avatar_url)
+        em.set_author(name=name, icon_url=user.avatar_url)
         em.set_thumbnail(url=user.avatar_url)
 
         if user.id == ctx.guild.owner.id:
-            em.description += "\n:crown: This person owns the server"
+            em.description += "\n:crown: This user owns the server"
         if user.bot:
             em.description += "\n:robot: This user is a bot"
+        if user.id == self.bot.user.id:
+            em.description +="\n:wave: This user is me"
+        if is_member and user.premium_since:
+            em.description += f"\n<:nitro:808884446739693609> This user has been bosting since {human_time.fulltime(user.joined_at)}"
+
+        if user.public_flags.team_user:
+            em.description += "\n:family: This user is a team user"
+        if user.public_flags.system:
+            em.description += "\n:gear: This user is a system user"
+        if user.public_flags.verified_bot:
+            em.description += "\n:white_check_mark: This user is a verified bot"
 
         em.add_field(name=":clock3: Created", value=human_time.fulltime(user.created_at))
-        em.add_field(name=":arrow_right: Joined", value=f"{human_time.fulltime(user.joined_at)}")
 
-        for x in enumerate(sorted(ctx.guild.members, key=lambda x: x.joined_at)):
-            if x[1] == user:
-                em.add_field(name=":family: Join Position", value=x[0]+1)
-        if len(user.roles) > 1:
-            em.add_field(name="Roles", value=" ".join([role.mention for role in reversed(user.roles) if not role.is_default()]))
+        if is_member:
+            em.add_field(name=":arrow_right: Joined", value=f"{human_time.fulltime(user.joined_at)}")
+
+            sorted_members = sorted(ctx.guild.members, key=lambda x: x.joined_at)
+            for position, member in enumerate(sorted_members):
+                if member == user:
+                    break
+
+            joins = []
+            if position > 0:
+                joins.append(f"{sorted_members[position-1]}")
+
+            joins.append(f"**{user} (#{position+1})**")
+
+            if position < len(sorted_members) - 1:
+                joins.append(f"{sorted_members[position+1]}")
+
+            em.add_field(name="Join Order", value=" → ".join(joins), inline=False)
+
+            if len(user.roles) > 1:
+                em.add_field(name="Roles", value=" ".join([role.mention for role in reversed(user.roles) if not role.is_default()]))
+
+        shared = [guild for guild in self.bot.guilds if discord.utils.get(guild.members, id=user.id)]
+        if shared:
+            em.set_footer(text=f"{formats.plural(len(shared)):server} shared")
 
         await ctx.send(embed=em)
 
@@ -120,15 +172,6 @@ class Tools(commands.Cog):
             elif user.endswith(("jpeg", "webp")):
                 view_format = user[-4:]
                 user = user[:len(user)-14]
-
-        elif user.endswith(("--format png", "--format jpg", "--format jpeg", "--format webp")):
-            if user.endswith(("png", "jpg")):
-                view_format = user[-3:]
-                user = user[:len(user)-12]
-            elif user.endswith(("jpeg", "webp")):
-                view_format = user[-4:]
-                user = user[:len(user)-13]
-
         else:
             view_format = "png"
 
