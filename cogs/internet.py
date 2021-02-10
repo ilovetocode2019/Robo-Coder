@@ -406,14 +406,12 @@ class Internet(commands.Cog):
                 html = html.decode("utf-8")
                 root = etree.fromstring(html, etree.HTMLParser())
 
-            em = discord.Embed(title=profile["Username"], description="", url=f"{base_url}/profile", color=0x96c8da)
+            premium = root.find(".//span[@class='icon-premium-medium']") is not None
+            em = discord.Embed(title=f"{'<:roblox_premium:809089466056310834> ' if premium else ''}{profile['Username']}", description="", url=f"{base_url}/profile", color=0x96c8da)
 
             avatar = root.find(".//div[@class='thumbnail-holder']/span[@class='thumbnail-span-original hidden']/img")
             if avatar is not None:
                 em.set_thumbnail(url=avatar.get("src"))
-
-            if root.find(".//span[@class='icon-premium-medium']") is not None:
-                em.description += "This user has premium \n\n"
 
             about = root.find(".//span[@class='profile-about-content-text linkify']")
             if about is not None:
