@@ -300,7 +300,7 @@ class Tools(commands.Cog):
         for reaction in reactions:
             await message.add_reaction(reaction)
 
-    @commands.command(name="snowflake", description="Get the timestamp from a Discord snowflake")
+    @commands.command(name="snowstamp", description="Get the timestamp from a Discord snowflake", hidden=True)
     async def snowflake(self, ctx, *, snowflake: int):
         time = discord.utils.snowflake_time(snowflake)
         await ctx.send(human_time.format_time(time))
