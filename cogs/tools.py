@@ -12,11 +12,12 @@ import unicodedata
 import collections
 import typing
 import datetime
+import shlex
 
 from PIL import Image
 from io import BytesIO
 
-from .utils import human_time, formats
+from .utils import human_time, formats, parsers
 
 class Tools(commands.Cog):
     def __init__(self, bot):
@@ -111,9 +112,30 @@ class Tools(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.command(name="avatar", description="Get a users avatar")
-    async def avatar(self, ctx, *, user: discord.Member = None):
-        if not user:
+    @commands.command(name="avatar", description="View someone's avatar", usage="[user] [--format FORMAT]")
+    async def avatar(self, ctx, *, user = ""):    
+        if user.endswith((" --format png", " --format jpg", " --format jpeg", " --format webp")):
+            if user.endswith(("png", "jpg")):
+                view_format = user[-3:]
+                user = user[:len(user)-13]
+            elif user.endswith(("jpeg", "webp")):
+                view_format = user[-4:]
+                user = user[:len(user)-14]
+
+        elif user.endswith(("--format png", "--format jpg", "--format jpeg", "--format webp")):
+            if user.endswith(("png", "jpg")):
+                view_format = user[-3:]
+                user = user[:len(user)-12]
+            elif user.endswith(("jpeg", "webp")):
+                view_format = user[-4:]
+                user = user[:len(user)-13]
+
+        else:
+            view_format = "png"
+
+        if user:
+            user = await commands.MemberConverter().convert(ctx, user)
+        else:
             user = ctx.author
 
         async with ctx.typing():
@@ -121,9 +143,16 @@ class Tools(commands.Cog):
                 color = await self.average_image_color(user.avatar_url_as(format="png"))
             except:
                 color = discord.Embed.Empty
-        em = discord.Embed(color=color)
+
+        avatar_formats = ["png", "jpg", "webp"]
+        if user.is_avatar_animated():
+            avatar_formats.append("gif")
+
+        formats_text = [f"[{avatar_format.upper()}]({user.avatar_url_as(format=avatar_format)})" for avatar_format in avatar_formats]
+
+        em = discord.Embed(description=f"View as {formats.join(formats_text, last='or')}", color=color)
         em.set_author(name=user.display_name, icon_url=user.avatar_url)
-        em.set_image(url=user.avatar_url_as(static_format="png"))
+        em.set_image(url=user.avatar_url_as(static_format=view_format))
         await ctx.send(embed=em)
 
     @commands.command(name="charinfo", description="Get info on a character")
