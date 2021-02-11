@@ -149,15 +149,19 @@ class Tools(commands.Cog):
                     break
 
             joins = []
+            if position > 1:
+                joins.append(f"{sorted_members[position-2]}")
             if position > 0:
                 joins.append(f"{sorted_members[position-1]}")
 
             joins.append(f"**{user} (#{position+1})**")
 
             if position < len(sorted_members) - 1:
-                joins.append(f"{sorted_members[position+1]}")
+                joins.append(f"{sorted_members[position+1]})")
+            if position < len(sorted_members) - 2:
+                joins.append(f"{sorted_members[position+2]}")
 
-            em.add_field(name="Join Order", value=" → ".join(joins), inline=False)
+            em.add_field(name=":busts_in_silhouette: Join Order", value=" → ".join(joins), inline=False)
 
             if len(user.roles) > 1:
                 em.add_field(name="Roles", value=" ".join([role.mention for role in reversed(user.roles) if not role.is_default()]))
