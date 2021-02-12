@@ -174,13 +174,21 @@ class Tools(commands.Cog):
 
     @commands.command(name="avatar", description="View someone's avatar", usage="[user] [--format FORMAT]")
     async def avatar(self, ctx, *, user = ""):    
-        if user.endswith((" --format png", " --format jpg", " --format jpeg", " --format webp")):
+        if user in ("--format png", "--format jpg", "--format jpeg", "--format webp"):
+            if user.endswith(("png", "jpg")):
+                view_format = user[-3:]
+                user = ""
+            elif user.endswith(("jpeg", "webp")):
+                view_format = user[-4:]
+                user = ""
+        elif user.endswith((" --format png", " --format jpg", " --format jpeg", " --format webp")):
             if user.endswith(("png", "jpg")):
                 view_format = user[-3:]
                 user = user[:len(user)-13]
             elif user.endswith(("jpeg", "webp")):
                 view_format = user[-4:]
                 user = user[:len(user)-14]
+
         else:
             view_format = "png"
 
