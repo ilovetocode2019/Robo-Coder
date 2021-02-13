@@ -34,8 +34,32 @@ class Fun(commands.Cog):
 
     @commands.command(name="8ball", description="Ask me a question", aliases=["eightball"])
     async def eightball(self, ctx, *, question):
-        choice = random.choice(["Yes", "No", "Maybe"])
-        await ctx.send(f"> {question} \n{choice}")
+        choice = random.choice(
+            [
+                "Yes",
+                "Certainly",
+                "Obviously",
+                "Of course",
+                "For sure",
+                "Without a doubt",
+                "It's likely"
+                "No",
+                "Nope",
+                "No way"
+                "Not a change",
+                "Definitely not",
+                "Obviously not",
+                "Certinaly not",
+                "It's unlikely",
+                "Maybe",
+                "Quite possibly",
+                "There is a chance",
+                "It could go either way",
+                "It's possible",
+            ]
+        )
+
+        await ctx.send(formats.quote(ctx.message, choice, quote=question))
 
     @commands.command(name="choose", description="Choose a random option")
     async def choose(self, ctx, *options):

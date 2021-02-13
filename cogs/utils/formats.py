@@ -1,12 +1,4 @@
-class plural:
-    def __init__(self, value):
-        self.value = value
-
-    def __format__(self, format_spec):
-        if self.value == 1:
-            return f"{self.value} {format_spec}"
-        else:
-            return f"{self.value} {format_spec}s"
+import discord
 
 def join(iterable, seperator=", ", last="or"):
     if len(iterable) == 0:
@@ -17,6 +9,20 @@ def join(iterable, seperator=", ", last="or"):
         return f"{iterable[0]} and {iterable[1]}"
 
     return seperator.join(iterable[:-1]) + f"{seperator}{last} {iterable[-1]}"
+
+def quote(message, reply, *, quote=None):
+    quote = quote or message.content
+    return f"> {discord.utils.escape_mentions(quote)} \n{message.author.mention} {reply}"
+
+class plural:
+    def __init__(self, value):
+        self.value = value
+
+    def __format__(self, format_spec):
+        if self.value == 1:
+            return f"{self.value} {format_spec}"
+        else:
+            return f"{self.value} {format_spec}s"
 
 class Tabulate:
     def __init__(self):
