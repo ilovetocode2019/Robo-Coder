@@ -157,7 +157,7 @@ class Tools(commands.Cog):
             joins.append(f"**{user} (#{position+1})**")
 
             if position < len(sorted_members) - 1:
-                joins.append(f"{sorted_members[position+1]})")
+                joins.append(f"{sorted_members[position+1]}")
             if position < len(sorted_members) - 2:
                 joins.append(f"{sorted_members[position+2]}")
 
