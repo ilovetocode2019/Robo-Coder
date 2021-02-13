@@ -224,7 +224,7 @@ class Internet(commands.Cog):
     async def google(self, ctx, *, query):
         async with ctx.typing():
             params = {"safe": "on", "lr": "lang_en", "hl": "en", "q": query}
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36 Edg/88.0.705.63"}
 
             async with self.bot.session.get(f"https://google.com/search", params=params, headers=headers) as resp:
                 html = await resp.read()
@@ -384,9 +384,7 @@ class Internet(commands.Cog):
     @commands.cooldown(2, 20, commands.BucketType.user)
     async def roblox(self, ctx, username):
         async with ctx.typing():
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
-
-            async with self.bot.session.get(f"http://api.roblox.com/users/get-by-username?username={username}", headers=headers) as resp:
+            async with self.bot.session.get(f"http://api.roblox.com/users/get-by-username?username={username}") as resp:
                 if resp.status != 200:
                     return await ctx.send(f":x: Failed to find user (error code {resp.status})")
 
@@ -397,7 +395,7 @@ class Internet(commands.Cog):
                 user_id = profile["Id"]
                 base_url = f"https://www.roblox.com/users/{user_id}"
 
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36 Edg/87.0.664.60"}
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.150 Safari/537.36 Edg/88.0.705.63"}
             async with self.bot.session.get(f"{base_url}/profile", headers=headers) as resp:
                 if resp.status != 200:
                     return await ctx.send(f":x: Failed to fetch user data (error code {resp.status})")
