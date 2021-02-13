@@ -131,7 +131,7 @@ class Meta(commands.Cog):
             perms_text = "\n".join([f"- {perm.replace('_', ' ').capitalize()}" for perm in error.missing_perms])
             await ctx.send(f":x: I am missing some permissions:\n {perms_text}") 
         elif isinstance(error, commands.errors.MissingRequiredArgument):
-            await ctx.send(f":x: You are missing a argument: `{error.param.name}`")
+            await ctx.send(f":x: You are missing a required argument: `{error.param.name}`")
         elif isinstance(error, commands.UserInputError):
             await ctx.send(f":x: {error}")
         elif isinstance(error, commands.errors.CommandOnCooldown):
