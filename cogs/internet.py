@@ -6,6 +6,7 @@ import functools
 import json
 import base64
 import urllib
+import markdown
 import io
 import zlib
 import re
@@ -361,24 +362,67 @@ class Internet(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.group(name="docs", description="Search Discord.py docs", invoke_without_command=True)
-    async def docs(self, ctx, obj=None):
+    async def docs(self, ctx, *, obj=None):
         await self.do_docs(ctx, "latest", obj)
 
     @docs.command(name="python", description="Search Python docs", aliases=["py"])
-    async def docs_python(self, ctx, obj=None):
+    async def docs_python(self, ctx, *, obj=None):
         await self.do_docs(ctx, "python", obj)
 
     @docs.command(name="asyncpg", description="Search Asyncpg docs", hidden=True)
-    async def docs_asyncpg(self, ctx, obj=None):
+    async def docs_asyncpg(self, ctx, *, obj=None):
         await self.do_docs(ctx, "asyncpg", obj)
 
     @docs.command(name="pillow", descrption="Search Pillow docs", aliases=["pil"], hidden=True)
-    async def docs_pillow(self, ctx, obj=None):
+    async def docs_pillow(self, ctx, *, obj=None):
         await self.do_docs(ctx, "pillow", obj)
 
     @docs.command(name="telegram", description="Search Telegram.py docs", aliases=["telegrampy", "telegram.py", "tpy"], hidden=True)
-    async def docs_telegram(self, ctx, obj=None):
+    async def docs_telegram(self, ctx, *, obj=None):
         await self.do_docs(ctx, "tpy", obj)
+
+    @commands.command(name="discord", description="Search the Discord API docs", aliases=["api"])
+    async def discord(self, ctx, *, obj=None):
+        if not obj:
+            return await ctx.send("https://discord.com/developers/docs/intro")
+
+        async with ctx.typing():
+            if not hasattr(self.bot, "api_docs"):
+                async with self.bot.session.get("https://api.github.com/repos/discord/discord-api-docs/contents/docs") as resp:
+                    data = await resp.json()
+                    self.bot.api_docs = await self.download_api_docs(data)
+
+            html = "\n".join(self.bot.api_docs)
+            root = etree.fromstring(html, etree.HTMLParser())
+
+        # Endpoint search
+        routes = [route for route in finder(obj, root.findall(".//h2"), key=lambda t: t.text, lazy=False) if route.text.count(" % ")]
+        route = routes[0] if len(routes) else None
+
+        if route is not None:
+            name, endpoint = route.text.split(" % ")
+            method, url = endpoint.split(" ", 1)
+            url = re.sub(r"#DOCS_[^/]+/[^/]+", "", url).replace("{", "").replace("}", "")
+            path = url.split("/")
+
+            em = discord.Embed(title=name, description=" ".join(route.getnext().itertext()), url=f"https://discord.com/developers/docs/resources/{path[1][:-1]}#{name.replace(' ', '-').lower()}", color=0x96c8da)
+            em.add_field(name="Method", value=method)
+            em.add_field(name="Route", value=url)
+
+            endpoints = []
+            for route in routes[1:6]:
+                name, endpoint = route.text.split(" % ")
+                method, url = endpoint.split(" ", 1)
+                path = url.split("/")
+
+                endpoints.append(f"[{name}](https://discord.com/developers/docs/resources/{path[1][:-1]}#{name.replace(' ', '-').lower()})")
+
+            if endpoints:
+                em.add_field(name="Other Endpoints", value="\n".join(endpoints), inline=False)
+
+            return await ctx.send(embed=em)
+
+        await ctx.send(f":x: No results for `{obj}`")
 
     @commands.command(name="roblox", description="Get info on a Roblox user")
     @commands.cooldown(2, 20, commands.BucketType.user)
@@ -620,6 +664,22 @@ class Internet(commands.Cog):
                 data = await resp.json()
 
         await ctx.send(f"https://strawpoll.com/{data['content_id']}")
+
+    async def download_api_docs(self, files):
+        pages = []
+
+        for file in files:
+            if file["download_url"]:
+                async with self.bot.session.get(file["download_url"]) as resp:
+                    page = await resp.read()
+                    page = markdown.markdown(page.decode("utf-8"))
+                    pages.append(page)
+            else:
+                async with self.bot.session.get(f"https://api.github.com/repos/discord/discord-api-docs/contents/{file['path']}") as resp:
+                    data = await resp.json()
+                    pages.extend(await self.download_api_docs(data))
+
+        return pages
 
 def setup(bot):
     bot.add_cog(Internet(bot))
