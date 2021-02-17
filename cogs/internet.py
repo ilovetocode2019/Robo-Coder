@@ -381,7 +381,7 @@ class Internet(commands.Cog):
     async def docs_telegram(self, ctx, *, obj=None):
         await self.do_docs(ctx, "tpy", obj)
 
-    @commands.command(name="discord", description="Search the Discord API docs", aliases=["api"])
+    @commands.command(name="api", description="Search the Discord API docs", aliases=["discord", "dapi"])
     async def discord(self, ctx, *, obj=None):
         if not obj:
             return await ctx.send("https://discord.com/developers/docs/intro")
