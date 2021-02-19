@@ -370,14 +370,6 @@ class Internet(commands.Cog):
     async def docs_python(self, ctx, *, obj=None):
         await self.do_docs(ctx, "python", obj)
 
-    @docs.command(name="asyncpg", description="Search Asyncpg docs", hidden=True)
-    async def docs_asyncpg(self, ctx, *, obj=None):
-        await self.do_docs(ctx, "asyncpg", obj)
-
-    @docs.command(name="pillow", descrption="Search Pillow docs", aliases=["pil"], hidden=True)
-    async def docs_pillow(self, ctx, *, obj=None):
-        await self.do_docs(ctx, "pillow", obj)
-
     @docs.command(name="telegram", description="Search Telegram.py docs", aliases=["telegrampy", "telegram.py", "tpy"], hidden=True)
     async def docs_telegram(self, ctx, *, obj=None):
         await self.do_docs(ctx, "tpy", obj)
@@ -641,6 +633,8 @@ class Internet(commands.Cog):
         await ctx.send(f"https://strawpoll.com/{data['content_id']}")
 
     async def build_api_docs(self):
+        """Build the Discord API docs."""
+
         async with self.bot.session.get("https://api.github.com/repos/discord/discord-api-docs/contents/docs") as resp:
             if resp.status != 200:
                 raise RuntimeError(f"GitHub returned the Status code {resp.status}")
@@ -650,16 +644,19 @@ class Internet(commands.Cog):
 
         entries = []
         for title, page in pages.items():
+            # Search for any headers
             headers = page.xpath("//h1|//h2|//h3|//h4|//h5|//h6")
 
             for header in headers:
                 text = header.text
 
+                # Get rid of api route url
                 if "%" in text and header.tag == "h2":
                     text = text.split("%")[0].strip()
 
                 section = text
 
+                # If needed, go back until we have something that's not a h6 tag
                 if header.tag == "h6":
                     previous = header.getprevious()
                     while previous.tag not in ("h1", "h2", "h3", "h4", "h5"):
@@ -667,6 +664,7 @@ class Internet(commands.Cog):
 
                     section = f"{previous.text} {text}"
 
+                # Finish the entry
                 section = section.replace(":", "").replace(".", "").replace("-", "").replace("_", "").replace(" ", "-").lower()
                 link = f"https://discord.com/developers/{title.replace('_', '-').lower()}#{section}"
 
@@ -675,6 +673,8 @@ class Internet(commands.Cog):
         return entries
 
     async def fetch_api_docs(self, files):
+        """Fetch the Discord API docs."""
+
         pages = {}
 
         for file in files:
