@@ -13,6 +13,7 @@ import re
 import os
 import googletrans
 import dateutil.parser
+
 from lxml import etree
 from PIL import Image
 
@@ -381,48 +382,22 @@ class Internet(commands.Cog):
     async def docs_telegram(self, ctx, *, obj=None):
         await self.do_docs(ctx, "tpy", obj)
 
-    @commands.command(name="api", description="Search the Discord API docs", aliases=["discord", "dapi"])
-    async def discord(self, ctx, *, obj=None):
+    @commands.command(name="api", description="Search the Discord API docs", aliases=["dapi", "discord"])
+    async def api(self, ctx, *, obj=None):
         if not obj:
             return await ctx.send("https://discord.com/developers/docs/intro")
 
         async with ctx.typing():
             if not hasattr(self.bot, "api_docs"):
-                async with self.bot.session.get("https://api.github.com/repos/discord/discord-api-docs/contents/docs") as resp:
-                    data = await resp.json()
-                    self.bot.api_docs = await self.download_api_docs(data)
+                self.bot.api_docs = await self.build_api_docs()
 
-            html = "\n".join(self.bot.api_docs)
-            root = etree.fromstring(html, etree.HTMLParser())
+            results = finder(obj, self.bot.api_docs, key=lambda t: t[0], lazy=False)
 
-        # Endpoint search
-        routes = [route for route in finder(obj, root.findall(".//h2"), key=lambda t: t.text, lazy=False) if route.text.count(" % ")]
-        route = routes[0] if len(routes) else None
+        if not results:
+            return await ctx.send(f"Could not find anything")
 
-        if route is not None:
-            name, endpoint = route.text.split(" % ")
-            method, url = endpoint.split(" ", 1)
-            url = re.sub(r"#DOCS_[^/]+/[^/]+", "", url).replace("{", "").replace("}", "")
-            path = url.split("/")
-
-            em = discord.Embed(title=name, description=" ".join(route.getnext().itertext()), url=f"https://discord.com/developers/docs/resources/{path[1][:-1]}#{name.replace(' ', '-').lower()}", color=0x96c8da)
-            em.add_field(name="Method", value=method)
-            em.add_field(name="Route", value=url)
-
-            endpoints = []
-            for route in routes[1:6]:
-                name, endpoint = route.text.split(" % ")
-                method, url = endpoint.split(" ", 1)
-                path = url.split("/")
-
-                endpoints.append(f"[{name}](https://discord.com/developers/docs/resources/{path[1][:-1]}#{name.replace(' ', '-').lower()})")
-
-            if endpoints:
-                em.add_field(name="Other Endpoints", value="\n".join(endpoints), inline=False)
-
-            return await ctx.send(embed=em)
-
-        await ctx.send(f":x: No results for `{obj}`")
+        pages = menus.MenuPages(DocsPages(results, obj), clear_reactions_after=True)
+        await pages.start(ctx)
 
     @commands.command(name="roblox", description="Get info on a Roblox user")
     @commands.cooldown(2, 20, commands.BucketType.user)
@@ -665,19 +640,63 @@ class Internet(commands.Cog):
 
         await ctx.send(f"https://strawpoll.com/{data['content_id']}")
 
-    async def download_api_docs(self, files):
-        pages = []
+    async def build_api_docs(self):
+        async with self.bot.session.get("https://api.github.com/repos/discord/discord-api-docs/contents/docs") as resp:
+            if resp.status != 200:
+                raise RuntimeError(f"GitHub returned the Status code {resp.status}")
+
+            data = await resp.json()
+            pages = await self.fetch_api_docs(data)
+
+        entries = []
+        for title, page in pages.items():
+            headers = page.xpath("//h1|//h2|//h3|//h4|//h5|//h6")
+
+            for header in headers:
+                text = header.text
+
+                if "%" in text and header.tag == "h2":
+                    text = text.split("%")[0].strip()
+
+                section = text
+
+                if header.tag == "h6":
+                    previous = header.getprevious()
+                    while previous.tag not in ("h1", "h2", "h3", "h4", "h5"):
+                        previous = previous.getprevious()
+
+                    section = f"{previous.text} {text}"
+
+                section = section.replace(":", "").replace(".", "").replace("-", "").replace("_", "").replace(" ", "-").lower()
+                link = f"https://discord.com/developers/{title.replace('_', '-').lower()}#{section}"
+
+                entries.append((text, link))
+
+        return entries
+
+    async def fetch_api_docs(self, files):
+        pages = {}
 
         for file in files:
             if file["download_url"]:
                 async with self.bot.session.get(file["download_url"]) as resp:
-                    page = await resp.read()
-                    page = markdown.markdown(page.decode("utf-8"))
-                    pages.append(page)
+                    text = await resp.read()
+                    html = markdown.markdown(text.decode("utf-8"))
+                    page = etree.fromstring(html, etree.HTMLParser())
+
+                    path = file["path"]
+                    path = path[:-3]
+
+                    pages[path] = page
+
             else:
                 async with self.bot.session.get(f"https://api.github.com/repos/discord/discord-api-docs/contents/{file['path']}") as resp:
+                    if resp.status != 200:
+                        raise RuntimeError(f"GitHub returned the Status code {resp.status}")
+            
                     data = await resp.json()
-                    pages.extend(await self.download_api_docs(data))
+                    docs = await self.fetch_api_docs(data)
+                    pages.update(docs)
 
         return pages
 
