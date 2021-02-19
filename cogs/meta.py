@@ -67,8 +67,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         em = discord.Embed(title=f"{getattr(cog, 'emoji', '')} {cog.qualified_name}", description="\n", color=0x96c8da)
         commands = await self.filter_commands(cog.walk_commands())
         for command in commands:
-            if not command.hidden:
-                em.description += f"\n`{self.get_command_signature(command)}` {'-' if command.description else ''} {command.description}"
+            em.description += f"\n`{self.get_command_signature(command)}` {'-' if command.description else ''} {command.description}"
 
         em.description += self.bottom_text.format(bot.support_server_link)
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
@@ -96,7 +95,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             em.description += f"\nAliases: {', '.join(group.aliases)} \n"
 
         commands = await self.filter_commands(group.commands)
-        for command in group.walk_commands():
+        for command in commands:
             em.description += f"\n`{self.get_command_signature(command)}` {'-' if command.description else ''} {command.description}"
 
         em.description += self.bottom_text.format(bot.support_server_link)
