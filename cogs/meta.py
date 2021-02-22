@@ -203,14 +203,14 @@ class Meta(commands.Cog):
         if prefix in prefixes:
             return await ctx.send(":x: That prefix is already added")
 
-        if len(prefixes) >= 10:
-            return await ctx.send(":x: You cannot have more than 10 prefixes")
+        if len(prefixes) > 10:
+            return await ctx.send(":x: You cannot have more than 10 custom prefixes")
 
         prefixes.append(prefix)
         await self.bot.prefixes.add(ctx.guild.id, prefixes)
 
         await ctx.send(f":white_check_mark: Added the prefix `{prefix}`")
-    
+
     @prefix.command(name="remove", description="Remove a prefix")
     @commands.has_permissions(manage_guild=True)
     async def prefix_remove(self, ctx, *, prefix: Prefix):
@@ -222,6 +222,21 @@ class Meta(commands.Cog):
         await self.bot.prefixes.add(ctx.guild.id, prefixes)
 
         await ctx.send(f":white_check_mark: Removed the prefix `{prefix}`")
+
+    @prefix.command(name="default", description="Set a prefix as the first prefix")
+    @commands.has_permissions(manage_guild=True)
+    async def prefix_default(self, ctx, *, prefix: Prefix):
+        prefixes = self.bot.get_guild_prefixes(ctx.guild)
+        if prefix in prefixes:
+            prefixes.remove(prefix)
+
+        if len(prefixes) >= 10:
+            return await ctx.send(":x: You cannot have more than 10 prefixes")
+
+        prefixes = [prefix] + prefixes
+        await self.bot.prefixes.add(ctx.guild.id, prefixes)
+
+        await ctx.send(f":white_check_mark: Set `{prefix}` as the default prefix")
 
     @prefix.command(name="clear", description="Clear all the prefixes in this server", aliases=["reset"])
     @commands.has_permissions(manage_guild=True)
@@ -235,7 +250,7 @@ class Meta(commands.Cog):
         prefixes.pop(0)
 
         em = discord.Embed(title="Prefixes", description="\n".join(prefixes), color=0x96c8da)
-        em.set_footer(text=f"{formats.plural(len(prefixes)):prefix}")
+        em.set_footer(text=f"{formats.plural(len(prefixes), end='es'):prefix}")
         await ctx.send(embed=em)
 
     @commands.command(name="prefixes", description="View the prefixes in this server")
