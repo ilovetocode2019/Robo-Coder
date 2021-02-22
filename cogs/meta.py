@@ -13,7 +13,7 @@ import os
 import codecs
 import pathlib
 
-from .utils import errors, human_time, formats
+from .utils import errors, formats, human_time, menus
 
 class Prefix(commands.Converter):
     async def convert(self, ctx, prefix):
@@ -241,6 +241,10 @@ class Meta(commands.Cog):
     @prefix.command(name="clear", description="Clear all the prefixes in this server", aliases=["reset"])
     @commands.has_permissions(manage_guild=True)
     async def prefix_clear(self, ctx):
+        result = await menus.Confirm("Are you sure you want to clear all your prefixes?").prompt(ctx)
+        if not result:
+            return await ctx.send("Aborting")
+
         await self.bot.prefixes.add(ctx.guild.id, [])
         await ctx.send(f":white_check_mark: Removed all prefixes")
 
