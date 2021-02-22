@@ -18,30 +18,38 @@ from lxml import etree
 from PIL import Image
 
 class GoogleResultPages(menus.ListPageSource):
-    def __init__(self, data, query):
+    def __init__(self, entries, query):
+        super().__init__(entries, per_page=1)
+
+        self.entries = entries
         self.query = query
-        self.data = data
-        super().__init__(data, per_page=1)
 
     async def format_page(self, menu, entry):
         em = discord.Embed(**entry, color=0x4285F3)
         em.set_author(name=f"Results for '{self.query}'")
-        em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{len(self.data)}")
+        em.set_footer(text=f"{len(self.entries)} results | Page {menu.current_page+1}/{len(self.entries)}")
 
         return em
 
-class DocsPages(menus.ListPageSource):
-    def __init__(self, data, query):
+class DocumentationPages(menus.ListPageSource):
+    def __init__(self, entries, *, query, code=True):
+        super().__init__(entries, per_page=10)
+
+        self.entries = entries
         self.query = query
-        self.data = data
-        super().__init__(data, per_page=10)
+        self.code = code
 
     async def format_page(self, menu, entries):
         offset = menu.current_page * self.per_page
         em = discord.Embed(title=f"Results for '{self.query}'", description="", color=0x96c8da)
-        for i, v in enumerate(entries, start=offset):
-            em.description += "\n[`"+v[0]+"`]("+v[1]+")"
-        em.set_footer(text=f"{len(self.data)} results | Page {menu.current_page+1}/{int(len(self.data)/10)+1}")
+
+        for counter, entry in enumerate(entries, start=offset):
+            if self.code:
+                em.description += f"\n[`{entry[0]}`]({entry[1]})"
+            else:
+                em.description += f"\n[{entry[0]}]({entry[1]})"
+
+        em.set_footer(text=f"{len(self.entries)} results | Page {menu.current_page+1}/{int(len(self.entries)/10)+1}")
 
         return em
 
@@ -218,7 +226,7 @@ class Internet(commands.Cog):
         if not matches:
             return await ctx.send("Could not find anything")
         
-        pages = menus.MenuPages(source=DocsPages(matches, obj), clear_reactions_after=True)
+        pages = menus.MenuPages(source=DocumentationPages(matches, query=obj), clear_reactions_after=True)
         await pages.start(ctx)
 
     @commands.command(name="google", description="Search google", aliases=["g"])
@@ -388,7 +396,21 @@ class Internet(commands.Cog):
         if not results:
             return await ctx.send(f"Could not find anything")
 
-        pages = menus.MenuPages(DocsPages(results, obj), clear_reactions_after=True)
+        pages = menus.MenuPages(DocumentationPages(results, query=obj), clear_reactions_after=True)
+        await pages.start(ctx)
+
+    @commands.command(name="faq", desciption="Search the Discord.py faq")
+    async def faq(self, ctx, *, query=None):
+        if not query:
+            return await ctx.send("https://discordpy.readthedocs.io/en/latest/faq.html")
+
+        async with ctx.typing():
+            if not hasattr(self.bot, "faq_entries"):
+                self.bot.faq_entries = await self.build_faq_entries()
+
+            matches = finder(query, self.bot.faq_entries, key=lambda entry: entry[0], lazy=False)
+
+        pages = menus.MenuPages(DocumentationPages(matches, query=query, code=False), clear_reactions_after=True)
         await pages.start(ctx)
 
     @commands.command(name="roblox", description="Get info on a Roblox user")
@@ -632,8 +654,25 @@ class Internet(commands.Cog):
 
         await ctx.send(f"https://strawpoll.com/{data['content_id']}")
 
+    async def build_faq_entries(self):
+        """Builds the faq entries."""
+
+        faq_url = "https://discordpy.readthedocs.io/en/latest/faq.html"
+
+        entries = {}
+        async with self.bot.session.get(faq_url) as resp:
+            text = await resp.read()
+            text = text.decode("utf-8")
+
+            root = etree.fromstring(text, etree.HTMLParser())
+            questions = root.findall(".//div[@id='questions']/ul[@class='simple']/li/ul//a")
+            for question in questions:
+                entries["".join(question.itertext()).strip()] = f"{faq_url}{question.get('href').strip()}"
+
+        return list(entries.items())
+
     async def build_api_docs(self):
-        """Build the Discord API docs."""
+        """Builds the Discord API docs."""
 
         async with self.bot.session.get("https://api.github.com/repos/discord/discord-api-docs/contents/docs") as resp:
             if resp.status != 200:
