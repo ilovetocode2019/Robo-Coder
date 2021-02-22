@@ -533,8 +533,8 @@ class Song:
 
     @classmethod
     async def delete_alias(cls, ctx, search):
-        query = """DELETE FROM songs
-                    WHERE song_searches.search=$1;
+        query = """DELETE FROM song_searches
+                   WHERE song_searches.search=$1;
                 """
         await ctx.bot.db.execute(query, search)
 
@@ -707,13 +707,13 @@ class Music(commands.Cog):
             return await ctx.send(":x: You are not connected to a voice channel")
 
         if not ctx.author.voice:
-            raise errors.VoiceError("You are not in any voice channel")
+            return await ctx.send("You are not in any voice channel")
         elif ctx.guild.id in self.bot.players or ctx.voice_client:
-            raise errors.VoiceError("Already connected to a voice channel")
+            return await ctx.send("Already connected to a voice channel")
         elif not channel.permissions_for(ctx.me).connect:
-            raise errors.VoiceError(f":x: I don't have permissions to connect to `{channel}`")
+            return await ctx.send(f":x: I don't have permissions to connect to `{channel}`")
         elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.me.guild_permissions.move_members:
-            raise errors.VoiceError(f"I can't connect to `{channel}` because it's full")
+            return await ctx.send(f"I can't connect to `{channel}` because it's full")
 
         log.info("Attempting to connect to channel ID %s (guild ID %s)", channel.id, ctx.guild.id)
         try:
@@ -724,7 +724,7 @@ class Music(commands.Cog):
                 return
             if ctx.voice_client:
                 await ctx.voice_client.disconnect()
-            raise errors.VoiceError(f"I couldn't connect to `{channel}`")
+            return await ctx.send(f"I couldn't connect to `{channel}`")
 
         self.bot.players[ctx.guild.id] = Player(ctx, voice_client)
         player = self.bot.players[ctx.guild.id]
@@ -1241,7 +1241,12 @@ class Music(commands.Cog):
             ctx.player = player
         else:
             log.info("Connecting to voice before playing music")
-            ctx.player = await self.connect(ctx)
+            await self.connect(ctx)
+
+            if ctx.guild.id in bot.players:
+                ctx.player = player
+            else:
+                raise errors.VoiceError()
 
     @summon.before_invoke
     @pause.before_invoke
