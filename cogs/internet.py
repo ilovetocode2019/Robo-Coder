@@ -642,6 +642,10 @@ class Internet(commands.Cog):
             data = await resp.json()
             pages = await self.fetch_api_docs(data)
 
+        # The Discord API docs seem a bit hard (and weird) to parse
+        # So my code is probably a bit complicated and messy
+        # Also I found a bunch of weird edge cases
+
         entries = []
         for title, page in pages.items():
             # Search for any headers
@@ -650,19 +654,20 @@ class Internet(commands.Cog):
             for header in headers:
                 text = header.text
 
-                # Get rid of api route url
-                if "%" in text and header.tag == "h2":
-                    text = text.split("%")[0].strip()
+                # For some reason the DELETE WEBHOOK MESSAGE is a h1 tag 
+                if " % " in text and header.tag in ("h1", "h2"):
+                    text = text.split(" % ")[0]
 
                 section = text
 
-                # If needed, go back until we have something that's not a h6 tag
+                # If neessesary, go back until we have something that's a non-h6 header
                 if header.tag == "h6":
                     previous = header.getprevious()
                     while previous.tag not in ("h1", "h2", "h3", "h4", "h5"):
                         previous = previous.getprevious()
 
-                    section = f"{previous.text} {text}"
+                    text = f"Table: {text}"
+                    section = f"{previous.text} {section}"
 
                 # Finish the entry
                 section = section.replace(":", "").replace(".", "").replace("-", "").replace("_", "").replace(" ", "-").lower()
