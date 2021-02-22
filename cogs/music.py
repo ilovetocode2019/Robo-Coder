@@ -14,6 +14,7 @@ import humanize
 import random
 import traceback
 import sys
+import os
 import logging
 
 from .utils import errors, formats, human_time
@@ -325,7 +326,7 @@ class Song:
                  "uploader", "uploader_url", "date", "total_seconds", "upload_date",
                  "title", "thumbnail", "description", "duration", "timestamp_duration",
                  "tags", "url", "views", "likes", "dislikes",
-                 "stream_url", "size", "id", "plays", "created_at",
+                 "stream_url", "id", "plays", "created_at",
                  "updated_at")
 
     FFMPEG_OPTIONS = {
@@ -372,7 +373,6 @@ class Song:
         self.likes = data.get("like_count")
         self.dislikes = data.get("dislike_count")
         self.stream_url = data.get("url")
-        self.size = data.get("filesize")
 
         self.id = None
         self.plays = None
@@ -1068,7 +1068,7 @@ class Music(commands.Cog):
         play_count = sum([song.plays for song in songs])
         music_legnth = sum([song.total_seconds for song in songs])
         music_played = sum([song.total_seconds*song.plays for song in songs])
-        music_cache_size = sum([song.size for song in songs])
+        music_cache_size = sum([os.path.getsize(song.filename) for song in songs])
 
         em = discord.Embed(title="Music Stats", color=0x96c8da)
         em.add_field(name="Song Count", value=song_count)
@@ -1123,7 +1123,7 @@ class Music(commands.Cog):
         em.add_field(name="Uploader", value=f"[{song.uploader}]({song.uploader_url})")
         em.add_field(name="Song ID", value=song.song_id)
         em.add_field(name="Extractor", value=song.extractor)
-        em.add_field(name="Size", value=humanize.naturalsize(song.size, binary=True))
+        em.add_field(name="Size", value=humanize.naturalsize(os.path.getsize(song.filename), binary=True))
         em.add_field(name="Filename", value=discord.utils.escape_markdown(song.filename))
         em.add_field(name="Plays", value=song.plays)
         em.add_field(name="ID", value=song.id)
