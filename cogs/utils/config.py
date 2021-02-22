@@ -34,6 +34,7 @@ class Config:
         # Use lock to insure that we don't modify the file twice at the same time
         async with self.lock:
             self.data[str(key)] = value
+            self.dump()
 
     async def remove(self, key):
         """Safely removes a key."""
