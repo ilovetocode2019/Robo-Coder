@@ -67,7 +67,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         em = discord.Embed(title=f"{getattr(cog, 'emoji', '')} {cog.qualified_name}", description="\n", color=0x96c8da)
         commands = await self.filter_commands(cog.walk_commands())
         for command in commands:
-            em.description += f"\n`{self.get_command_signature(command)}` {'-' if command.description else ''} {command.description}"
+            em.description += f"\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
 
         em.description += self.bottom_text.format(bot.support_server_link)
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
@@ -78,7 +78,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         ctx = self.context
         bot = ctx.bot
 
-        em = discord.Embed(title=f"{command.name} {command.signature}", description=command.description or "", color=0x96c8da)
+        em = discord.Embed(title=f"{command.name} {command.signature.strip()}", description=command.description or "", color=0x96c8da)
         if command.aliases:
             em.description += f"\nAliases: {', '.join(command.aliases)}"
         em.description += self.bottom_text.format(bot.support_server_link)
@@ -90,13 +90,13 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         ctx = self.context
         bot = ctx.bot
 
-        em = discord.Embed(title=f"{group.name} {group.signature}", description=group.description or "", color=0x96c8da)
+        em = discord.Embed(title=f"{group.name} {group.signature.strip()}", description=group.description or "", color=0x96c8da)
         if group.aliases:
             em.description += f"\nAliases: {', '.join(group.aliases)} \n"
 
         commands = await self.filter_commands(group.commands)
         for command in commands:
-            em.description += f"\n`{self.get_command_signature(command)}` {'-' if command.description else ''} {command.description}"
+            em.description += f"\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
 
         em.description += self.bottom_text.format(bot.support_server_link)
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
@@ -223,7 +223,7 @@ class Meta(commands.Cog):
 
         await ctx.send(f":white_check_mark: Removed the prefix `{prefix}`")
 
-    @prefix.command(name="clear", description="Clear all the prefixes in this server")
+    @prefix.command(name="clear", description="Clear all the prefixes in this server", aliases=["reset"])
     @commands.has_permissions(manage_guild=True)
     async def prefix_clear(self, ctx):
         await self.bot.prefixes.add(ctx.guild.id, [])
