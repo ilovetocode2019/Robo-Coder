@@ -367,7 +367,7 @@ class Internet(commands.Cog):
         summary = summary.replace("==", "**")
         description = f"{summary[:1000]}{'...' if len(summary) > 1000 else ''}\n\n[Read more]({page['fullurl']})"
 
-        em = discord.Embed(title=f"{page['title']} ({page_id})", description=description, url=page["fullurl"])
+        em = discord.Embed(title=f"{page['title']} ({page_id})", description=description, url=page["fullurl"], color=0x96c8da)
         await ctx.send(embed=em)
 
     @commands.group(name="docs", description="Search Discord.py docs", invoke_without_command=True)
@@ -394,7 +394,7 @@ class Internet(commands.Cog):
             results = finder(obj, self.bot.api_docs, key=lambda t: t[0], lazy=False)
 
         if not results:
-            return await ctx.send(f"Could not find anything")
+            return await ctx.send("Could not find anything")
 
         pages = menus.MenuPages(DocumentationPages(results, query=obj), clear_reactions_after=True)
         await pages.start(ctx)
@@ -409,6 +409,9 @@ class Internet(commands.Cog):
                 self.bot.faq_entries = await self.build_faq_entries()
 
             matches = finder(query, self.bot.faq_entries, key=lambda entry: entry[0], lazy=False)
+
+        if not matches:
+            return await ctx.send("Could not find anything")
 
         pages = menus.MenuPages(DocumentationPages(matches, query=query, code=False), clear_reactions_after=True)
         await pages.start(ctx)
