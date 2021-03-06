@@ -1236,17 +1236,14 @@ class Music(commands.Cog):
     @playbin.before_invoke
     @search.before_invoke
     async def create_player(self, ctx):
-        player = self.bot.players.get(ctx.guild.id)
-        if player:
-            ctx.player = player
-        else:
-            log.info("Connecting to voice before playing music")
+        if ctx.guild.id not in self.bot.players:
+            log.info("Connecting to voice before invoking command")
             await self.connect(ctx)
 
-            if ctx.guild.id in bot.players:
-                ctx.player = player
-            else:
+            if ctx.guild.id not in self.bot.players:
                 raise errors.VoiceError()
+
+        ctx.player = self.bot.players[ctx.guild.id]
 
     @summon.before_invoke
     @pause.before_invoke
