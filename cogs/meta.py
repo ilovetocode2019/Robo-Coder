@@ -49,7 +49,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
 
         em = discord.Embed(
             title=f"{bot.user.name} Help",
-            description=f"Help for Robo Coder Bot. Use `{self.clean_prefix}help [command]` or `{self.clean_prefix}help [Category]` for more specific help. If you need more help you can join the [support server]({bot.support_server_link}).",
+            description=f"{bot.description}. Use `{self.clean_prefix}help [command]` or `{self.clean_prefix}help [Category]` for more specific help. If you need more help you can join the [support server]({bot.support_server_link}).",
             color=0x96c8da
             )
         msg = ""
@@ -171,7 +171,7 @@ class Meta(commands.Cog):
 
     @commands.group(name="uptime", description="Get the uptime", aliases=["up"], invoke_without_command=True)
     async def uptime(self, ctx):
-        await ctx.send(f"I started up {human_time.timedelta(self.bot.startup_time, accuracy=None)}")
+        await ctx.send(f"I started up {human_time.timedelta(self.bot.uptime, accuracy=None)}")
     
     @commands.command(name="invite", description="Get a link to add me to your server")
     async def invite(self, ctx):
