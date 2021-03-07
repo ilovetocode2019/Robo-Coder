@@ -247,18 +247,26 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(kick_members=True)
     @commands.has_permissions(kick_members=True)
     async def kick(self, ctx, user: discord.Member, *, reason=None):
+        can_kick = await self.can_perform_action(ctx, ctx.author, user)
+        if not can_kick:
+            return await ctx.send(":x: Cannot kick user due to the role hierarchy")
+
         if reason:
             reason = f"Kicked by {ctx.author} with reason {reason}"
         else:
             reason = f"Kicked by {ctx.author}"
 
         await user.kick(reason=reason)
-        await ctx.send(f":white_check_mark: Kicked {user}")
+        await ctx.send(f":white_check_mark: Kicked `{user}`")
 
     @commands.command(name="ban", description="Ban a member from the server")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
     async def ban(self, ctx, user: typing.Union[discord.Member, UserID], *, reason=None):
+        can_ban = isinstance(user, discord.Member) or await self.can_perform_action(ctx, ctx.author, user)
+        if not can_ban:
+            return await ctx.send(":x: Cannot ban user due to the role hierarchy")
+
         if reason:
             reason = f"Banned by {ctx.author} with reason {reason}"
         else:
@@ -266,17 +274,17 @@ class Moderation(commands.Cog):
 
         await self.delete_timer("tempban", [ctx.guild.id, user.id])
 
-        if isinstance(user, discord.User):
-            await ctx.guild.ban(user, reason=reason)
-        elif isinstance(user, discord.Member):
-            await user.ban(reason=reason)
-
-        await ctx.send(f":white_check_mark: Banned {user}")
+        await ctx.guild.ban(user, reason=reason)
+        await ctx.send(f":white_check_mark: Banned `{user}`")
 
     @commands.command(name="tempban", description="Temporarily ban a member from the server")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
     async def tempban(self, ctx, user: typing.Union[discord.Member, UserID], time: human_time.FutureTime, *, reason=None):
+        can_ban = isinstance(user, discord.Member) or await self.can_perform_action(ctx, ctx.author, user)
+        if not can_ban:
+            return await ctx.send(":x: Cannot ban user due to the role hierarchy")
+
         expires_at = time.time
         created_at = ctx.message.created_at
         delta = human_time.timedelta(expires_at, when=created_at)
@@ -293,30 +301,25 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: This feature is temporarily unavailable")
         await timers.create_timer("tempban", [ctx.guild.id, user.id], expires_at, created_at)
 
-        if isinstance(user, discord.User):
-            await ctx.guild.ban(user, reason=reason)
-        elif isinstance(user, discord.Member):
-            await user.ban(reason=reason)
-
-        await ctx.send(f":white_check_mark: Temporarily banned {user} for {delta}")
+        await ctx.guild.ban(user, reason=reason)
+        await ctx.send(f":white_check_mark: Temporarily banned `{user}` for `{delta}`")
 
     @commands.command(name="softban", description="Ban a user and unban them right away")
     @commands.bot_has_permissions(ban_members=True)
     @commands.has_permissions(ban_members=True)
     async def softban(self, ctx, user: typing.Union[discord.Member, UserID], *, reason=None):
+        can_ban = isinstance(user, discord.Member) or await self.can_perform_action(ctx, ctx.author, user)
+        if not can_ban:
+            return await ctx.send(":x: Cannot ban user due to the role hierarchy")
+
         if reason:
             reason = f"Softban by {ctx.author} with reason {reason}"
         else:
             reason = f"Softban by {ctx.author}"
 
-        if isinstance(user, discord.User):
-            await ctx.guild.ban(user, reason=reason)
-        elif isinstance(user, discord.Member):
-            await user.ban(reason=reason)
-
+        await user.ban(reason=reason)
         await ctx.guild.unban(user, reason=reason)
-
-        await ctx.send(f":white_check_mark: Softbanned {user}")
+        await ctx.send(f":white_check_mark: Softbanned `{user}`")
 
     @commands.command(name="unban", description="Temporarily ban someone from the server")
     @commands.bot_has_permissions(ban_members=True)
@@ -328,18 +331,14 @@ class Moderation(commands.Cog):
             reason = f"Unban by {ctx.author}"
 
         await ctx.guild.unban(user, reason=reason)
-        await ctx.send(f":white_check_mark: Unbanned {user}")
+        await ctx.send(f":white_check_mark: Unbanned `{user}`")
 
     @commands.group(name="mute", description="Mute a member", invoke_without_command=True)
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_messages=True)
     async def mute(self, ctx, user: discord.Member, *, reason=None):
         config = await self.get_guild_config(ctx.guild)
-
-        if not config.mute_role:
-            return await ctx.send(":x: Muted role is not set")
-        if user.id in config.muted:
-            return await ctx.send(":x: This member is already muted")
+        await self.can_perform_mute(config, ctx, ctx.author, user)
 
         if reason:
             reason = f"Mute by {ctx.author} with reason {reason}"
@@ -347,18 +346,48 @@ class Moderation(commands.Cog):
             reason = f"Mute by {ctx.author}"
 
         await user.add_roles(config.mute_role)
-        await ctx.send(f":white_check_mark: Muted {user}")
+        await ctx.send(f":white_check_mark: Muted `{user}`")
 
     @mute.group(name="role", description="View the current mute role", invoke_without_command=True)
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def mute_role(self, ctx):
         config = await self.get_guild_config(ctx.guild)
-
         if not config.mute_role:
-            return await ctx.send(":x: No mute role has been set")
+            return await ctx.send("No mute role has been set")
 
         await ctx.send(f"The mute role set is `{config.mute_role.name}` ({config.mute_role_id})")
+
+    @mute_role.command(name="create", description="Create a mute role")
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_roles=True)
+    async def mute_role_create(self, ctx, name="Muted"):
+        config = await self.get_guild_config(ctx.guild)
+
+        if config.mute_role:
+            result = await menus.Confirm("Are you sure you want to create a new mute role? All currently muted users will stay muted").prompt(ctx)
+            if not result:
+                return await ctx.send("Aborting")
+
+        reason = f"Mute role creation {ctx.author}"
+        role = await ctx.guild.create_role(name="Muted", color=0x607d8b, reason=reason)
+
+        channels = ctx.guild.text_channels + ctx.guild.categories
+        failed = 0
+
+        for channel in channels:
+            try:
+                overwrite = discord.PermissionOverwrite(send_messages=False, add_reactions=False)
+                await channel.set_permissions(role, overwrite=overwrite, reason=reason)
+            except discord.HTTPException:
+                failed += 1
+
+        await config.set_mute_role(role)
+
+        if not failed:
+            await ctx.send(f":white_check_mark: Created a mute role and set the overwrites")
+        else:
+            await ctx.send(f":white_check_mark: Created a mute role and set the overrides (failed to set the permissions for {failed}/{formats.plural(len(channels)): channel}")
 
     @mute_role.command(name="set", description="Set a mute role")
     @commands.bot_has_permissions(manage_roles=True)
@@ -374,7 +403,7 @@ class Moderation(commands.Cog):
         config = await self.get_guild_config(ctx.guild)
 
         if config.mute_role:
-            result = await menus.Confirm("A mute role is already set. Would you like to override it?").prompt(ctx)
+            result = await menus.Confirm("Are you sure you want to set a new mute role? All currently muted users will stay muted").prompt(ctx)
             if not result:
                 return await ctx.send("Aborting")
 
@@ -382,49 +411,30 @@ class Moderation(commands.Cog):
 
         await ctx.send(f":white_check_mark: Mute role set to `{role.name}` ({role.id})")
 
-    @mute_role.command(name="create", description="Create a mute role")
+    @mute_role.command(name="sync", description="Update the mute role", aliases=["update"])
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
-    async def mute_role_create(self, ctx):
-        config = await self.get_guild_config(ctx.guild)
-
-        if config.mute_role:
-            result = await menus.Confirm("A mute role is already set. Would you like to override it?").prompt(ctx)
-            if not result:
-                return await ctx.send("Aborting")
-
-        reason = f"Create mute role by {ctx.author}"
-        role = await ctx.guild.create_role(name="Muted", reason=reason)
-
-        channels = ctx.guild.text_channels + ctx.guild.categories
-        for channel in channels:
-            try:
-                overwrite = discord.PermissionOverwrite(send_messages=False, add_reactions=False)
-                await channel.set_permissions(role, overwrite=overwrite, reason=reason)
-            except discord.HTTPException:
-                pass
-
-        await config.set_mute_role(role)
-        await ctx.send(f":white_check_mark: Created a mute role and set the overwrites")
-
-    @mute_role.command(name="update", description="Update the mute role", aliases=["sync"])
-    @commands.has_permissions(manage_roles=True)
-    @commands.bot_has_permissions(manage_roles=True)
     async def mute_role_update(self, ctx):
         config = await self.get_guild_config(ctx.guild)
 
         if not config.mute_role:
             return await ctx.send(":x: No mute role to update")
 
-        reason = f"Update mute role by {ctx.author}"
+        reason = f"Mute role updation by {ctx.author}"
         channels = ctx.guild.text_channels + ctx.guild.categories
+        failed = 0
 
         for channel in channels:
             try:
                 overwrite = discord.PermissionOverwrite(send_messages=False, add_reactions=False)
                 await channel.set_permissions(config.mute_role, overwrite=overwrite, reason=reason)
             except discord.HTTPException:
-                pass
+                failed += 1
+
+        if not failed:
+            await ctx.send(f":white_check_mark: Created a mute role and set the overwrites")
+        else:
+            await ctx.send(f":white_check_mark: Created a mute role and set the overrides (failed to set the permissions for {failed}/{formats.plural(len(channels)): channel}")
 
         await ctx.send(":white_check_mark: Successfully updated mute role")
 
@@ -437,21 +447,35 @@ class Moderation(commands.Cog):
         if not config.mute_role:
             return await ctx.send(":x: No mute role to unbind")
 
-        result = await menus.Confirm("Are you sure you want to unbind the mute role?").prompt(ctx)
+        result = await menus.Confirm("Are you sure you want to unbind the mute role? All currently muted users will stay muted").prompt(ctx)
         if not result:
             return await ctx.send("Aborting")
 
         await config.set_mute_role(None)
         await ctx.send(":white_check_mark: Unbound mute role")
 
+    @mute_role.command(name="delete", description="Delete the mute role")
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_roles=True)
+    async def mute_role_delete(self, ctx):
+        config = await self.get_guild_config(ctx.guild)
+
+        if not config.mute_role:
+            return await ctx.send(":x: No mute role to delete")
+
+        result = await menus.Confirm("Are you sure you want to delete the mute role? All currently muted users will be unmuted")
+        if not result:
+            return await ctx.send("Aborting")
+
+        await config.mute_role.delete()
+        await ctx.send(":white_check_mark: Deleted mute role")
+
     @commands.command(name="unmute", description="Unmute a member")
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def unmute(self, ctx, user: typing.Union[discord.Member, int], *, reason=None):
         config = await self.get_guild_config(ctx.guild)
-
-        if not config.mute_role:
-            return await ctx.send(":x: Muted role not set")
+        await self.can_perform_mute(config, ctx, ctx.author, user)
 
         if reason:
             reason = f"Unmute by {ctx.author} with reason {reason}"
@@ -471,7 +495,67 @@ class Moderation(commands.Cog):
             reason = f"Unmute by {ctx.author}"
 
         await user.remove_roles(config.mute_role, reason=reason)
-        await ctx.send(f":white_check_mark: Unmuted {user}")
+        await ctx.send(f":white_check_mark: Unmuted `{user}`")
+
+    @commands.command(name="tempmute", description="Temporarily mute a member")
+    @commands.bot_has_permissions(manage_roles=True)
+    @commands.has_permissions(manage_roles=True)
+    async def tempmute(self, ctx, user: discord.Member, time: human_time.FutureTime, *, reason=None):
+        config = await self.get_guild_config(ctx.guild)
+        await self.can_perform_mute(config, ctx, ctx.author, user)
+
+        expires_at = time.time
+        created_at = ctx.message.created_at
+        delta = human_time.timedelta(expires_at, when=created_at)
+
+        if reason:
+            reason = f"Tempmute by {ctx.author} for {delta} with reason {reason}"
+        else:
+            reason = f"Tempmute by {ctx.author} for {delta}"
+
+        await self.delete_timer("tempmute", [ctx.guild.id, user.id])
+
+        timers = self.bot.get_cog("Timers")
+        if not timers:
+            return await ctx.send(":x: This feature is temporarily unavailable")
+        await timers.create_timer("tempmute", [ctx.guild.id, user.id], expires_at, created_at)
+
+        await user.add_roles(config.mute_role, reason=reason)
+        await ctx.send(f":white_check_mark: Temporarily muted `{user}` for `{delta}`")
+
+    @commands.command(name="selfmute", description="Mute yourself")
+    @commands.bot_has_permissions(manage_roles=True)
+    async def selfmute(self, ctx, time: human_time.FutureTime, *, reason=None):
+        config = await self.get_guild_config(ctx.guild)
+        await self.can_perform_mute(config, ctx, ctx.author, ctx.author)
+
+        expires_at = time.time
+        created_at = ctx.message.created_at
+
+        delta = expires_at-datetime.datetime.utcnow()
+        if delta > datetime.timedelta(days=1):
+            return await ctx.send(":x: You cannot mute yourself for more than a day")
+        if delta+datetime.timedelta(seconds=1) <= datetime.timedelta(minutes=5):
+            return await ctx.send(":x: You must mute yourself for at least 5 minutes")
+
+        human_delta = human_time.timedelta(expires_at, when=created_at)
+
+        if reason:
+            reason = f"Selfmute by {ctx.author} for {human_delta} with reason {reason}"
+        else:
+            reason = f"Selfmute by {ctx.author} for {human_delta}"
+
+        timers = self.bot.get_cog("Timers")
+        if not timers:
+            return await ctx.send(":x: This feature is temporarily unavailable")
+        await timers.create_timer("tempmute", [ctx.guild.id, ctx.author.id], expires_at, created_at)
+
+        result = await menus.Confirm(f"Are you sure you want to mute yourself for `{human_delta}`?").prompt(ctx)
+        if not result:
+            return await ctx.send("Aborting")
+
+        await ctx.author.add_roles(config.mute_role, reason=reason)
+        await ctx.send(f":white_check_mark: You have been muted for `{human_delta}`")
 
     @commands.command(name="muted", description="Mute a member")
     @commands.bot_has_permissions(manage_roles=True)
@@ -490,70 +574,6 @@ class Moderation(commands.Cog):
         muted = "\n".join(muted)
         muted = f"```ini\n{muted}\n```"
         await ctx.send(muted)
-
-    @commands.command(name="tempmute", description="Temporarily mute a member")
-    @commands.bot_has_permissions(manage_roles=True)
-    @commands.has_permissions(manage_roles=True)
-    async def tempmute(self, ctx, user: discord.Member, time: human_time.FutureTime, *, reason=None):
-        config = await self.get_guild_config(ctx.guild)
-        expires_at = time.time
-        created_at = ctx.message.created_at
-        delta = human_time.timedelta(expires_at, when=created_at)
-
-        if not config.mute_role:
-            return await ctx.send(":x: Muted role not set")
-
-        if reason:
-            reason = f"Tempmute by {ctx.author} for {delta} with reason {reason}"
-        else:
-            reason = f"Tempmute by {ctx.author} for {delta}"
-
-        await self.delete_timer("tempmute", [ctx.guild.id, user.id])
-
-        timers = self.bot.get_cog("Timers")
-        if not timers:
-            return await ctx.send(":x: This feature is temporarily unavailable")
-        await timers.create_timer("tempmute", [ctx.guild.id, user.id], expires_at, created_at)
-
-        await user.add_roles(config.mute_role, reason=reason)
-        await ctx.send(f":white_check_mark: Temporarily muted {user} for {delta}")
-
-    @commands.command(name="selfmute", description="Mute yourself")
-    @commands.bot_has_permissions(manage_roles=True)
-    async def selfmute(self, ctx, time: human_time.FutureTime, *, reason=None):
-        config = await self.get_guild_config(ctx.guild)
-        expires_at = time.time
-        created_at = ctx.message.created_at
-
-        delta = expires_at-datetime.datetime.utcnow()
-        if delta > datetime.timedelta(days=1):
-            return await ctx.send(":x: You cannot mute yourself for more than a day")
-        if delta+datetime.timedelta(seconds=1) <= datetime.timedelta(minutes=5):
-            return await ctx.send(":x: You must mute yourself for at least 5 minutes")
-
-        if not config.mute_role:
-            return await ctx.send(":x: Muted role not set")
-        if ctx.author.id in config.muted:
-            return await ctx.send(":x: You are already muted")
-
-        human_delta = human_time.timedelta(expires_at, when=created_at)
-
-        if reason:
-            reason = f"Selfmute by {ctx.author} for {human_delta} with reason {reason}"
-        else:
-            reason = f"Selfmute by {ctx.author} for {human_delta}"
-
-        timers = self.bot.get_cog("Timers")
-        if not timers:
-            return await ctx.send(":x: This feature is temporarily unavailable")
-        await timers.create_timer("tempmute", [ctx.guild.id, ctx.author.id], expires_at, created_at)
-
-        result = await menus.Confirm("Are you sure you want to mute yourself?").prompt(ctx)
-        if not result:
-            return await ctx.send("Aborting")
-
-        await ctx.author.add_roles(config.mute_role, reason=reason)
-        await ctx.send(f":white_check_mark: You have been muted for {human_delta}")
 
     @commands.group(name="spam", description="View the current spam prevention settings", invoke_without_command=True)
     @commands.has_permissions(manage_guild=True)
@@ -620,13 +640,25 @@ class Moderation(commands.Cog):
         detector.spammers.pop(user.id)
         await ctx.send(f":white_check_mark: Reset automatic mute time for {user}")
 
-    @commands.command(name="purge", description="Purge messages from a channel", usage="[limit=100]")
+    @commands.command(name="purge", description="Purge messages from a channel", usage="[limit]")
     @commands.has_permissions(manage_messages=True)
     @commands.bot_has_permissions(manage_messages=True)
-    async def purge(self, ctx, limit: typing.Optional[int] = 100, *, flags = None):
+    async def purge(self, ctx, limit: typing.Optional[int], *, flags = None):
+        """[limit] [--or OR=False] [--not NOT=False]
+           [--users USERS] [--starts STARTS] [--ends ENDS] [--contains CONTAINS]
+           [--emojis EMOJIS=False] [--reactions REACTIONS=False] [--files FILES=False] [--embeds EMBEDS=False] [--bots BOTS=False]
+           [--before BEFORE] [--after AFTER]
+        """
+
         if not ctx.guild.chunked:
             async with ctx.typing():
                 await ctx.guild.chunk(cache=True)
+
+        if not limit:
+            limit = 100
+            confirm = await menus.Confirm(f"Are you sure you want to delete up to {limit} messages?").prompt(ctx)
+            if not confirm:
+                return await ctx.send("Aborting")
 
         if flags:
             parser = ArgumentParser()
@@ -634,16 +666,17 @@ class Moderation(commands.Cog):
             parser.add_argument("--or", action="store_true", dest="_or")
             parser.add_argument("--not", action="store_true", dest="_not")
 
-            parser.add_argument("--user", nargs="+")
-            parser.add_argument("--contains", nargs="+")
+            parser.add_argument("--users", nargs="+")
             parser.add_argument("--starts", nargs="+")
             parser.add_argument("--ends", nargs="+")
+            parser.add_argument("--contains", nargs="+")
 
-            parser.add_argument("--emoji", action="store_true")
-            parser.add_argument("--bot", action="store_true")
-            parser.add_argument("--embeds", action="store_true")
-            parser.add_argument("--files", action="store_true")
+            parser.add_argument("--emojis", action="store_true")
             parser.add_argument("--reactions", action="store_true")
+            parser.add_argument("--files", action="store_true")
+            parser.add_argument("--embeds", action="store_true")
+            parser.add_argument("--bots", action="store_true")
+
             parser.add_argument("--after")
             parser.add_argument("--before")
 
@@ -696,6 +729,12 @@ class Moderation(commands.Cog):
                     after = await commands.MessageConverter().convert(ctx, args.after)
                 except commands.BadArgument as exc:
                     return await ctx.send(f":x: {exc}")
+
+                limit = 2000
+                confirm = await menus.Confirm(f"Are you sure you want to delete up to {limit} messages?").prompt(ctx)
+                if not confirm:
+                    return await ctx.send("Aborting")
+
             else:
                 after = None
 
@@ -727,20 +766,6 @@ class Moderation(commands.Cog):
         deleted = await method(ctx, limit+1)
         await ctx.send(f":white_check_mark: Deleted {formats.plural(len(deleted)):message}", delete_after=5)
 
-    async def basic_cleanup(self, ctx, limit):
-        deleted = []
-        async for message in ctx.history(limit=limit):
-            if message.author.id == self.bot.user.id:
-                await message.delete()
-                deleted.append(message)
-        return deleted
-
-    async def complex_cleanup(self, ctx, limit):
-        prefixes = self.bot.guild_prefixes[str(ctx.guild.id)]
-        prefixes.append(self.bot.user.mention)
-        deleted = await ctx.channel.purge(limit=limit, check=lambda message: message.author.id == self.bot.user.id or message.content.startswith(tuple(prefixes)))
-        return deleted
-
     @cache.cache()
     async def get_guild_config(self, guild):
         query = """SELECT *
@@ -760,6 +785,31 @@ class Moderation(commands.Cog):
             }
 
         return GuildConfig.from_record(dict(record), self.bot)
+
+    async def basic_cleanup(self, ctx, limit):
+        deleted = []
+        async for message in ctx.history(limit=limit):
+            if message.author.id == self.bot.user.id:
+                await message.delete()
+                deleted.append(message)
+        return deleted
+
+    async def complex_cleanup(self, ctx, limit):
+        prefixes = self.bot.guild_prefixes[str(ctx.guild.id)]
+        prefixes.append(self.bot.user.mention)
+        deleted = await ctx.channel.purge(limit=limit, check=lambda message: message.author.id == self.bot.user.id or message.content.startswith(tuple(prefixes)))
+        return deleted
+
+    async def can_perform_action(self, ctx, user, target):
+        return (user == ctx.guild.owner) or (user.top_role > target.top_role and target != ctx.guild.owner)
+
+    async def can_perform_mute(self, config, ctx, user, target):
+        if not config.mute_role:
+            raise commands.BadArgument("No mute role has been set")
+        if config.mute_role > ctx.me.top_role:
+            raise commands.BadArgument("The mute role is higher than my highest role")
+        if config.mute_role > user.top_role:
+            raise commands.BadArgument("The mute role is higher than your highest role")
 
     async def delete_timer(self, event, data):
         timers = self.bot.get_cog("Timers")
