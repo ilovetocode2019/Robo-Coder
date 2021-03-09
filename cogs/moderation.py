@@ -654,12 +654,6 @@ class Moderation(commands.Cog):
             async with ctx.typing():
                 await ctx.guild.chunk(cache=True)
 
-        if not limit:
-            limit = 100
-            confirm = await menus.Confirm(f"Are you sure you want to delete up to {limit} messages?").prompt(ctx)
-            if not confirm:
-                return await ctx.send("Aborting")
-
         if flags:
             parser = ArgumentParser()
 
@@ -670,6 +664,8 @@ class Moderation(commands.Cog):
             parser.add_argument("--starts", nargs="+")
             parser.add_argument("--ends", nargs="+")
             parser.add_argument("--contains", nargs="+")
+            parser.add_argument("--after")
+            parser.add_argument("--before")
 
             parser.add_argument("--emojis", action="store_true")
             parser.add_argument("--reactions", action="store_true")
@@ -677,19 +673,16 @@ class Moderation(commands.Cog):
             parser.add_argument("--embeds", action="store_true")
             parser.add_argument("--bots", action="store_true")
 
-            parser.add_argument("--after")
-            parser.add_argument("--before")
-
             try:
                 args = parser.parse_args(shlex.split(flags))
             except Exception as e:
                 return await ctx.send(str(e))
 
             checks = []
-            if args.user:
+            if args.users:
                 users = []
                 converter = commands.MemberConverter()
-                for arg in args.user:
+                for arg in args.users:
                     try:
                         user = await converter.convert(ctx, arg)
                         users.append(user)
@@ -704,10 +697,10 @@ class Moderation(commands.Cog):
             if args.ends:
                 checks.append(lambda message: any(message.endswith(end) for end in args.ends))
 
-            if args.emoji:
+            if args.emojis:
                 regex = re.compile("<a?:\w+:\d+>")
                 checks.append(lambda message: regex.search(message.content))
-            if args.bot:
+            if args.bots:
                 checks.append(lambda message: message.author.bot)
             if args.embeds:
                 checks.append(lambda message: len(message.embeds) != 0)
@@ -745,6 +738,12 @@ class Moderation(commands.Cog):
                     return not result
                 else:
                     return result
+
+        if not limit:
+            limit = 100
+            confirm = await menus.Confirm(f"Are you sure you want to delete up to {limit} messages?").prompt(ctx)
+            if not confirm:
+                return await ctx.send("Aborting")
 
         if flags:
             deleted = await ctx.channel.purge(limit=limit, before=before, after=after, check=check)
