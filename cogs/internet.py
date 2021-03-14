@@ -355,26 +355,27 @@ class Internet(commands.Cog):
 
                 root = etree.fromstring(html, etree.HTMLParser())
 
-            # Get all the search results and filter out the bad ones
-            results = [result.find(".//div[@class='yuRUbf']/a") for result in root.findall(".//div[@class='g']")]
-            results = [result for result in results if result is not None]
-            divs = root.findall(".//div[@class='IsZvec']")
+            # Search results
+            results = [result.find(".//div[@class='yuRUbf']/a") for result in root.findall(".//div[@class='g']") if result is not None]
+            previews = root.findall(".//div[@class='IsZvec']")
 
             if not results:
                 return await ctx.send(":x: I couldn't find any results for that query")
 
             entries = []
 
-            # Search results
+            # Results formatting
             for counter, result in enumerate(results):
-                span = result.find(".//h3[@class='LC20lb DKV0Md']")
-                cite = result.find(".//div/cite")
-                description = divs[counter].find(".//span[@class='aCOpRe']/span")
-
                 href = result.get("href")
+                span = result.find(".//h3[@class='LC20lb DKV0Md']")
+
+                cite = result.find(".//div/cite")
                 site = f'`{cite.text}`' if cite is not None else ''
 
-                entries.append({"title": span.text, "description":  f"`{site}` \n\n{' '.join(description.itertext()) if description is not None else ''}", "url": href})
+                preview = previews[counter].find(".//span[@class='aCOpRe']/span")
+                preview = " ".join(preview.itertext()) if preview else None
+
+                entries.append({"title": span.text, "description":  f"`{site}` \n\n{preview or 'No description available for this page'}", "url": href})
 
             # Calculator card
             calculator = root.find(".//div[@class='tyYmIf']")
