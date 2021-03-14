@@ -356,7 +356,8 @@ class Internet(commands.Cog):
                 root = etree.fromstring(html, etree.HTMLParser())
 
             # Search results
-            results = [result.find(".//div[@class='yuRUbf']/a") for result in root.findall(".//div[@class='g']") if result is not None]
+            results = [g.find(".//div[@class='yuRUbf']/a") for g in root.findall(".//div[@class='g']")]
+            results = [result for result in results if result is not None] 
             previews = root.findall(".//div[@class='IsZvec']")
 
             if not results:
@@ -367,15 +368,14 @@ class Internet(commands.Cog):
             # Results formatting
             for counter, result in enumerate(results):
                 href = result.get("href")
-                span = result.find(".//h3[@class='LC20lb DKV0Md']")
+                h3 = result.find(".//h3[@class='LC20lb DKV0Md']")
 
                 cite = result.find(".//div/cite")
-                site = f'`{cite.text}`' if cite is not None else ''
+                site = f"`{cite.text}`" if cite is not None else ""
 
                 preview = previews[counter].find(".//span[@class='aCOpRe']/span")
-                preview = " ".join(preview.itertext()) if preview else None
-
-                entries.append({"title": span.text, "description":  f"`{site}` \n\n{preview or 'No description available for this page'}", "url": href})
+                preview = " ".join(preview.itertext()) if preview is not None else ""
+                entries.append({"title": h3.text, "description":  f"`{site}` \n\n{preview or 'No description available for this page'}", "url": href})
 
             # Calculator card
             calculator = root.find(".//div[@class='tyYmIf']")
@@ -406,10 +406,10 @@ class Internet(commands.Cog):
             if currency_converter is not None:
                 src_name = currency_converter.find(".//tr/td/div[@class='J8cLR']/select[@class='l84FKc R9zNe vk_bk Uekwlc']/option[@selected='1']")
                 dest_name = currency_converter.find(".//tr/td/div[@class='J8cLR']/select[@class='NKvwhd R9zNe vk_bk Uekwlc']/option[@selected='1']")
-                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 src = currency_converter.find(".//tr/td/input[@class='ZEB7Fb vk_gy vk_sh Hg3mWc']")
                 dest = currency_converter.find(".//tr/td/input[@class='a61j6 vk_gy vk_sh Hg3mWc']")
+                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title="Currency", color=0x4285F3)
                 em.add_field(name=f"{src_name.text} ({src_name.get('value')})", value=src.get("value"))
@@ -420,17 +420,17 @@ class Internet(commands.Cog):
             # Translator card
             translator = root.find(".//div[@class='tw-src-ltr']")
             if translator is not None:
-                langs = root.find(".//div[@class='pcCUmf vCOSGb']")
-                src_language = langs.find(".//div[@class='j1iyq hide-focus-ring']/span[@class='source-language']")
-                dest_language = langs.find(".//div[@class='j1iyq hide-focus-ring']/span[@class='target-language']")
+                languages = root.find(".//div[@class='pcCUmf vCOSGb']")
+                src_lang = languages.find(".//div[@class='hhB0V']/div[@class='j1iyq']/span[@class='source-language']")
+                dest_lang = languages.find(".//div[@class='hhB0V']/div[@class='j1iyq']/span[@class='target-language']")
 
                 src = translator.find(".//pre[@id='tw-source-text']/span")
                 dest = translator.find(".//pre[@id='tw-target-text']/span")
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title="Translator", color=0x4285F3)
-                em.add_field(name=src_language.text, value=src.text)
-                em.add_field(name=dest_language.text, value=dest.text)
+                em.add_field(name=src_lang.text, value=src.text)
+                em.add_field(name=dest_lang.text, value=dest.text)
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
