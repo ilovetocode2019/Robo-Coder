@@ -483,8 +483,7 @@ class Moderation(commands.Cog):
             reason = f"Unmute by {ctx.author}"
 
         if isinstance(user, int):
-            await config.unmute_member(discord.Object(id=user))
-            return await ctx.send(f":white_check_mark: Unmuted user with ID of {user}")
+            user = discord.Object(id=user)
 
         if user.id not in config.muted:
             return await ctx.send(":x: This member is not muted")
@@ -495,7 +494,11 @@ class Moderation(commands.Cog):
             reason = f"Unmute by {ctx.author}"
 
         await user.remove_roles(config.mute_role, reason=reason)
-        await ctx.send(f":white_check_mark: Unmuted `{user}`")
+
+        if isinstance(user, discord.Member):
+            await ctx.send(f":white_check_mark: Unmuted `{user}`")
+        else:
+            await ctx.send(f":white_check_mark: Unmuted a user with an ID of {user.id}")
 
     @commands.command(name="tempmute", description="Temporarily mute a member")
     @commands.bot_has_permissions(manage_roles=True)
