@@ -401,6 +401,22 @@ class Internet(commands.Cog):
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
+            # Currency card
+            currency_converter = root.find(".//table[@class='qzNNJ']")
+            if currency_converter is not None:
+                src_name = currency_converter.find(".//tr/td/div[@class='J8cLR']/select[@class='l84FKc R9zNe vk_bk Uekwlc']/option[@selected='1']")
+                dest_name = currency_converter.find(".//tr/td/div[@class='J8cLR']/select[@class='NKvwhd R9zNe vk_bk Uekwlc']/option[@selected='1']")
+                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
+                src = currency_converter.find(".//tr/td/input[@class='ZEB7Fb vk_gy vk_sh Hg3mWc']")
+                dest = currency_converter.find(".//tr/td/input[@class='a61j6 vk_gy vk_sh Hg3mWc']")
+
+                em = discord.Embed(title="Currency", color=0x4285F3)
+                em.add_field(name=f"{src_name.text} ({src_name.get('value')})", value=src.get("value"))
+                em.add_field(name=f"{dest_name.text} ({dest_name.get('value')})", value=dest.get("value"))
+                em.add_field(name="Search Results", value=search_results, inline=False)
+                return await ctx.send(embed=em)
+
             # Translator card
             translator = root.find(".//div[@class='tw-src-ltr']")
             if translator is not None:
