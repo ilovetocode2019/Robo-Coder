@@ -366,10 +366,7 @@ class Internet(commands.Cog):
 
             # Search results
             for counter, result in enumerate(results):
-                span = result.find(".//h3[@class='LC20lb DKV0Md']/span")
-                if span is None:
-                    span = result.find(".//h3[@class='LC20lb DKV0Md']/div[@class='ellip']/span")
-
+                span = result.find(".//h3[@class='LC20lb DKV0Md']")
                 cite = result.find(".//div/cite")
                 description = divs[counter].find(".//span[@class='aCOpRe']/span")
 
