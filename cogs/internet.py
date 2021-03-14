@@ -434,6 +434,20 @@ class Internet(commands.Cog):
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
+            # Definition card
+            definer = root.find(".//div[@class='WI9k4c']")
+            if definer:
+                word = definer.find(".//div[@class='RjReFf jY7QFf']/div[@class='DgZBFd XcVN5d frCXef']/span")
+                pronounciation = definer.find(".//div[@class='S23sjd g30o5d']")
+                conjunction = root.find(".//div[@class='pgRvse vdBwhd ePtbIe']/i/span")
+                examples = [f"{counter+1}. {example.text}" for counter, example in enumerate(root.findall(".//div[@class='L1jWkf h3TRxf']/div/span"))]
+
+                em = discord.Embed(title="Definition", description=f"{word.text} `{''.join(pronounciation.itertext())}`", color=0x4285F3)
+                em.add_field(name="Examples", value="\n".join(examples))
+                em.add_field(name="Conjunction", value=conjunction.text)
+
+                return await ctx.send(embed=em)
+
         pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
         await pages.start(ctx)
 
