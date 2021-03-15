@@ -377,7 +377,7 @@ class Internet(commands.Cog):
                 preview = " ".join(preview.itertext()) if preview is not None else ""
                 entries.append({"title": h3.text, "description":  f"`{site}` \n\n{preview or 'No description available for this page'}", "url": href})
 
-            # Calculator card
+            # Calculation card
             calculator = root.find(".//div[@class='tyYmIf']")
             if calculator is not None:
                 equation = calculator.find(".//span[@class='vUGUtc']")
@@ -388,7 +388,7 @@ class Internet(commands.Cog):
                 em.add_field(name="Search Results", value=search_results)
                 return await ctx.send(embed=em)
 
-            # Converter card
+            # Conversion card
             converter = root.find(".//div[@class='vk_c card obcontainer card-section']")
             if converter is not None:
                 src, dest = converter.findall(".//input[@class='vXQmIe gsrt']")
@@ -417,7 +417,7 @@ class Internet(commands.Cog):
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
-            # Translator card
+            # Translation card
             translator = root.find(".//div[@class='tw-src-ltr']")
             if translator is not None:
                 languages = root.find(".//div[@class='pcCUmf vCOSGb']")
@@ -436,16 +436,41 @@ class Internet(commands.Cog):
 
             # Definition card
             definer = root.find(".//div[@class='WI9k4c']")
-            if definer:
+            if definer is not None:
                 word = definer.find(".//div[@class='RjReFf jY7QFf']/div[@class='DgZBFd XcVN5d frCXef']/span")
                 pronounciation = definer.find(".//div[@class='S23sjd g30o5d']")
                 conjunction = root.find(".//div[@class='pgRvse vdBwhd ePtbIe']/i/span")
+
                 examples = [f"{counter+1}. {example.text}" for counter, example in enumerate(root.findall(".//div[@class='L1jWkf h3TRxf']/div/span"))]
+                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title="Definition", description=f"{word.text} `{''.join(pronounciation.itertext())}`", color=0x4285F3)
                 em.add_field(name="Examples", value="\n".join(examples))
                 em.add_field(name="Conjunction", value=conjunction.text)
+                em.add_field(name="Search Results", value=search_results, inline=False)
+                return await ctx.send(embed=em)
 
+            # Wheather card
+            weather = root.find(".//div[@class='nawv0d']")
+            if weather is not None:
+                image = weather.find(".//div[@class='UQt4rd']/img[@class='wob_tci']")
+                temperature_f = weather.find(".//div[@class='UQt4rd']/div[@class='Ab33Nc']/div/div[@class='vk_bk TylWce']/span[@class='wob_t TVtOme']")
+                temperature_c = weather.find(".//div[@class='UQt4rd']/div[@class='Ab33Nc']/div/div[@class='vk_bk TylWce']/span[@class='wob_t']")
+
+                details = weather.find(".//div[@class='UQt4rd']/div[@class='wtsRwe']")
+                precipitation = details.find(".//div/span[@id='wob_pp']")
+                humidity = details.find(".//div/span[@id='wob_hm']")
+                wind = details.find(".//div/span[@class='wob_t']")
+
+                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
+                em = discord.Embed(title="Weather", description=image.get("alt"), color=0x4285F3)
+                em.add_field(name="Temperature", value=f"{temperature_f.text}°F | {temperature_c.text}°C", inline=False)
+                em.add_field(name="Precipitation", value=precipitation.text)
+                em.add_field(name="Humidity", value=humidity.text)
+                em.add_field(name="Wind", value=wind)
+                em.add_field(name="Search Results", value=search_results)
+                em.set_thumbnail(url=f"https:{image.get('src')}")
                 return await ctx.send(embed=em)
 
         pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
