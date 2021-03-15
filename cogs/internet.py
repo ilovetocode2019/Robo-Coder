@@ -417,6 +417,15 @@ class Internet(commands.Cog):
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
+            # Generic information card
+            infromation = root.find(".//div[@class='Z0LcW XcVN5d AZCkJd']")
+            if infromation is not None:
+                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
+                em = discord.Embed(title="Information", description=infromation.text, color=0x4285F3)
+                em.add_field(name="Search Results", value=search_results)
+                return await ctx.send(embed=em)
+
             # Translation card
             translator = root.find(".//div[@class='tw-src-ltr']")
             if translator is not None:
