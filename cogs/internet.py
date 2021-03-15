@@ -472,7 +472,8 @@ class Internet(commands.Cog):
                 pronounciation = definer.find(".//div[@class='S23sjd g30o5d']")
                 conjunction = root.find(".//div[@class='pgRvse vdBwhd ePtbIe']/i/span")
 
-                examples = [f"{counter+1}. {example.text}" for counter, example in enumerate(root.findall(".//div[@class='L1jWkf h3TRxf']/div/span"))]
+                raw_examples = [raw_example for raw_example in root.findall(".//div[@class='L1jWkf h3TRxf']/div/span") if raw_example.text]
+                examples = [f"{counter+1}. {example.text}" for counter, example in enumerate(raw_examples)]
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title="Definition", description=f"{word.text} `{''.join(pronounciation.itertext())}`", color=0x4285F3)
