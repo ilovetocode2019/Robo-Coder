@@ -423,7 +423,7 @@ class Internet(commands.Cog):
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title="Information", description=infromation.text, color=0x4285F3)
-                em.add_field(name="Search Results", value=search_results)
+                em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
             # Translation card
@@ -440,6 +440,22 @@ class Internet(commands.Cog):
                 em = discord.Embed(title="Translator", color=0x4285F3)
                 em.add_field(name=src_lang.text, value=src.text)
                 em.add_field(name=dest_lang.text, value=dest.text)
+                em.add_field(name="Search Results", value=search_results, inline=False)
+                return await ctx.send(embed=em)
+
+            # Time in card
+            time_in = root.find(".//div[@class='vk_c vk_gy vk_sh card-section sL6Rbf R36Kq']")
+            if time_in is not None:
+                time = time_in.find(".//div[@class='gsrt vk_bk dDoNo FzvWSb XcVN5d DjWnwf']")
+                location = time_in.find(".//span[@class='vk_gy vk_sh']")
+                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
+                if time is not None:
+                    em = discord.Embed(title="Time", description=f"{location.text} — {time.text}", color=0x4285F3)
+                if time is None:
+                    time = time_in.find(".//div")
+                    em = discord.Embed(title="Time", description="".join(time.itertext()), color=0x4285F3)
+
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
