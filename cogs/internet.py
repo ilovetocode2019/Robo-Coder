@@ -346,6 +346,9 @@ class Internet(commands.Cog):
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0"}
 
             async with self.bot.session.get(f"https://google.com/search", params=params, headers=headers) as resp:
+                if resp.status != 200:
+                    return await ctx.send(f":x: Failed to search google (status code {resp.status_code})")
+
                 html = await resp.read()
                 html = html.decode("utf-8")
 
@@ -444,18 +447,21 @@ class Internet(commands.Cog):
                 return await ctx.send(embed=em)
 
             # Time in card
-            time_in = root.find(".//div[@class='vk_c vk_gy vk_sh card-section sL6Rbf R36Kq']")
+            time_in = root.find(".//div[@class='vk_c vk_gy vk_sh card-section sL6Rbf R36Kq']/div[@class='gsrt vk_bk dDoNo FzvWSb XcVN5d DjWnwf']")
             if time_in is not None:
-                time = time_in.find(".//div[@class='gsrt vk_bk dDoNo FzvWSb XcVN5d DjWnwf']")
-                location = time_in.find(".//span[@class='vk_gy vk_sh']")
+                location = root.find(".//div[@class='vk_c vk_gy vk_sh card-section sL6Rbf R36Kq']/span[@class='vk_gy vk_sh']")
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
-                if time is not None:
-                    em = discord.Embed(title="Time", description=f"{location.text} — {time.text}", color=0x4285F3)
-                if time is None:
-                    time = time_in.find(".//div")
-                    em = discord.Embed(title="Time", description="".join(time.itertext()), color=0x4285F3)
+                em = discord.Embed(title="Time", description=f"{location.text} — {time_in.text}", color=0x4285F3)
+                em.add_field(name="Search Results", value=search_results, inline=False)
+                return await ctx.send(embed=em)
 
+            # Time conversion card
+            time_converter = root.find(".//div[@class='vk_c vk_gy vk_sh card-section sL6Rbf R36Kq']/div")
+            if time_converter is not None:
+                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
+                em = discord.Embed(title="Time Converter", description="".join(time_converter.itertext()), color=0x4285F3)
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
@@ -509,6 +515,9 @@ class Internet(commands.Cog):
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0"}
 
             async with self.bot.session.get(f"https://clients5.google.com/translate_a/t", params=params, headers=headers) as resp:
+                if resp.status != 200:
+                    return await ctx.send(f":x: Failed to translate (status code {resp.status_code})")
+
                 data = await resp.json()
 
             sentence = data["sentences"][0]
