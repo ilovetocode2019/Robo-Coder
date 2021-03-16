@@ -349,8 +349,8 @@ class Internet(commands.Cog):
                 if resp.status != 200:
                     return await ctx.send(f":x: Failed to search google (status code {resp.status_code})")
 
-                html = await resp.read()
-                html = html.decode("utf-8")
+                text = await resp.read()
+                html = text.decode("utf-8")
 
                 # Debugging
                 with open("google.html", "w", encoding="utf-8") as file:
@@ -641,22 +641,27 @@ class Internet(commands.Cog):
                 if resp.status != 200:
                     return await ctx.send(f":x: Failed to fetch user data (error code {resp.status})")
 
-                html = await resp.read()
-                html = html.decode("utf-8")
+                text = await resp.read()
+                html = text.decode("utf-8")
+
+                # Debugging
+                with open("roblox.html", "w", encoding="utf-8") as file:
+                    file.write(html)
+
                 root = etree.fromstring(html, etree.HTMLParser())
 
-            premium = root.find(".//span[@class='icon-premium-medium']") is not None
-            em = discord.Embed(title=f"{'<:roblox_premium:809089466056310834> ' if premium else ''}{profile['Username']}", description="", url=f"{base_url}/profile", color=0x96c8da)
+            premium = root.find(".//span[@class='icon-premium-medium']")
+            about = root.find(".//span[@class='profile-about-content-text linkify']")
+            details = root.find(".//div[@class='hidden']")
 
-            avatar = root.find(".//div[@class='thumbnail-holder']/span[@class='thumbnail-span-original hidden']/img")
+            em = discord.Embed(title=f"{'<:roblox_premium:809089466056310834> ' if premium is not None else ''}{profile['Username']}", description="", url=f"{base_url}/profile", color=0x96c8da)
+
+            avatar = root.find(".//span[@class='thumbnail-span-original hidden']/img")
             if avatar is not None:
                 em.set_thumbnail(url=avatar.get("src"))
 
-            about = root.find(".//span[@class='profile-about-content-text linkify']")
             if about is not None:
                 em.description += about.text
-
-            details = root.find(".//div[@class='hidden']")
 
             friends_count = details.get("data-friendscount")
             if friends_count:
@@ -676,12 +681,6 @@ class Internet(commands.Cog):
             status = details.get("data-statustext")
             if status:
                 em.add_field(name="Status", value=status, inline=False)
-
-            stats = root.findall(".//ul[@class='profile-stats-container']/li")
-            for stat in stats:
-                name = stat[0].text
-                value = stat[1].text
-                em.add_field(name=name, value=value)
 
         await ctx.send(embed=em)
 
