@@ -653,10 +653,10 @@ class Internet(commands.Cog):
             premium = root.find(".//span[@class='icon-premium-medium']")
             about = root.find(".//span[@class='profile-about-content-text linkify']")
             details = root.find(".//div[@class='hidden']")
+            avatar = root.find(".//span[@class='thumbnail-span-original hidden']/img")
 
             em = discord.Embed(title=f"{'<:roblox_premium:809089466056310834> ' if premium is not None else ''}{profile['Username']}", description="", url=f"{base_url}/profile", color=0x96c8da)
 
-            avatar = root.find(".//span[@class='thumbnail-span-original hidden']/img")
             if avatar is not None:
                 em.set_thumbnail(url=avatar.get("src"))
 
