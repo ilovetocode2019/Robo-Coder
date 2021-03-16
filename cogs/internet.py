@@ -396,72 +396,75 @@ class Internet(commands.Cog):
             if converter is not None:
                 src, dest = converter.findall(".//input[@class='vXQmIe gsrt']")
                 units = converter.findall(".//option[@selected='1']")
+                formula = converter.find(".//div[@class='bjhkR']")
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
-                em = discord.Embed(title=f"Unit Converter ({units[0].text})", color=0x4285F3)
-                em.add_field(name=units[1].text, value=src.get("value"))
-                em.add_field(name=units[2].text, value=dest.get("value"))
+                em = discord.Embed(title=f"{units[0].text} Converter", color=0x4285F3)
+                em.add_field(name=units[1].text.title(), value=src.get("value"))
+                em.add_field(name=units[2].text.title(), value=dest.get("value"))
+                em.add_field(name="Formula", value=formula.text.capitalize())
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
             # Currency card
             currency_converter = root.find(".//table[@class='qzNNJ']")
             if currency_converter is not None:
-                src_name = currency_converter.find(".//tr/td/div[@class='J8cLR']/select[@class='l84FKc R9zNe vk_bk Uekwlc']/option[@selected='1']")
-                dest_name = currency_converter.find(".//tr/td/div[@class='J8cLR']/select[@class='NKvwhd R9zNe vk_bk Uekwlc']/option[@selected='1']")
+                src_name, dest_name = currency_converter.findall(".//option[@selected='1']")
+                src = currency_converter.find(".//input[@class='ZEB7Fb vk_gy vk_sh Hg3mWc']")
+                dest = currency_converter.find(".//input[@class='a61j6 vk_gy vk_sh Hg3mWc']")
 
-                src = currency_converter.find(".//tr/td/input[@class='ZEB7Fb vk_gy vk_sh Hg3mWc']")
-                dest = currency_converter.find(".//tr/td/input[@class='a61j6 vk_gy vk_sh Hg3mWc']")
+                time = root.find(".//div[@class='hqAUc']/span")
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
-                em = discord.Embed(title="Currency", color=0x4285F3)
+                em = discord.Embed(title="Currency Converter", description=time.text.replace("·", ""), color=0x4285F3)
                 em.add_field(name=f"{src_name.text} ({src_name.get('value')})", value=src.get("value"))
                 em.add_field(name=f"{dest_name.text} ({dest_name.get('value')})", value=dest.get("value"))
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
             # Generic information card
-            infromation = root.find(".//div[@class='Z0LcW XcVN5d AZCkJd']")
-            if infromation is not None:
+            information = root.find(".//div[@class='Z0LcW XcVN5d AZCkJd']")
+            if information is not None:
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
-                em = discord.Embed(title="Information", description=infromation.text, color=0x4285F3)
+                em = discord.Embed(title="Information", description=f"{information.text}", color=0x4285F3)
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
             # Translation card
             translator = root.find(".//div[@class='tw-src-ltr']")
             if translator is not None:
-                languages = root.find(".//div[@class='pcCUmf vCOSGb']")
-                src_lang = languages.find(".//div[@class='hhB0V']/div[@class='j1iyq']/span[@class='source-language']")
-                dest_lang = languages.find(".//div[@class='hhB0V']/div[@class='j1iyq']/span[@class='target-language']")
+                src_lang = root.find(".//span[@class='source-language']")
+                dest_lang = root.find(".//span[@class='target-language']")
 
                 src = translator.find(".//pre[@id='tw-source-text']/span")
                 dest = translator.find(".//pre[@id='tw-target-text']/span")
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title="Translator", color=0x4285F3)
-                em.add_field(name=src_lang.text, value=src.text)
-                em.add_field(name=dest_lang.text, value=dest.text)
+                em.add_field(name=src_lang.text.title(), value=src.text)
+                em.add_field(name=dest_lang.text.title(), value=dest.text)
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
             # Time in card
-            time_in = root.find(".//div[@class='vk_c vk_gy vk_sh card-section sL6Rbf R36Kq']/div[@class='gsrt vk_bk dDoNo FzvWSb XcVN5d DjWnwf']")
+            time_in = root.find(".//div[@class='gsrt vk_bk dDoNo FzvWSb XcVN5d DjWnwf']")
             if time_in is not None:
-                location = root.find(".//div[@class='vk_c vk_gy vk_sh card-section sL6Rbf R36Kq']/span[@class='vk_gy vk_sh']")
+                date = root.find(".//div[@class='vk_gy vk_sh']")
+                location = root.find(".//span[@class='vk_gy vk_sh']")
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
-                em = discord.Embed(title="Time", description=f"{location.text} — {time_in.text}", color=0x4285F3)
+                em = discord.Embed(title=location.text, description=f"{time_in.text} — {''.join(date.itertext())}", color=0x4285F3)
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
-            # Time conversion card
-            time_converter = root.find(".//div[@class='vk_c vk_gy vk_sh card-section sL6Rbf R36Kq']/div")
-            if time_converter is not None:
+            # Generic time card
+            generic_time = root.find(".//div[@class='vk_c vk_gy vk_sh card-section sL6Rbf R36Kq']")
+            if generic_time is not None:
+                info = generic_time.find(".//div")
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
-                em = discord.Embed(title="Time Converter", description="".join(time_converter.itertext()), color=0x4285F3)
+                em = discord.Embed(title="Time Converter", description="".join(info.itertext()), color=0x4285F3)
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
@@ -478,29 +481,32 @@ class Internet(commands.Cog):
 
                 em = discord.Embed(title="Definition", description=f"{word.text} `{''.join(pronounciation.itertext())}`", color=0x4285F3)
                 em.add_field(name="Examples", value="\n".join(examples))
-                em.add_field(name="Conjunction", value=conjunction.text)
+                em.add_field(name="Conjunction", value=conjunction.text.capitalize())
                 em.add_field(name="Search Results", value=search_results, inline=False)
                 return await ctx.send(embed=em)
 
-            # Wheather card
+            # Weather card
             weather = root.find(".//div[@class='nawv0d']")
             if weather is not None:
-                image = weather.find(".//div[@class='UQt4rd']/img[@class='wob_tci']")
-                temperature_f = weather.find(".//div[@class='UQt4rd']/div[@class='Ab33Nc']/div/div[@class='vk_bk TylWce']/span[@class='wob_t TVtOme']")
-                temperature_c = weather.find(".//div[@class='UQt4rd']/div[@class='Ab33Nc']/div/div[@class='vk_bk TylWce']/span[@class='wob_t']")
+                image = weather.find(".//img[@class='wob_tci']")
+                temperature_f = weather.find(".//span[@class='wob_t TVtOme']")
+                temperature_c = weather.find(".//span[@class='wob_t']")
 
-                details = weather.find(".//div[@class='UQt4rd']/div[@class='wtsRwe']")
-                precipitation = details.find(".//div/span[@id='wob_pp']")
-                humidity = details.find(".//div/span[@id='wob_hm']")
-                wind = details.find(".//div/span[@class='wob_t']")
+                location = weather.find(".//div[@class='wob_loc mfMhoc']")
+                time = weather.find(".//div[@class='wob_dts']")
+
+                details = weather.find(".//div[@class='wtsRwe']")
+                precipitation = details.find(".//span[@id='wob_pp']")
+                humidity = details.find(".//span[@id='wob_hm']")
+                wind = details.find(".//span[@class='wob_t']")
 
                 search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
-                em = discord.Embed(title="Weather", description=image.get("alt"), color=0x4285F3)
+                em = discord.Embed(title=f"Weather in {location.text}", description=f"{time.text} — {image.get('alt')}", color=0x4285F3)
                 em.add_field(name="Temperature", value=f"{temperature_f.text}°F | {temperature_c.text}°C", inline=False)
                 em.add_field(name="Precipitation", value=precipitation.text)
                 em.add_field(name="Humidity", value=humidity.text)
-                em.add_field(name="Wind", value=wind)
+                em.add_field(name="Wind", value=wind.text)
                 em.add_field(name="Search Results", value=search_results)
                 em.set_thumbnail(url=f"https:{image.get('src')}")
                 return await ctx.send(embed=em)
@@ -618,7 +624,8 @@ class Internet(commands.Cog):
     @commands.cooldown(2, 20, commands.BucketType.user)
     async def roblox(self, ctx, username):
         async with ctx.typing():
-            async with self.bot.session.get(f"http://api.roblox.com/users/get-by-username?username={username}") as resp:
+            params = {"username": username}
+            async with self.bot.session.get(f"http://api.roblox.com/users/get-by-username", params=params) as resp:
                 if resp.status != 200:
                     return await ctx.send(f":x: Failed to find user (error code {resp.status})")
 
