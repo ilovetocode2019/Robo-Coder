@@ -54,7 +54,7 @@ class Admin(commands.Cog):
     async def unload(self, ctx, extension):
         try:
             self.bot.unload_extension(extension)
-            await ctx.send(f":out_tray: Unloaded `{extension}`")
+            await ctx.send(f":outbox_tray: Unloaded `{extension}`")
         except commands.ExtensionError as exc:
             full = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
             await ctx.send(f":warning: Couldn't unload `{extension}`\n```py\n{full}```")
