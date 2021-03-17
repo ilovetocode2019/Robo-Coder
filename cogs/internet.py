@@ -6,7 +6,6 @@ import functools
 import json
 import base64
 import urllib
-import markdown
 import io
 import zlib
 import re
@@ -879,7 +878,7 @@ class Internet(commands.Cog):
         return list(entries.items())
 
     async def build_api_docs(self):
-        """Builds the Discord API docs."""
+        """Buils the Discord API docs."""
 
         async with self.bot.session.get("https://api.github.com/repos/discord/discord-api-docs/contents/docs") as resp:
             if resp.status != 200:
@@ -888,38 +887,38 @@ class Internet(commands.Cog):
             data = await resp.json()
             pages = await self.fetch_api_docs(data)
 
-        # The Discord API docs seem a bit hard (and weird) to parse
-        # So my code is probably a bit complicated and messy
-        # Also I found a bunch of weird edge cases
-
+        # My attempt at parsing the Discord API Docs
         entries = []
+
         for title, page in pages.items():
-            # Search for any headers
-            headers = page.xpath("//h1|//h2|//h3|//h4|//h5|//h6")
+            is_codeblock = False
+            last_header = None
 
-            for header in headers:
-                text = header.text
+            for line in page.split("\n"):
+                # Check for codeblocks and headers
+                is_codeblock = line.startswith("```") if not is_codeblock else not line.startswith("```")
+                is_subheader = line.startswith(("# ", "## ", "### ", "#### ", "##### ", "###### ")) and not is_codeblock
 
-                # For some reason the DELETE WEBHOOK MESSAGE is a h1 tag 
-                if " % " in text and header.tag in ("h1", "h2"):
-                    text = text.split(" % ")[0]
+                if is_subheader:
+                    header, text = line.split(" ", 1)
 
-                section = text
+                    # DELETE WEBHOOK MESSAGE is a h1 ¯\_(ツ)_/¯
+                    if is_subheader and " % " in text and len(header) >= 2:
+                        text = text.split(" % ")[0]
+                    elif len(header) == 1:
+                        last_header = text
 
-                # If neessesary, go back until we have something that's a non-h6 header
-                if header.tag == "h6":
-                    previous = header.getprevious()
-                    while previous.tag not in ("h1", "h2", "h3", "h4", "h5"):
-                        previous = previous.getprevious()
+                    section = text
 
-                    text = f"Table: {text}"
-                    section = f"{previous.text} {section}"
+                    # Properly label and link tables/codeblocks
+                    if len(header) == 6:
+                        text = f"Table: {text}"
+                        section = f"{last_header} {section}"
 
-                # Finish the entry
-                section = section.replace(":", "").replace(".", "").replace("-", "").replace("_", "").replace(" ", "-").lower()
-                link = f"https://discord.com/developers/{title.replace('_', '-').lower()}#{section}"
-
-                entries.append((text, link))
+                    # Format entry
+                    section = section.replace(":", "").replace(".", "").replace("-", "").replace("_", "").replace(" ", "-").lower()
+                    link = f"https://discord.com/developers/{title.replace('_', '-').lower()}#{section}"
+                    entries.append((text, link))
 
         return entries
 
@@ -932,13 +931,11 @@ class Internet(commands.Cog):
             if file["download_url"]:
                 async with self.bot.session.get(file["download_url"]) as resp:
                     text = await resp.read()
-                    html = markdown.markdown(text.decode("utf-8"))
-                    page = etree.fromstring(html, etree.HTMLParser())
+                    markdown = text.decode("utf-8")
 
                     path = file["path"]
                     path = path[:-3]
-
-                    pages[path] = page
+                    pages[path] = markdown
 
             else:
                 async with self.bot.session.get(f"https://api.github.com/repos/discord/discord-api-docs/contents/{file['path']}") as resp:
