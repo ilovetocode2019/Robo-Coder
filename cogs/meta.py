@@ -5,7 +5,6 @@ import asyncio
 
 import codecs
 import os
-import pathlib
 import sys
 import traceback
 
@@ -16,25 +15,6 @@ class Prefix(commands.Converter):
         if discord.utils.escape_mentions(prefix) != prefix:
             raise commands.BadArgument("Prefix can't include a mention")
         return prefix
-
-def get_lines_of_code():
-    total = 0
-    file_amount = 0
-    for path, subdirs, files in os.walk("."):
-        if "venv" in subdirs:
-            subdirs.remove("venv")
-        if "env" in subdirs:
-            subdirs.remove("env")
-        for name in files:
-            if name.endswith(".py"):
-                file_amount += 1
-                with codecs.open(
-                    "./" + str(pathlib.PurePath(path, name)), "r", "utf-8"
-                ) as f:
-                    for i, l in enumerate(f):
-                        total += 1
-
-    return f"I am made of {total:,} lines of code, spread across {file_amount:,} files!"
 
 class RoboCoderHelpCommand(commands.HelpCommand):
     bottom_text = "\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**. \nFor more help join the [support server]({0})."
@@ -48,11 +28,12 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             description=f"{bot.description}. Use `{self.clean_prefix}help [command]` or `{self.clean_prefix}help [Category]` for more specific help. If you need more help you can join the [support server]({bot.support_server_link}).",
             color=0x96c8da
             )
-        msg = ""
+
+        message = ""
         for name, cog in sorted(bot.cogs.items()):
             if not getattr(cog, "hidden", False):
-                msg += f"\n{getattr(cog, 'emoji', '')} {cog.qualified_name}"
-        em.add_field(name="Categories", value=msg)
+                message += f"\n{getattr(cog, 'emoji', '')} {cog.qualified_name}"
+        em.add_field(name="Categories", value=message)
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
         await ctx.send(embed=em)
 
@@ -187,8 +168,40 @@ class Meta(commands.Cog):
 
     @commands.command(name="code", description="Find out what I'm made of")
     async def code(self, ctx):
-        code = get_lines_of_code()
-        await ctx.send(code)
+        file_count = 0
+        line_count = 0
+        comment_count = 0
+        class_count = 0
+        function_count = 0
+
+        for path, directories, files in os.walk("."):
+            if "venv" in directories:
+                subdirs.remove("venv")
+
+            for filename in files:
+                if filename.endswith(".py"):
+                    path = os.path.join("")
+                    file_count += 1
+
+                    with open(path) as file:
+                        for counter, line in enumerate(file):
+                            line = line.strip()
+                            line_count += 1
+
+                            if line.startswith("#"):
+                                comment_count += 1
+                            elif line.startswith("class"):
+                                class_count += 1
+                            elif line.startswith("def"):
+                                function_count += 1
+
+        em = discord.Embed(title="Code", description=f"I am made of {line_count} of python code, spread across {file_count} files", color=0x96c8da)
+        em.add_field(name="Files", value=file_count)
+        em.add_field(name="Lines", value=line_count)
+        em.add_field(name="Comments", value=comment_count)
+        em.add_field(name="Classes", value=class_count)
+        em.add_field(name="Functions", value=function_count)
+        await ctx.send(embed=em)
 
     @commands.group(name="prefix", description="Manage custom prefixes", invoke_without_command=True)
     async def prefix(self, ctx):
