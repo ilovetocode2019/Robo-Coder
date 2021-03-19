@@ -240,7 +240,7 @@ class Meta(commands.Cog):
 
         await ctx.send(f":white_check_mark: Set `{prefix}` as the default prefix")
 
-    @prefix.command(name="clear", description="Clear all the prefixes in this server", aliases=["reset"])
+    @prefix.command(name="clear", description="Clear all the prefixes in this server")
     @commands.has_permissions(manage_guild=True)
     async def prefix_clear(self, ctx):
         result = await menus.Confirm("Are you sure you want to clear all your prefixes?").prompt(ctx)
@@ -249,6 +249,16 @@ class Meta(commands.Cog):
 
         await self.bot.prefixes.add(ctx.guild.id, [])
         await ctx.send(f":white_check_mark: Removed all prefixes")
+
+    @prefix.command(name="reset", description="Reset the prefixes to the default prefixes")
+    @commands.has_permissions(manage_guild=True)
+    async def prefix_reset(self, ctx):
+        result = await menus.Confirm("Are you sure you want to clear all your prefixes?").prompt(ctx)
+        if not result:
+            return await ctx.send("Aborting")
+
+        await self.bot.prefixes.add(ctx.guild.id, ["r!", "r."])
+        await ctx.send(f":white_check_mark: Reset prefixes")
 
     @prefix.command(name="list", description="View the prefixes in this server")
     async def prefix_list(self, ctx):
