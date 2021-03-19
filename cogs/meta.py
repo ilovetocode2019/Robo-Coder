@@ -3,7 +3,6 @@ from discord.ext import commands
 
 import asyncio
 
-import codecs
 import os
 import sys
 import traceback
@@ -174,16 +173,16 @@ class Meta(commands.Cog):
         class_count = 0
         function_count = 0
 
-        for path, directories, files in os.walk("."):
+        for root, directories, files in os.walk("."):
             if "venv" in directories:
-                subdirs.remove("venv")
+                directories.remove("venv")
 
             for filename in files:
                 if filename.endswith(".py"):
-                    path = os.path.join("")
+                    path = os.path.join(root, filename)
                     file_count += 1
 
-                    with open(path) as file:
+                    with open(path, encoding="utf-8") as file:
                         for counter, line in enumerate(file):
                             line = line.strip()
                             line_count += 1
