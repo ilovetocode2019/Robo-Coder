@@ -932,7 +932,7 @@ class Internet(commands.Cog):
         for file in files:
             if file["download_url"]:
                 async with self.bot.session.get(file["download_url"]) as resp:
-                    mardown = await resp.text("utf-8")
+                    markdown = await resp.text("utf-8")
 
                     path = file["path"]
                     path = path[:-3]
