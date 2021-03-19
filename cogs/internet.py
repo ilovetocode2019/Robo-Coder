@@ -362,9 +362,6 @@ class Internet(commands.Cog):
             results = [result for result in results if result is not None] 
             previews = root.findall(".//div[@class='IsZvec']")
 
-            if not results:
-                return await ctx.send(":x: I couldn't find any results for that query")
-
             entries = []
 
             # Results formatting
@@ -379,15 +376,18 @@ class Internet(commands.Cog):
                 preview = " ".join(preview.itertext()) if preview is not None else ""
                 entries.append({"title": h3.text, "description":  f"`{site}` \n\n{preview or 'No description available for this page'}", "url": href})
 
+            search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
             # Calculation card
             calculator = root.find(".//div[@class='tyYmIf']")
             if calculator is not None:
                 equation = calculator.find(".//span[@class='vUGUtc']")
                 result = calculator.find(".//span[@class='qv3Wpe']")
-                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title="Calculator", description=f"{equation.text}{result.text}", color=0x4285F3)
-                em.add_field(name="Search Results", value=search_results)
+                if search_results:
+                    em.add_field(name="Search Results", value=search_results, inline=False)
+
                 return await ctx.send(embed=em)
 
             # Conversion card
@@ -396,13 +396,14 @@ class Internet(commands.Cog):
                 src, dest = converter.findall(".//input[@class='vXQmIe gsrt']")
                 units = converter.findall(".//option[@selected='1']")
                 formula = converter.find(".//div[@class='bjhkR']")
-                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title=f"{units[0].text} Converter", color=0x4285F3)
                 em.add_field(name=units[1].text.title(), value=src.get("value"))
                 em.add_field(name=units[2].text.title(), value=dest.get("value"))
                 em.add_field(name="Formula", value=formula.text.capitalize())
-                em.add_field(name="Search Results", value=search_results, inline=False)
+                if search_results:
+                    em.add_field(name="Search Results", value=search_results, inline=False)
+
                 return await ctx.send(embed=em)
 
             # Currency card
@@ -411,23 +412,23 @@ class Internet(commands.Cog):
                 src_name, dest_name = currency_converter.findall(".//option[@selected='1']")
                 src = currency_converter.find(".//input[@class='ZEB7Fb vk_gy vk_sh Hg3mWc']")
                 dest = currency_converter.find(".//input[@class='a61j6 vk_gy vk_sh Hg3mWc']")
-
                 time = root.find(".//div[@class='hqAUc']/span")
-                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title="Currency Converter", description=time.text.replace("·", ""), color=0x4285F3)
                 em.add_field(name=f"{src_name.text} ({src_name.get('value')})", value=src.get("value"))
                 em.add_field(name=f"{dest_name.text} ({dest_name.get('value')})", value=dest.get("value"))
-                em.add_field(name="Search Results", value=search_results, inline=False)
+                if search_results:
+                    em.add_field(name="Search Results", value=search_results, inline=False)
+
                 return await ctx.send(embed=em)
 
             # Generic information card
             information = root.find(".//div[@class='Z0LcW XcVN5d AZCkJd']")
             if information is not None:
-                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
-
                 em = discord.Embed(title="Information", description=f"{information.text}", color=0x4285F3)
-                em.add_field(name="Search Results", value=search_results, inline=False)
+                if search_results:
+                    em.add_field(name="Search Results", value=search_results, inline=False)
+
                 return await ctx.send(embed=em)
 
             # Translation card
@@ -438,12 +439,13 @@ class Internet(commands.Cog):
 
                 src = translator.find(".//pre[@id='tw-source-text']/span")
                 dest = translator.find(".//pre[@id='tw-target-text']/span")
-                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title="Translator", color=0x4285F3)
                 em.add_field(name=src_lang.text.title(), value=src.text)
                 em.add_field(name=dest_lang.text.title(), value=dest.text)
-                em.add_field(name="Search Results", value=search_results, inline=False)
+                if search_results:
+                    em.add_field(name="Search Results", value=search_results, inline=False)
+
                 return await ctx.send(embed=em)
 
             # Time in card
@@ -451,7 +453,6 @@ class Internet(commands.Cog):
             if time_in is not None:
                 date = root.find(".//div[@class='vk_gy vk_sh']")
                 location = root.find(".//span[@class='vk_gy vk_sh']")
-                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title=location.text, description=f"{time_in.text} — {''.join(date.itertext())}", color=0x4285F3)
                 em.add_field(name="Search Results", value=search_results, inline=False)
@@ -461,10 +462,11 @@ class Internet(commands.Cog):
             generic_time = root.find(".//div[@class='vk_c vk_gy vk_sh card-section sL6Rbf R36Kq']")
             if generic_time is not None:
                 info = generic_time.find(".//div")
-                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title="Time Converter", description="".join(info.itertext()), color=0x4285F3)
-                em.add_field(name="Search Results", value=search_results, inline=False)
+                if search_results:
+                    em.add_field(name="Search Results", value=search_results, inline=False)
+
                 return await ctx.send(embed=em)
 
             # Definition card
@@ -476,12 +478,13 @@ class Internet(commands.Cog):
 
                 raw_examples = [raw_example for raw_example in root.findall(".//div[@class='L1jWkf h3TRxf']/div/span") if raw_example.text]
                 examples = [f"{counter+1}. {example.text}" for counter, example in enumerate(raw_examples)]
-                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
                 em = discord.Embed(title="Definition", description=f"{word.text} `{''.join(pronounciation.itertext())}`", color=0x4285F3)
                 em.add_field(name="Examples", value="\n".join(examples))
                 em.add_field(name="Conjunction", value=conjunction.text.capitalize())
-                em.add_field(name="Search Results", value=search_results, inline=False)
+                if search_results:
+                    em.add_field(name="Search Results", value=search_results, inline=False)
+
                 return await ctx.send(embed=em)
 
             # Weather card
@@ -499,16 +502,19 @@ class Internet(commands.Cog):
                 humidity = details.find(".//span[@id='wob_hm']")
                 wind = details.find(".//span[@class='wob_t']")
 
-                search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
-
                 em = discord.Embed(title=f"Weather in {location.text}", description=f"{time.text} — {image.get('alt')}", color=0x4285F3)
+                em.set_thumbnail(url=f"https:{image.get('src')}")
                 em.add_field(name="Temperature", value=f"{temperature_f.text}°F | {temperature_c.text}°C", inline=False)
                 em.add_field(name="Precipitation", value=precipitation.text)
                 em.add_field(name="Humidity", value=humidity.text)
                 em.add_field(name="Wind", value=wind.text)
-                em.add_field(name="Search Results", value=search_results)
-                em.set_thumbnail(url=f"https:{image.get('src')}")
+                if search_results:
+                    em.add_field(name="Search Results", value=search_results, inline=False)
+
                 return await ctx.send(embed=em)
+
+            if not results:
+                return await ctx.send(":x: I couldn't find anything")
 
         pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
         await pages.start(ctx)
