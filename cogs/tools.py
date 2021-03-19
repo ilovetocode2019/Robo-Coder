@@ -1,22 +1,16 @@
 import discord
 from discord.ext import commands
 
-import inspect
-import os
+import collections
 import functools
 import io
-import re
-import zlib
-import json
 import unicodedata
-import collections
-import typing
-import datetime
+import zlib
 
-from PIL import Image
 from io import BytesIO
+from PIL import Image
 
-from .utils import human_time, formats
+from .utils import formats, human_time
 
 class AnyUser(commands.Converter):
     async def convert(self, ctx, arg):

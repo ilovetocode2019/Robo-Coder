@@ -1,14 +1,12 @@
 import discord
 from discord.ext import commands
-from discord import Webhook, AsyncWebhookAdapter
 
-import asyncpg
 import aiohttp
+import asyncpg
 import datetime
-import logging
-import traceback
-import sys
 import json
+import logging
+import sys
 
 from cogs.utils import config
 
@@ -58,7 +56,7 @@ class RoboCoder(commands.Bot):
             try:
                 self.load_extension(extension)
             except Exception as exc:
-                traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
+                log.info("Couldn't load extension %s", extension, exc_info=exc)
 
     async def create_pool(self):
         async def init(connection): await connection.set_type_codec("jsonb", schema="pg_catalog", encoder=json.dumps, decoder=json.loads, format="text")
@@ -71,7 +69,7 @@ class RoboCoder(commands.Bot):
     async def create_session(self):
         self.session = aiohttp.ClientSession(loop=self.loop)
         if self.config.status_hook:
-            self.status_webhook = Webhook.from_url(self.config.status_hook, adapter=AsyncWebhookAdapter(self.session))
+            self.status_webhook = discord.Webhook.from_url(self.config.status_hook, adapter=discord.AsyncWebhookAdapter(self.session))
 
     def get_guild_prefix(self, guild):
         return self.prefixes.get(guild.id, [self.user.mention])[0]

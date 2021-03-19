@@ -4,7 +4,6 @@ from discord.ext import tasks
 
 import asyncio
 import datetime
-import humanize
 
 from .utils import human_time
 
@@ -26,7 +25,7 @@ class Timers(commands.Cog):
 
         self.loop = self.bot.loop.create_task(self.run_timers())
         self.current_timer = None
-        self.timers_pending = asyncio.Event()
+        self.timers_pending = asyncio.Event(loop=self.bot.loop)
         self.timers_pending.set()
 
     def cog_unload(self):

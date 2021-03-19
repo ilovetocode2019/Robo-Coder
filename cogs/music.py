@@ -2,20 +2,18 @@ import discord
 from discord.ext import commands, menus
 
 import asyncio
-import youtube_dl
-import asyncpg
-import re
-import urllib
-import functools
-import itertools
-import time
 import datetime
+import functools
 import humanize
-import random
-import traceback
-import sys
-import os
+import itertools
 import logging
+import os
+import random
+import re
+import sys
+import time
+import urllib
+import youtube_dl
 
 from .utils import errors, formats, human_time
 
@@ -253,8 +251,7 @@ class Player:
                     self.now = None
 
         except Exception as exc:
-            log.warning("Exception in player loop for %s. Shutting down player.", self)
-            traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
+            log.error("Exception in player loop for %s. Shutting down player.", self, exc_info=exc)
 
             if self.queue:
                 url = await self.save_queue(player)
@@ -275,8 +272,7 @@ class Player:
         if not exc:
             self._event.set()
         else:
-            log.warning("Exception in after function for %s", self)
-            traceback.print_exception(type(exc), exc, exc.__traceback__, file=sys.stderr)
+            log.error("Exception in after function for %s", self, exc_info=exc)
 
     async def update_voice(self, channel):
         await self.guild.change_voice_state(channel=channel)

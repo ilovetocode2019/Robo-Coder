@@ -4,10 +4,9 @@ from discord.ext import commands
 import argparse
 import datetime
 import enum
+import re
 import shlex
 import typing
-import re
-import humanize
 
 from .utils import cache, formats, human_time, menus
 

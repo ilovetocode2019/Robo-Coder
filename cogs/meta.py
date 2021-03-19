@@ -3,15 +3,11 @@ from discord.ext import commands
 
 import asyncio
 
-import datetime
-import traceback
-import os
-import json
-import sys
-import humanize
-import os
 import codecs
+import os
 import pathlib
+import sys
+import traceback
 
 from .utils import errors, formats, human_time, menus
 
