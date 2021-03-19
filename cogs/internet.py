@@ -905,7 +905,7 @@ class Internet(commands.Cog):
                     header, text = line.split(" ", 1)
 
                     # DELETE WEBHOOK MESSAGE is a h1 ¯\_(ツ)_/¯
-                    if is_subheader and " % " in text and len(header) >= 2:
+                    if is_subheader and " % " in text and len(header) <= 2:
                         text = text.split(" % ")[0]
                     elif len(header) == 1:
                         last_header = text
@@ -918,7 +918,7 @@ class Internet(commands.Cog):
                         section = f"{last_header} {section}"
 
                     # Format entry
-                    section = section.replace(":", "").replace(".", "").replace("-", "").replace("_", "").replace(" ", "-").lower()
+                    section = section.replace(":", "").replace(".", "").replace("?", "").replace("-", "").replace("_", "").replace(" ", "-").lower()
                     link = f"https://discord.com/developers/{title.replace('_', '-').lower()}#{section}"
                     entries.append((text, link))
 
