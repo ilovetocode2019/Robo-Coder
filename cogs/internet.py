@@ -347,8 +347,7 @@ class Internet(commands.Cog):
                 if resp.status != 200:
                     return await ctx.send(f":x: Failed to search google (status code {resp.status_code})")
 
-                text = await resp.read()
-                html = text.decode("utf-8")
+                html = await resp.text("utf-8")
 
                 # Debugging
                 with open("google.html", "w", encoding="utf-8") as file:
@@ -645,8 +644,7 @@ class Internet(commands.Cog):
                 if resp.status != 200:
                     return await ctx.send(f":x: Failed to fetch user data (error code {resp.status})")
 
-                text = await resp.read()
-                html = text.decode("utf-8")
+                html = await resp.text("utf-8")
 
                 # Debugging
                 with open("roblox.html", "w", encoding="utf-8") as file:
@@ -866,17 +864,16 @@ class Internet(commands.Cog):
         await ctx.send(f"https://strawpoll.com/{data['content_id']}")
 
     async def build_faq_entries(self):
-        """Builds the faq entries."""
+        """Builds the discord.py faq entries."""
 
         faq_url = "https://discordpy.readthedocs.io/en/latest/faq.html"
 
         entries = {}
         async with self.bot.session.get(faq_url) as resp:
-            text = await resp.read()
-            text = text.decode("utf-8")
+            html = await resp.text("utf-8")
+            root = etree.fromstring(html, etree.HTMLParser())
+            questions = root.findall(".//ul[@class='simple']/li/ul//a")
 
-            root = etree.fromstring(text, etree.HTMLParser())
-            questions = root.findall(".//div[@id='questions']/ul[@class='simple']/li/ul//a")
             for question in questions:
                 entries["".join(question.itertext()).strip()] = f"{faq_url}{question.get('href').strip()}"
 
@@ -935,8 +932,7 @@ class Internet(commands.Cog):
         for file in files:
             if file["download_url"]:
                 async with self.bot.session.get(file["download_url"]) as resp:
-                    text = await resp.read()
-                    markdown = text.decode("utf-8")
+                    mardown = await resp.text("utf-8")
 
                     path = file["path"]
                     path = path[:-3]
