@@ -521,29 +521,17 @@ class Internet(commands.Cog):
     @commands.cooldown(1, 20, commands.BucketType.user)
     async def translate(self, ctx, *, query):
         async with ctx.typing():
-            params = {"client": "dict-chrome-ex", "sl": "auto", "tl": "en", "q": query}
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0"}
+            partial = functools.partial(self.bot.translator.translate, query)
+            translated = await self.bot.loop.run_in_executor(None, partial)
 
-            async with self.bot.session.get(f"https://clients5.google.com/translate_a/t", params=params, headers=headers) as resp:
-                if resp.status != 200:
-                    return await ctx.send(f":x: Failed to translate (status code {resp.status_code})")
-
-                data = await resp.json()
-
-            sentence = data["sentences"][0]
-            src = sentence["orig"]
-            dest = sentence["trans"]
-
-            src_lang = LANGUAGES.get(data["src"].lower(), "???").title()
-            dest_lang = LANGUAGES.get("en", "???").title()
-
-            confidence = data["confidence"]
+            src_lang = LANGUAGES.get(translated.src.lower(), "???").title()
+            dest_lang = LANGUAGES.get(translated.dest.lower(), "???").title()
 
             em = discord.Embed(title="Translator", color=0x4285F3)
-            em.add_field(name=f"From {src_lang}", value=src)
-            em.add_field(name=f"To {dest_lang}", value=dest)
-            em.add_field(name="Confidence", value=f"{int(confidence*100)}%", inline=False)
-            await ctx.send(embed=em)
+            em.add_field(name=f"From {src_lang}", value=query)
+            em.add_field(name=f"To {dest_lang}", value=translated.text, inline=False)
+
+        await ctx.send(embed=em)
 
     @commands.command(name="wikipedia", description="Search wikipedia", aliases=["wiki"])
     @commands.cooldown(2, 20, commands.BucketType.user)

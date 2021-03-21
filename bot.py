@@ -4,6 +4,7 @@ from discord.ext import commands
 import aiohttp
 import asyncpg
 import datetime
+import googletrans
 import json
 import logging
 import sys
@@ -43,6 +44,7 @@ class RoboCoder(commands.Bot):
         self.support_server_link = "https://discord.gg/eHxvStNJb7"
         self.uptime = datetime.datetime.utcnow()
         self.prefixes = config.Config("prefixes.json", loop=self.loop)
+        self.translator = googletrans.Translator()
         self.players = {}
         self.spam_detectors = {}
 
