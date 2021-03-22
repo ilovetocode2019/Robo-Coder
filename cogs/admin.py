@@ -185,7 +185,7 @@ class Admin(commands.Cog):
             "asyncpg",
             "discord.py",
             "humanize",
-            "jishau",
+            "jishaku",
             "lxml",
             "parsedatetime",
             "pillow",
