@@ -23,16 +23,16 @@ def get_prefix(bot, message):
     return prefixes
 
 extensions = [
-"cogs.meta",
-"cogs.admin",
-"cogs.tools",
-"cogs.internet",
-"cogs.moderation",
-"cogs.fun",
-"cogs.games",
-"cogs.timers",
-"cogs.music",
-"cogs.roles"
+    "cogs.meta",
+    "cogs.admin",
+    "cogs.tools",
+    "cogs.internet",
+    "cogs.moderation",
+    "cogs.fun",
+    "cogs.games",
+    "cogs.timers",
+    "cogs.music",
+    "cogs.roles"
 ]
 
 class RoboCoder(commands.Bot):
