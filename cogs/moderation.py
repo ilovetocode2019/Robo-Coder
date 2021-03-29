@@ -387,7 +387,7 @@ class Moderation(commands.Cog):
         if not failed:
             await ctx.send(f":white_check_mark: Created a mute role and set the overwrites")
         else:
-            await ctx.send(f":white_check_mark: Created a mute role and set the overrides (failed to set the permissions for {failed}/{formats.plural(len(channels)): channel})")
+            await ctx.send(f":white_check_mark: Created a mute role and set the overrides (failed to set the permissions for {failed}/{formats.plural(len(channels)):channel})")
 
     @mute_role.command(name="set", description="Set a mute role")
     @commands.bot_has_permissions(manage_roles=True)
@@ -439,7 +439,7 @@ class Moderation(commands.Cog):
         if not failed:
             await ctx.send(f":white_check_mark: Synced the mute role")
         else:
-            await ctx.send(f":white_check_mark: Synced the mute role (failed to set the permissions for {failed}/{formats.plural(len(channels)): channel})")
+            await ctx.send(f":white_check_mark: Synced the mute role (failed to set the permissions for {failed}/{formats.plural(len(channels)):channel})")
 
     @mute_role.command(name="unbind", description="Unbind the mute role")
     @commands.has_permissions(manage_roles=True)
