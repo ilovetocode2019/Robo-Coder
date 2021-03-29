@@ -462,7 +462,7 @@ class Moderation(commands.Cog):
         if not config.mute_role:
             return await ctx.send(":x: No mute role to delete")
 
-        result = await menus.Confirm("Are you sure you want to delete the mute role? All currently muted users will be unmuted")
+        result = await menus.Confirm("Are you sure you want to delete the mute role? All currently muted users will be unmuted").prompt(ctx)
         if not result:
             return await ctx.send("Aborting")
 
