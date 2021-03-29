@@ -413,7 +413,7 @@ class Moderation(commands.Cog):
     @mute_role.command(name="sync", description="Update the mute role", aliases=["update"])
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
-    async def mute_role_update(self, ctx):
+    async def mute_role_sync(self, ctx):
         config = await self.get_guild_config(ctx.guild)
 
         if not config.mute_role:
@@ -431,11 +431,9 @@ class Moderation(commands.Cog):
                 failed += 1
 
         if not failed:
-            await ctx.send(f":white_check_mark: Created a mute role and set the overwrites")
+            await ctx.send(f":white_check_mark: Synced the mute role")
         else:
-            await ctx.send(f":white_check_mark: Created a mute role and set the overrides (failed to set the permissions for {failed}/{formats.plural(len(channels)): channel}")
-
-        await ctx.send(":white_check_mark: Successfully updated mute role")
+            await ctx.send(f":white_check_mark: Synced the mute role (failed to set the permissions for {failed}/{formats.plural(len(channels)): channel}")
 
     @mute_role.command(name="unbind", description="Unbind the mute role")
     @commands.has_permissions(manage_roles=True)
@@ -617,7 +615,7 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: Channel is already being ignored")
 
         await config.add_ignore_spam_channel(channel)
-        await ctx.send(f":white_check_mark: Spam prevention is disabled for {channel.mention}")
+        await ctx.send(f":white_check_mark: Spam prevention is now enabled for {channel.mention}")
 
     @spam.command(name="unignore", description="Remove a channel from the ignore list for spam detection")
     @commands.has_permissions(manage_guild=True)
