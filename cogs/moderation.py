@@ -368,20 +368,21 @@ class Moderation(commands.Cog):
             if not result:
                 return await ctx.send("Aborting")
 
-        reason = f"Mute role creation {ctx.author}"
-        role = await ctx.guild.create_role(name="Muted", color=0x607d8b, reason=reason)
+        async with ctx.typing():
+            reason = f"Mute role creation {ctx.author}"
+            role = await ctx.guild.create_role(name="Muted", color=0x607d8b, reason=reason)
 
-        channels = ctx.guild.text_channels + ctx.guild.categories
-        failed = 0
+            channels = ctx.guild.text_channels + ctx.guild.categories
+            failed = 0
 
-        for channel in channels:
-            try:
-                overwrite = discord.PermissionOverwrite(send_messages=False, add_reactions=False)
-                await channel.set_permissions(role, overwrite=overwrite, reason=reason)
-            except discord.HTTPException:
-                failed += 1
+            for channel in channels:
+                try:
+                    overwrite = discord.PermissionOverwrite(send_messages=False, add_reactions=False)
+                    await channel.set_permissions(role, overwrite=overwrite, reason=reason)
+                except discord.HTTPException:
+                    failed += 1
 
-        await config.set_mute_role(role)
+            await config.set_mute_role(role)
 
         if not failed:
             await ctx.send(f":white_check_mark: Created a mute role and set the overwrites")
@@ -419,16 +420,17 @@ class Moderation(commands.Cog):
         if not config.mute_role:
             return await ctx.send(":x: No mute role to update")
 
-        reason = f"Mute role updation by {ctx.author}"
-        channels = ctx.guild.text_channels + ctx.guild.categories
-        failed = 0
+        async with ctx.typing():
+            reason = f"Mute role updation by {ctx.author}"
+            channels = ctx.guild.text_channels + ctx.guild.categories
+            failed = 0
 
-        for channel in channels:
-            try:
-                overwrite = discord.PermissionOverwrite(send_messages=False, add_reactions=False)
-                await channel.set_permissions(config.mute_role, overwrite=overwrite, reason=reason)
-            except discord.HTTPException:
-                failed += 1
+            for channel in channels:
+                try:
+                    overwrite = discord.PermissionOverwrite(send_messages=False, add_reactions=False)
+                    await channel.set_permissions(config.mute_role, overwrite=overwrite, reason=reason)
+                except discord.HTTPException:
+                    failed += 1
 
         if not failed:
             await ctx.send(f":white_check_mark: Synced the mute role")
@@ -615,7 +617,7 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: Channel is already being ignored")
 
         await config.add_ignore_spam_channel(channel)
-        await ctx.send(f":white_check_mark: Spam prevention is now enabled for {channel.mention}")
+        await ctx.send(f":white_check_mark: Spam prevention is now disabled for {channel.mention}")
 
     @spam.command(name="unignore", description="Remove a channel from the ignore list for spam detection")
     @commands.has_permissions(manage_guild=True)
@@ -628,7 +630,7 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: Channel is not ignored")
 
         await config.remove_ignore_spam_channel(channel)
-        await ctx.send(f":white_check_mark: Spam prevention is disabled for {channel.mention}")
+        await ctx.send(f":white_check_mark: Spam prevention is now enabled for {channel.mention}")
 
     @spam.command(name="reset", description="Reset a member's automatic mute time")
     @commands.has_permissions(manage_guild=True)
