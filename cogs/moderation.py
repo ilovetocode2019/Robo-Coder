@@ -420,6 +420,10 @@ class Moderation(commands.Cog):
         if not config.mute_role:
             return await ctx.send(":x: No mute role to update")
 
+        result = await menus.Confirm("Are you sure you want to sync permissions for the mute role? This will automaticly apply the mute role to all channels it can").prompt(ctx)
+        if not result:
+            return await ctx.send("Aborting")
+
         async with ctx.typing():
             reason = f"Mute role updation by {ctx.author}"
             channels = ctx.guild.text_channels + ctx.guild.categories
