@@ -124,7 +124,7 @@ class RoboCoder(commands.Bot):
     def run(self):
         super().run(self.config.token)
 
-    async def logout(self):
+    async def close(self):
         log.info("Logging out of Discord")
 
         if self.config.status_hook:
@@ -133,7 +133,7 @@ class RoboCoder(commands.Bot):
         await self.stop_players()
         await self.db.close()
         await self.session.close()
-        await super().logout()
+        await super().close()
 
     @discord.utils.cached_property
     def config(self):
