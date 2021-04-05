@@ -38,8 +38,9 @@ extensions = [
 class RoboCoder(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
+        allowed_mentions = discord.AllowedMentions(everyone=False, users=True, roles=False, replied_user=True)
         intents.members = True
-        super().__init__(command_prefix=get_prefix, description="A multipurpose Discord bot", case_insensitive=True, intents=intents)
+        super().__init__(command_prefix=get_prefix, description="A multipurpose Discord bot", case_insensitive=True, intents=intents, allowed_mentions=allowed_mentions)
 
         self.support_server_link = "https://discord.gg/eHxvStNJb7"
         self.uptime = datetime.datetime.utcnow()
