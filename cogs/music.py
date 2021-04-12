@@ -1141,7 +1141,7 @@ class Music(commands.Cog):
                        WHERE songs.id=$5;
                     """
             await self.bot.db.execute(query, song.title, song.filename, song._data, datetime.datetime.utcnow(), song_id)
-    
+
         await ctx.send(f":white_check_mark: `{song.title}` has been updated")
 
     @songs.command(name="delete", description="Delete a song from the database", aliases=["remove"])

@@ -148,7 +148,7 @@ class Meta(commands.Cog):
     @commands.group(name="uptime", description="Get the uptime", aliases=["up"], invoke_without_command=True)
     async def uptime(self, ctx):
         await ctx.send(f"I started up {human_time.timedelta(self.bot.uptime, accuracy=None)}")
-    
+
     @commands.command(name="invite", description="Get a link to add me to your server")
     async def invite(self, ctx):
         perms  = discord.Permissions.none()

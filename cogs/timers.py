@@ -146,13 +146,13 @@ class Timers(commands.Cog):
                 self.timers_pending.clear()
                 await self.timers_pending.wait()
                 timer = await self.get_newest_timer()
-    
+
             # Wait until the current timer is ready to be dispatched
             self.current_timer = timer
             time = timer.expires_at-datetime.datetime.utcnow()
             if time.total_seconds():
                 await asyncio.sleep(time.total_seconds())
-    
+
             query = """DELETE FROM timers
                        WHERE timers.id=$1;
                     """

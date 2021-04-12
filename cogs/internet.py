@@ -332,7 +332,7 @@ class Internet(commands.Cog):
 
         if not matches:
             return await ctx.send("Could not find anything")
-        
+
         pages = menus.MenuPages(source=DocumentationPages(matches, query=obj), clear_reactions_after=True)
         await pages.start(ctx)
 
@@ -930,7 +930,7 @@ class Internet(commands.Cog):
                 async with self.bot.session.get(f"https://api.github.com/repos/discord/discord-api-docs/contents/{file['path']}") as resp:
                     if resp.status != 200:
                         raise RuntimeError(f"GitHub returned the Status code {resp.status}")
-            
+
                     data = await resp.json()
                     docs = await self.fetch_api_docs(data)
                     pages.update(docs)

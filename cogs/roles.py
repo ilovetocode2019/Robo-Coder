@@ -22,7 +22,7 @@ class Roles(commands.Cog):
     async def autorole_add(self, ctx, *, role: discord.Role):
         if role.is_default() or role.managed:
             return await ctx.send(":x: You can't use this role as an autorole")
-    
+
         query = """INSERT INTO autoroles (guild_id, role_id)
                    VALUES ($1, $2)
                 """

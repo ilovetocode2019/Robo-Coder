@@ -167,7 +167,7 @@ class Tools(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.command(name="avatar", description="View someone's avatar", usage="[user] [--format FORMAT]")
-    async def avatar(self, ctx, *, user = ""):    
+    async def avatar(self, ctx, *, user = ""):
         if user in ("--format png", "--format jpg", "--format jpeg", "--format webp"):
             if user.endswith(("png", "jpg")):
                 view_format = user[-3:]
