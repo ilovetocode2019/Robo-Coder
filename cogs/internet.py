@@ -461,7 +461,7 @@ class Internet(commands.Cog):
             if generic_time is not None:
                 info = generic_time.find(".//div")
 
-                em = discord.Embed(title="Time Converter", description="".join(info.itertext()), color=0x4285F3)
+                em = discord.Embed(title="Time", description="".join(info.itertext()), color=0x4285F3)
                 if search_results:
                     em.add_field(name="Search Results", value=search_results, inline=False)
 
@@ -477,9 +477,8 @@ class Internet(commands.Cog):
                 raw_examples = [raw_example for raw_example in root.findall(".//div[@class='L1jWkf h3TRxf']/div/span") if raw_example.text]
                 examples = [f"{counter+1}. {example.text}" for counter, example in enumerate(raw_examples)]
 
-                em = discord.Embed(title="Definition", description=f"{word.text} `{''.join(pronounciation.itertext())}`", color=0x4285F3)
+                em = discord.Embed(title="Definition", description=f"{word.text} `{''.join(pronounciation.itertext())}`\n\n*{conjunction.text}*", color=0x4285F3)
                 em.add_field(name="Examples", value="\n".join(examples))
-                em.add_field(name="Conjunction", value=conjunction.text.capitalize())
                 if search_results:
                     em.add_field(name="Search Results", value=search_results, inline=False)
 
