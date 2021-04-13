@@ -383,6 +383,7 @@ class Internet(commands.Cog):
                 result = calculator.find(".//span[@class='qv3Wpe']")
 
                 em = discord.Embed(title="Calculator", description=f"{equation.text}{result.text}", color=0x4285F3)
+
                 if search_results:
                     em.add_field(name="Search Results", value=search_results, inline=False)
 
@@ -399,6 +400,7 @@ class Internet(commands.Cog):
                 em.add_field(name=units[1].text.title(), value=src.get("value"))
                 em.add_field(name=units[2].text.title(), value=dest.get("value"))
                 em.add_field(name="Formula", value=formula.text.capitalize())
+
                 if search_results:
                     em.add_field(name="Search Results", value=search_results, inline=False)
 
@@ -415,6 +417,7 @@ class Internet(commands.Cog):
                 em = discord.Embed(title="Currency Converter", description=time.text.replace("·", ""), color=0x4285F3)
                 em.add_field(name=f"{src_name.text} ({src_name.get('value')})", value=src.get("value"))
                 em.add_field(name=f"{dest_name.text} ({dest_name.get('value')})", value=dest.get("value"))
+
                 if search_results:
                     em.add_field(name="Search Results", value=search_results, inline=False)
 
@@ -424,6 +427,7 @@ class Internet(commands.Cog):
             information = root.find(".//div[@class='Z0LcW XcVN5d AZCkJd']")
             if information is not None:
                 em = discord.Embed(title="Information", description=f"{information.text}", color=0x4285F3)
+
                 if search_results:
                     em.add_field(name="Search Results", value=search_results, inline=False)
 
@@ -441,6 +445,7 @@ class Internet(commands.Cog):
                 em = discord.Embed(title="Translator", color=0x4285F3)
                 em.add_field(name=src_lang.text.title(), value=src.text)
                 em.add_field(name=dest_lang.text.title(), value=dest.text)
+
                 if search_results:
                     em.add_field(name="Search Results", value=search_results, inline=False)
 
@@ -453,7 +458,10 @@ class Internet(commands.Cog):
                 location = root.find(".//span[@class='vk_gy vk_sh']")
 
                 em = discord.Embed(title=location.text, description=f"{time_in.text} — {''.join(date.itertext())}", color=0x4285F3)
-                em.add_field(name="Search Results", value=search_results, inline=False)
+
+                if search_results:
+                    em.add_field(name="Search Results", value=search_results, inline=False)
+
                 return await ctx.send(embed=em)
 
             # Generic time card
@@ -462,6 +470,7 @@ class Internet(commands.Cog):
                 info = generic_time.find(".//div")
 
                 em = discord.Embed(title="Time", description="".join(info.itertext()), color=0x4285F3)
+
                 if search_results:
                     em.add_field(name="Search Results", value=search_results, inline=False)
 
@@ -479,6 +488,7 @@ class Internet(commands.Cog):
 
                 em = discord.Embed(title="Definition", description=f"{word.text} `{''.join(pronounciation.itertext())}`\n\n*{conjunction.text}*", color=0x4285F3)
                 em.add_field(name="Examples", value="\n".join(examples))
+
                 if search_results:
                     em.add_field(name="Search Results", value=search_results, inline=False)
 
@@ -505,13 +515,14 @@ class Internet(commands.Cog):
                 em.add_field(name="Precipitation", value=precipitation.text)
                 em.add_field(name="Humidity", value=humidity.text)
                 em.add_field(name="Wind", value=wind.text)
+
                 if search_results:
                     em.add_field(name="Search Results", value=search_results, inline=False)
 
                 return await ctx.send(embed=em)
 
             if not results:
-                return await ctx.send(":x: I couldn't find anything")
+                return await ctx.send(":x: I couldn't find any results")
 
         pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
         await pages.start(ctx)
