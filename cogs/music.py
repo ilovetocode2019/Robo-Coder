@@ -724,6 +724,19 @@ class Music(commands.Cog):
 
         self.bot.players[ctx.guild.id] = Player(ctx, voice_client)
         player = self.bot.players[ctx.guild.id]
+
+        if isinstance(channel, discord.StageChannel):
+            log.info("Attempting to become a speaker")
+
+            try:
+                await ctx.guild.me.edit(suppress=False)
+                log.info("Successfully became a speaker")
+            except discord.Forbidden:
+                log.warning("In-sufficient permissions to become a speaker. Requesting to speak instead.")
+                await ctx.guild.me.request_to_speak()
+
+                return await ctx.send(f"Connected to `{channel}` as a listener")
+
         await ctx.send(f"Connected to `{channel}`")
         log.info("Successfully connected to channel ID %s (guild ID %s)", channel.id, ctx.guild.id)
         return player
