@@ -729,11 +729,11 @@ class Music(commands.Cog):
             log.info("Attempting to become a speaker")
 
             try:
-                await ctx.guild.me.edit(suppress=False)
+                await ctx.me.edit(suppress=False)
                 log.info("Successfully became a speaker")
             except discord.Forbidden:
                 log.warning("In-sufficient permissions to become a speaker. Requesting to speak instead.")
-                await ctx.guild.me.request_to_speak()
+                await ctx.me.request_to_speak()
 
                 return await ctx.send(f"Connected to `{channel}` as a listener")
 
@@ -755,8 +755,35 @@ class Music(commands.Cog):
 
         log.info("Moving player in %s to channel ID %s", ctx.player, channel.id)
         await ctx.player.update_voice(channel)
+
+        def check(member, before, after):
+            player = self.bot.players[ctx.guild.id]
+
+            if not player:
+                return False
+            elif member != ctx.me or after.channel != channel:
+                return False
+            else:
+                return True
+
+        # Prevent from un-supressing to soon and getting errors
+        await self.bot.wait_for("voice_state_update", timeout=10, check=check)
+
         log.info("Successfully moved player to %s", ctx.player)
         ctx.player.ctx = ctx
+
+        if isinstance(channel, discord.StageChannel):
+            log.info("Attempting to become a speaker")
+
+            try:
+                await ctx.me.edit(suppress=False)
+                log.info("Successfully became a speaker")
+            except discord.Forbidden:
+                log.warning("In-sufficient permissions to become a speaker. Requesting to speak instead.")
+                await ctx.me.request_to_speak()
+
+                return await ctx.send(f"Connected to `{channel}` as a listener")
+
         await ctx.send(f"Now connected to `{channel}` and bound to `{ctx.channel}`")
 
     @commands.command(name="play", description="Play a song", aliases=["p"])
@@ -1229,12 +1256,22 @@ class Music(commands.Cog):
 
         log.info("Unexpectedly disconnected from %s. Waiting to rejoin.", player)
 
-        # Wait for the player to reconnect (10 seconds *should* be enough)
+        # Wait for the player to reconnect
         try:
-            await asyncio.wait_for(self.bot.loop.run_in_executor(None, player.voice._connected.wait), timeout=10, loop=self.bot.loop)
+            def check(member, before, after):
+                player = self.bot.players[member.guild.id]
+
+                if not player:
+                    return False
+                elif member.id != self.bot.user.id or after.channel:
+                    return False
+                else:
+                    return True
+
+            await self.bot.wait_for("voice_state_update", timeout=10, check=check)
             log.info("Successfully rejoined %s", player)
-        # If it times out then we can assume that we aren't going to reconnect and clean up the player
         except asyncio.TimeoutError:
+            # Cleanup the player since we didn't reconnect
             log.info("Didn't rejoin %s. Cleaning up player.", player)
             if player.queue:
                 url = await player.save_queue(player)

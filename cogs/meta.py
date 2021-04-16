@@ -152,12 +152,24 @@ class Meta(commands.Cog):
     @commands.command(name="invite", description="Get a link to add me to your server")
     async def invite(self, ctx):
         perms  = discord.Permissions.none()
-        perms.manage_messages = True
         perms.kick_members = True
         perms.ban_members = True
         perms.manage_channels = True
+        perms.manage_guild = True
+        perms.add_reactions = True
+        perms.view_audit_log = True
+        perms.read_messages = True
+        perms.send_messages = True
+        perms.manage_messages = True
+        perms.embed_links = True
+        perms.attach_files = True
+        perms.read_message_history = True
+        perms.external_emojis = True
+        perms.mute_members = True
+        perms.move_members = True
         perms.manage_roles = True
-        perms.manage_webhooks = True
+        perms.request_to_speak = True
+
         invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms, guild=None, redirect_uri=None)
         await ctx.send(f"<{invite}>")
 
