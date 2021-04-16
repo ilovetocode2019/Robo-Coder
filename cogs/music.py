@@ -735,7 +735,7 @@ class Music(commands.Cog):
                 log.warning("In-sufficient permissions to become a speaker. Requesting to speak instead.")
                 await ctx.me.request_to_speak()
 
-                return await ctx.send(f"Connected to `{channel}` as a listener")
+                return await ctx.send(f"Connected to `{channel}` ")
 
         await ctx.send(f"Connected to `{channel}`")
         log.info("Successfully connected to channel ID %s (guild ID %s)", channel.id, ctx.guild.id)
@@ -782,7 +782,7 @@ class Music(commands.Cog):
                 log.warning("In-sufficient permissions to become a speaker. Requesting to speak instead.")
                 await ctx.me.request_to_speak()
 
-                return await ctx.send(f"Connected to `{channel}` as a listener")
+                return await ctx.send(f"Connected to `{channel}` ")
 
         await ctx.send(f"Now connected to `{channel}` and bound to `{ctx.channel}`")
 
