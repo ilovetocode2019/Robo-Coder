@@ -196,11 +196,14 @@ class Admin(commands.Cog):
         stdout, stderr = await process.communicate()
         status_code = await process.wait()
 
-        with open("update.log", "wb") as file:
-            file.write(f"$ {command}\n\n".encode("utf-8"))
-            file.write(f"[stdout] {stdout}\n\n".encode("utf-8"))
-            file.write(f"[stderr] {stderr}\n\n".encode("utf-8"))
-            file.write(f"[status] Return code {status_code}".encode("utf-8"))
+        stdout = stdout.decode("utf-8").replace("\n", "").strip()
+        stderr = stderr.decode("utf-8").replace("\n", "").strip()
+
+        with open("update.log", "w") as file:
+            file.write(f"$ {command}\n\n")
+            file.write(f"[stdout] {stdout}\n\n")
+            file.write(f"[stderr] {stderr}\n\n")
+            file.write(f"[status] Return code {status_code}")
 
         if status_code:
             log.warning("Something went wrong while updating requirements (check update.log for details)")
