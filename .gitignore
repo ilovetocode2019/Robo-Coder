@@ -1,9 +1,10 @@
 
 *.pyc
-*.html
 *.json
 *.html
+*.log
 
 ffmpeg.exe
 /config.py
+
 songs/*

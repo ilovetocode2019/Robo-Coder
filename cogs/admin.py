@@ -5,8 +5,8 @@ import asyncio
 import humanize
 import importlib
 import io
+import logging
 import os
-import pkg_resources
 import psutil
 import re
 import subprocess
@@ -17,12 +17,13 @@ from jishaku import codeblocks, paginators, shell
 
 from .utils import formats, menus
 
+log = logging.getLogger("robo_coder.admin")
+
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.hidden = True
 
-        self.outdated_packages = []
         self.update_packages_loop.start()
 
     def cog_unload(self):
@@ -180,57 +181,29 @@ class Admin(commands.Cog):
         await ctx.send(":wave: Logging out")
         await self.bot.close()
 
-    async def get_outdated_packages(self, wait=None):
-        installed = [
-            "asyncpg",
-            "discord.py",
-            "humanize",
-            "jishaku",
-            "lxml",
-            "parsedatetime",
-            "pillow",
-            "psutil",
-            "python-dateutil",
-            "youtube_dl"
-        ]
-
-        outdated = []
-        for package in installed:
-            try:
-                current_version = pkg_resources.get_distribution(package).version
-                async with self.bot.session.get(f"https://pypi.org/pypi/{package}/json") as resp:
-                    data = await resp.json()
-
-                pypi_version = data["info"]["version"]
-                if current_version != pypi_version:
-                    outdated.append((package, current_version, pypi_version))
-            except Exception as exc:
-                traceback.print_exception(type(exc), exc, exc.__traceback__,file=sys.stderr)
-
-            if wait:
-                await asyncio.sleep(wait)
-
-        return outdated
-
-    @tasks.loop(hours=10)
+    @tasks.loop(hours=12)
     async def update_packages_loop(self):
-        """Checks for outdated packages every 10 hours."""
+        """Updates outdated packages twice a day."""
 
-        outdated = await self.get_outdated_packages(wait=5)
-        self.outdated_packages = outdated
+        log.info("Updating required packages")
 
-        if outdated:
-            joined = " ".join([package[0] for package in outdated])
-            em = discord.Embed(title="Outdated Packages", description=f"Update with `jsk sh {sys.executable} -m pip install -U {joined}`\n", color=0x96c8da)
+        with open("requirements.txt") as file:
+            requirements = file.read().replace("\n", " ")
 
-            for package in outdated:
-                em.description += f"\n{package[0]} (Current: {package[1]} | Latest: {package[2]})"
+        command = f"{sys.executable} -m pip install --upgrade pip {requirements}"
+        process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-            await self.bot.console.send(embed=em)
+        stdout, stderr = await process.communicate()
+        status_code = await process.wait()
 
-    @update_packages_loop.before_loop
-    async def before_update_packages_loop(self):
-        await self.bot.wait_until_ready()
+        with open("update.log", "wb") as file:
+            file.write(f"$ {command}\n\n".encode("utf-8"))
+            file.write(f"[stdout] {stdout}\n\n".encode("utf-8"))
+            file.write(f"[stderr] {stderr}\n\n".encode("utf-8"))
+            file.write(f"[status] Return code {status_code}".encode("utf-8"))
+
+        if status_code:
+            log.warning("Something went wrong while updating requirements (check update.log for details)")
 
 def setup(bot):
     bot.add_cog(Admin(bot))
