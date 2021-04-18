@@ -184,13 +184,10 @@ class Admin(commands.Cog):
     @tasks.loop(hours=12)
     async def update_packages_loop(self):
         """Updates outdated packages twice a day."""
-
-        log.info("Updating required packages")
-
         with open("requirements.txt") as file:
             requirements = file.read().replace("\n", " ")
 
-        command = f"{sys.executable} -m pip install --upgrade pip {requirements}"
+        command = f"{sys.executable} -m pip install -U pip {requirements}"
         process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         stdout, stderr = await process.communicate()
@@ -199,14 +196,13 @@ class Admin(commands.Cog):
         stdout = stdout.decode("utf-8").replace("\n", "").strip()
         stderr = stderr.decode("utf-8").replace("\n", "").strip()
 
-        with open("update.log", "w") as file:
-            file.write(f"$ {command}\n\n")
-            file.write(f"[stdout] {stdout}\n\n")
-            file.write(f"[stderr] {stderr}\n\n")
-            file.write(f"[status] Return code {status_code}")
-
         if status_code:
-            log.warning("Something went wrong while updating requirements (check update.log for details)")
+            log.warning("Failed to update packages")
+            print(f"\n$ {command} \n\n[stderr] {stderr}\n\n[status] Return code {status_code}\n", file=sys.stdout)
+
+    @update_packages_loop.before_loop
+    async def wait_to_update(self):
+        await self.bot.wait_until_ready()
 
 def setup(bot):
     bot.add_cog(Admin(bot))
