@@ -1,0 +1,8 @@
+*.pyc
+*.json
+*.html
+
+ffmpeg.exe
+/config.py
+
+songs/*
