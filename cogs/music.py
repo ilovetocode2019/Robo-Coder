@@ -35,13 +35,17 @@ class SearchPages(menus.ListPageSource):
 
 class SongSelectorMenuPages(menus.MenuPages):
     def __init__(self, songs, **kwargs):
-        self._source = SearchPages(songs)
         self.songs = songs
-        kwargs.setdefault("delete_message_after", True)
-
         self.current_page = 0
         self.result = None
+
+        kwargs.setdefault("delete_message_after", True)
+        kwargs.setdefault("source", SearchPages(songs))
         super().__init__(**kwargs)
+
+    async def prompt(self, ctx):
+        await self.start(ctx, wait=True)
+        return self.result
 
     # Even though we are subclassing MenuPages, which has this, I need to define it here so I can use it in the decorator
     def _skip_double_triangle_buttons(self):
@@ -838,9 +842,11 @@ class Music(commands.Cog):
 
         async with ctx.typing():
             songs = await Song.playlist(ctx, f"ytsearch5:{query}", download=False)
+
         pages = SongSelectorMenuPages(songs, clear_reactions_after=True)
         song = await pages.prompt(ctx)
-        if not result:
+
+        if not song:
             return await ctx.send("Aborting")
 
         if ctx.player.is_playing:
