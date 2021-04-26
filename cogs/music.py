@@ -849,6 +849,8 @@ class Music(commands.Cog):
         if not song:
             return await ctx.send("Aborting")
 
+        song = await Song.from_query(ctx, song.url)
+
         if ctx.player.is_playing:
             await ctx.send(f":page_facing_up: Enqueued `{song.title}`")
         elif not ctx.player.notifications:
