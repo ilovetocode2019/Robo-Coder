@@ -9,6 +9,7 @@ import sys
 import time
 import traceback
 
+import discord
 import humanize
 import psutil
 from discord.ext import commands, tasks
@@ -17,6 +18,7 @@ from jishaku import codeblocks
 from .utils import formats, menus
 
 log = logging.getLogger("robo_coder.admin")
+
 
 class Admin(commands.Cog):
     def __init__(self, bot):
@@ -202,6 +204,7 @@ class Admin(commands.Cog):
     @update_packages_loop.before_loop
     async def wait_to_update(self):
         await self.bot.wait_until_ready()
+
 
 def setup(bot):
     bot.add_cog(Admin(bot))
