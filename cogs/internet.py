@@ -1,6 +1,3 @@
-import discord
-from discord.ext import commands, menus
-
 import base64
 import datetime
 import functools
@@ -10,7 +7,9 @@ import os
 import re
 import zlib
 
+import discord
 from dateutil import parser
+from discord.ext import commands, menus
 from lxml import etree
 from PIL import Image
 

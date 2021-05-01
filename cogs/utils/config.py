@@ -1,7 +1,6 @@
 import asyncio
 import json
 import os
-import itertools
 
 class Config:
     """Represents a configuration file."""

@@ -1,7 +1,7 @@
 import asyncio
+import collections
 import functools
 import inspect
-import collections
 
 class LRUDict(collections.OrderedDict):
     def __init__(self, max_legnth = 10, *args, **kwargs):

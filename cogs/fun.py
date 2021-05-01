@@ -1,7 +1,6 @@
-import discord
-from discord.ext import commands
-
 import random
+
+from discord.ext import commands
 
 from .utils import formats
 

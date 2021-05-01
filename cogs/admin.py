@@ -1,19 +1,18 @@
-import discord
-from discord.ext import commands, tasks
-
 import asyncio
-import humanize
 import importlib
 import io
 import logging
 import os
-import psutil
 import re
 import subprocess
 import sys
 import time
 import traceback
-from jishaku import codeblocks, paginators, shell
+
+import humanize
+import psutil
+from discord.ext import commands, tasks
+from jishaku import codeblocks
 
 from .utils import formats, menus
 

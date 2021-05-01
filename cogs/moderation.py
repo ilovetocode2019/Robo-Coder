@@ -1,12 +1,12 @@
-import discord
-from discord.ext import commands
-
 import argparse
 import datetime
 import enum
 import re
 import shlex
 import typing
+
+import discord
+from discord.ext import commands
 
 from .utils import cache, formats, human_time, menus
 

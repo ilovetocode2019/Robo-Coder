@@ -1,13 +1,10 @@
-import discord
-from discord.ext import commands
-
 import collections
 import functools
 import io
 import unicodedata
-import zlib
 
-from io import BytesIO
+import discord
+from discord.ext import commands
 from PIL import Image
 
 from .utils import formats, human_time

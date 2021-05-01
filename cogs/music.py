@@ -1,19 +1,18 @@
-import discord
-from discord.ext import commands, menus
-
 import asyncio
 import datetime
 import functools
-import humanize
 import itertools
 import logging
 import os
 import random
 import re
-import sys
 import time
 import urllib
+
+import discord
+import humanize
 import youtube_dl
+from discord.ext import commands, menus
 
 from .utils import errors, formats, human_time
 
