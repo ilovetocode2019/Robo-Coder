@@ -423,7 +423,7 @@ class Internet(commands.Cog):
                 return await ctx.send(embed=em)
 
             # Generic information card
-            information = root.find(".//div[@class='Z0LcW XcVN5d AZCkJd']")
+            information = root.find(".//div[@class='IZ6rdc']")
             if information is not None:
                 em = discord.Embed(title="Information", description=f"{information.text}", color=0x4285F3)
 
