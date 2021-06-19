@@ -356,22 +356,17 @@ class Internet(commands.Cog):
 
             # Search results
             results = [g.find(".//div[@class='yuRUbf']/a") for g in root.findall(".//div[@class='g']")]
-            results = [result for result in results if result is not None] 
-            previews = root.findall(".//div[@class='IsZvec']")
-
             entries = []
 
             # Results formatting
-            for counter, result in enumerate(results):
-                href = result.get("href")
-                h3 = result.find(".//h3[@class='LC20lb DKV0Md']")
+            for result in results:
+                if result:
+                    href = result.get("href")
+                    h3 = result.find(".//h3[@class='LC20lb DKV0Md']")
 
-                cite = result.find(".//div/cite")
-                site = f"`{cite.text}`" if cite is not None else ""
-
-                preview = previews[counter].find(".//span[@class='aCOpRe']/span")
-                preview = " ".join(preview.itertext()) if preview is not None else ""
-                entries.append({"title": h3.text, "description":  f"`{site}` \n\n{preview or 'No description available for this page'}", "url": href})
+                    cite = result.find(".//div/cite")
+                    site = f"`{cite.text}`" if cite is not None else ""
+                    entries.append({"title": h3.text, "description":  f"`{site}`", "url": href})
 
             search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
