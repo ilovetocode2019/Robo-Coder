@@ -563,7 +563,7 @@ class Moderation(commands.Cog):
         await ctx.author.add_roles(config.mute_role, reason=reason)
         await ctx.send(f":white_check_mark: You have been muted for `{human_delta}`")
 
-    @commands.command(name="muted", description="Mute a member")
+    @commands.command(name="muted", description="List muted members")
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def muted(self, ctx):
