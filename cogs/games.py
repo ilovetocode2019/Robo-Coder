@@ -178,6 +178,10 @@ class Games(commands.Cog):
         self.hangman_games.pop(ctx.channel.id)
         await ctx.send(":white_check_mark: Hangman game stopped")
 
+    @commands.command(name="guess", description="Guess a letter in hangman")
+    async def guess(self, ctx):
+        await ctx.send(self.hangman_guess)
+
     @commands.command(name="tictactoe", description="Play a tic tac toe", aliases=["ttt"])
     async def tictactoe(self, ctx, *, opponent: discord.Member):
         if opponent.bot:
