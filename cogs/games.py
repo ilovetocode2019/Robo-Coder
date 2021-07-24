@@ -179,8 +179,8 @@ class Games(commands.Cog):
         await ctx.send(":white_check_mark: Hangman game stopped")
 
     @commands.command(name="guess", description="Guess a letter in hangman")
-    async def guess(self, ctx):
-        await ctx.send(self.hangman_guess)
+    async def guess(self, ctx, letter):
+        await ctx.invoke(self.hangman_guess, letter)
 
     @commands.command(name="tictactoe", description="Play a tic tac toe", aliases=["ttt"])
     async def tictactoe(self, ctx, *, opponent: discord.Member):
