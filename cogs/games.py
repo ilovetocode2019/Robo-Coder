@@ -186,6 +186,8 @@ class Games(commands.Cog):
     async def tictactoe(self, ctx, *, opponent: discord.Member):
         if opponent.bot:
             return await ctx.send(":x: You can't play tic tac toe against a bot")
+        elif ctx.author == opponent:
+            return await ctx.send(":x: Don't play against yourself!")
 
         players = [ctx.author, opponent]
         random.shuffle(players)
