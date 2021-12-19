@@ -53,7 +53,6 @@ class Tools(commands.Cog):
         em.add_field(name=":clock3: Created", value=f"{human_time.fulltime(guild.created_at)}")
         em.add_field(name="<:subscriber:808884446739693609> Nitro Boosts", value=guild.premium_tier)
         bots = len([member for member in guild.members if member.bot])
-        em.add_field(name=":earth_americas: Region", value=str(guild.region).upper().replace("-", " "))
         em.add_field(name=":family: Members", value=f"{len(guild.members)} ({formats.plural(bots):bot})")
         em.add_field(name=":speech_balloon: Channels", value=f"<:text_channel:822911982319173642> {str(len(guild.text_channels))} \N{BULLET} <:voice_channel:822912006947733504> {str(len(guild.voice_channels))}")
 
