@@ -50,7 +50,7 @@ class Tools(commands.Cog):
         em.set_thumbnail(url=guild.icon_url)
 
         em.add_field(name=":crown: Owner", value=guild.owner.mention)
-        em.add_field(name=":clock1: Created", value=f"{human_time.fulltime(guild.created_at)}")
+        em.add_field(name=":clock3: Created", value=f"{human_time.fulltime(guild.created_at)}")
         em.add_field(name="<:subscriber:808884446739693609> Nitro Boosts", value=guild.premium_tier)
         bots = len([member for member in guild.members if member.bot])
         em.add_field(name=":earth_americas: Region", value=str(guild.region).upper().replace("-", " "))
@@ -116,23 +116,19 @@ class Tools(commands.Cog):
         if user.id == ctx.guild.owner.id:
             em.description += "\n:crown: This user owns the server"
         if user.bot:
-            em.description += "\n:robot: This user is a bot"
+            verified = " verified" if user.public_flags.verified_bot else ""
+            em.description += f"\n:robot: This user is a{verified} bot"
         if user.id == self.bot.user.id:
-            em.description +="\n:wave: This user is me"
+            em.description +="\n:wave: That's me!"
         if is_member and user.premium_since:
-            em.description += f"\n<:nitro:808884446739693609> This user has been bosting since {human_time.fulltime(user.joined_at)}"
-
-        if user.public_flags.team_user:
-            em.description += "\n:family: This user is a team user"
+            em.description += f"\n<:nitro:808884446739693609> This user has been bosting this server since {human_time.fulltime(user.joined_at)}"
         if user.public_flags.system:
             em.description += "\n:gear: This user is a system user"
-        if user.public_flags.verified_bot:
-            em.description += "\n:white_check_mark: This user is a verified bot"
 
         em.add_field(name=":clock3: Created", value=human_time.fulltime(user.created_at))
 
         if is_member:
-            em.add_field(name=":arrow_right: Joined", value=f"{human_time.fulltime(user.joined_at)}")
+            em.add_field(name="<:join:922185698587586591> Joined", value=f"{human_time.fulltime(user.joined_at)}")
 
             sorted_members = sorted(ctx.guild.members, key=lambda x: x.joined_at)
             for position, member in enumerate(sorted_members):
@@ -141,16 +137,21 @@ class Tools(commands.Cog):
 
             joins = []
             if position > 1:
-                joins.append(f"{sorted_members[position-2]}")
+                member_display = str(sorted_members[position-2])
+                joins.append(f"{discord.utils.escape_markdown(member_display)}")
             if position > 0:
-                joins.append(f"{sorted_members[position-1]}")
+                member_display = str(sorted_members[position-1])
+                joins.append(f"{discord.utils.escape_markdown(member_display)}")
 
-            joins.append(f"**{user} (#{position+1})**")
+            user_display = str(user)
+            joins.append(f"**{discord.utils.escape_markdown(user_display)} (#{position+1})**")
 
             if position < len(sorted_members) - 1:
-                joins.append(f"{sorted_members[position+1]}")
+                member_display = str(sorted_members[position+1])
+                joins.append(f"{discord.utils.escape_markdown(member_display)}")
             if position < len(sorted_members) - 2:
-                joins.append(f"{sorted_members[position+2]}")
+                member_display = str(sorted_members[position+2])
+                joins.append(f"{discord.utils.escape_markdown(member_display)}")
 
             em.add_field(name=":busts_in_silhouette: Join Order", value=" → ".join(joins), inline=False)
 
