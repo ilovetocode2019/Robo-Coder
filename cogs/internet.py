@@ -358,7 +358,7 @@ class Internet(commands.Cog):
 
             # Search results
             results = [g.find(".//div[@class='tF2Cxc']") for g in root.findall(".//div[@class='g']")]
-            if results[0] == results[1]:
+            if results and results[0] == results[1]:
                 results = results[1:]
 
             entries = []
@@ -375,7 +375,7 @@ class Internet(commands.Cog):
                     preview = result.find(".//div[@class='VwiC3b yXK7lf MUxGbd yDYNvb lyLwlc lEBKkf']")
                     entries.append({"title": h3.text, "description": f"`{cite.text}` \n\n{' '.join(preview.itertext()) if preview is not None else 'No information is available for this page.'}", "url": href})
 
-            # Format results
+            """# Format results
             search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
             if not search_results.strip():
@@ -523,8 +523,9 @@ class Internet(commands.Cog):
 
                 if search_results:
                     em.add_field(name="Search Results", value=search_results, inline=False)
+                
 
-                return await ctx.send(embed=em)
+                return await ctx.send(embed=em)"""
 
             if not results:
                 return await ctx.send("No results found.")
