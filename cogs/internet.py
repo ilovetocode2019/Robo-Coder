@@ -133,7 +133,7 @@ class GoogleResultPages(menus.ListPageSource):
     async def format_page(self, menu, entry):
         em = discord.Embed(**entry, color=0x4285F3)
         em.set_author(name=f"Results for '{self.query}'")
-        em.set_footer(text=f"{len(self.entries)} results | Page {menu.current_page+1}/{len(self.entries)}")
+        em.set_footer(text=f"{entry['url']} | Result {menu.current_page+1}/{len(self.entries)}")
 
         return em
 
@@ -339,36 +339,47 @@ class Internet(commands.Cog):
     @commands.cooldown(1, 20, commands.BucketType.user)
     async def google(self, ctx, *, query):
         async with ctx.typing():
-            params = {"safe": "on", "lr": "lang_en", "hl": "en", "q": query}
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0"}
+            params = {"q": query, "safe": "on", "lr": "lang_en", "hl": "en"}
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0"}
 
-            async with self.bot.session.get(f"https://google.com/search", params=params, headers=headers) as resp:
+            # Request for search results page
+            async with self.bot.session.get("https://google.com/search", params=params, headers=headers) as resp:
                 if resp.status != 200:
-                    return await ctx.send(f":x: Failed to search google (status code {resp.status_code})")
+                    return await ctx.send(f"Failed to fetch google search results (status code {resp.status_code})")
 
                 html = await resp.text("utf-8")
 
                 # Debugging
-                with open("google.html", "w", encoding="utf-8") as file:
-                    file.write(html)
+                if ctx.author.id == self.bot.owner_id:
+                    with open("google.html", "w", encoding="utf-8") as file:
+                        file.write(html)
 
                 root = etree.fromstring(html, etree.HTMLParser())
 
             # Search results
-            results = [g.find(".//div[@class='yuRUbf']/a") for g in root.findall(".//div[@class='g']")]
+            results = [g.find(".//div[@class='tF2Cxc']") for g in root.findall(".//div[@class='g']")]
+            if results[0] == results[1]:
+                results = results[1:]
+
             entries = []
 
-            # Results formatting
+            # Parse results
             for result in results:
-                if result:
-                    href = result.get("href")
-                    h3 = result.find(".//h3[@class='LC20lb DKV0Md']")
+                if result is not None:
+                    link = result.find(".//div[@class='yuRUbf']/a")
 
-                    cite = result.find(".//div/cite")
-                    site = f"`{cite.text}`" if cite is not None else ""
-                    entries.append({"title": h3.text, "description":  f"`{site}`", "url": href})
+                    href = link.get("href")
+                    h3 = link.find(".//h3[@class='LC20lb MBeuO DKV0Md']")
+                    cite = link.find(".//cite[@role='text']")
 
+                    preview = result.find(".//div[@class='VwiC3b yXK7lf MUxGbd yDYNvb lyLwlc lEBKkf']")
+                    entries.append({"title": h3.text, "description": f"`{cite.text}` \n\n{' '.join(preview.itertext()) if preview is not None else 'No information is available for this page.'}", "url": href})
+
+            # Format results
             search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
+
+            if not search_results.strip():
+                search_results = "No search results found."
 
             # Calculation card
             calculator = root.find(".//div[@class='tyYmIf']")
@@ -475,12 +486,12 @@ class Internet(commands.Cog):
             if definer is not None:
                 word = definer.find(".//div[@class='RjReFf jY7QFf']/div[@class='DgZBFd XcVN5d frCXef']/span")
                 pronounciation = definer.find(".//div[@class='S23sjd g30o5d']")
-                conjunction = root.find(".//div[@class='pgRvse vdBwhd ePtbIe']/i/span")
+                word_type = root.find(".//div[@class='pgRvse vdBwhd ePtbIe']/i/span")
 
                 raw_examples = [raw_example for raw_example in root.findall(".//div[@class='L1jWkf h3TRxf']/div/span") if raw_example.text]
                 examples = [f"{counter+1}. {example.text}" for counter, example in enumerate(raw_examples)]
 
-                em = discord.Embed(title="Definition", description=f"{word.text} `{''.join(pronounciation.itertext())}`\n\n*{conjunction.text}*", color=0x4285F3)
+                em = discord.Embed(title="Definition", description=f"{word.text} `{''.join(pronounciation.itertext())}`\n\n*{word_type}*", color=0x4285F3)
                 em.add_field(name="Examples", value="\n".join(examples))
 
                 if search_results:
@@ -516,7 +527,7 @@ class Internet(commands.Cog):
                 return await ctx.send(embed=em)
 
             if not results:
-                return await ctx.send(":x: I couldn't find any results")
+                return await ctx.send("No results found.")
 
         pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
         await pages.start(ctx)
