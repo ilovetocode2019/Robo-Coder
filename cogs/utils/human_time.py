@@ -12,13 +12,13 @@ class ShortTime:
     """Attempts to parse a time using regex."""
 
     regex = re.compile(
-        """(?:(?P<years>[0-9])(?:years?|year|y))?\s?
-           (?:(?P<months>[0-9])(?:months?|month|mo))?\s?
-           (?:(?P<weeks>[0-9])(?:weeks?|week|w))?\s?
-           (?:(?P<days>[0-9])(?:days?|day|d))?\s?
-           (?:(?P<hours>[0-9])(?:hours?|hour|h))?\s?
-           (?:(?P<minutes>[0-9])(?:minutes?|minute|mins|min|m))?\s?
-           (?:(?P<seconds>[0-9])(?:seconds?|second|secs|sec|s))?\s?""",
+        """(?:(?P<years>[0-9]+)(?:years?|year|y))?\s?
+           (?:(?P<months>[0-9]+)(?:months?|month|mo))?\s?
+           (?:(?P<weeks>[0-9]+)(?:weeks?|week|w))?\s?
+           (?:(?P<days>[0-9]+)(?:days?|day|d))?\s?
+           (?:(?P<hours>[0-9]+)(?:hours?|hour|h))?\s?
+           (?:(?P<minutes>[0-9]+)(?:minutes?|minute|mins|min|m))?\s?
+           (?:(?P<seconds>[0-9]+)(?:seconds?|second|secs|sec|s))?\s?""",
            re.VERBOSE)
 
     def __init__(self, argument, *, now=None):
@@ -100,7 +100,7 @@ class TimeWithContent(Time):
             time = now+dateutil.relativedelta.relativedelta(**data)
             content = argument[match.end():].strip()
         else:
-            # Parsedatetime doesn't work with 'from now' so handle that here
+            # nlp doesn't work with 'from now' so handle that here
             if argument.endswith("from now"):
                 argument = argument[:-8].strip()
 
@@ -112,7 +112,7 @@ class TimeWithContent(Time):
             if not context.hasDateOrTime:
                 raise commands.BadArgument("I couldn't recognize your time. Try something like `tomorrow` or `3 days`.")
             if not context.hasTime:
-                # We have date data data, but not time, so replace it with time data
+                # We have date date data, but not time, so replace it with time data
                 time = time.replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=now.microsecond)
             if context.accuracy == parsedatetime.pdtContext.ACU_HALFDAY:
                 time = time.replace(day=now.day+1)
