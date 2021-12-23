@@ -37,7 +37,7 @@ class Timers(commands.Cog):
         created_at = ctx.message.created_at
 
         await self.create_timer("reminder", [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content], expires_at, created_at)
-        await ctx.send(f"Set a reminder for `{human_time.timedelta(expires_at, when=created_at)}` with the message `{discord.utils.escape_markdown(content)}`.")
+        await ctx.send(f"Set a reminder for `{human_time.timedelta(expires_at, when=created_at)}` with the message: `{content}`.")
 
     @remind.command(name="list", description="List your reminders")
     async def remind_list(self, ctx):
@@ -52,7 +52,7 @@ class Timers(commands.Cog):
 
         em = discord.Embed(title="Reminders", description="\n", color=0x96c8da)
         for timer in timers:
-            em.description += f"\n{timer.data[3]} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=ctx.message.created_at)}"
+            em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=ctx.message.created_at)}"
         await ctx.send(embed=em)
 
     @remind.command(name="here", description="List your reminders in this channel")
@@ -70,7 +70,7 @@ class Timers(commands.Cog):
 
         em = discord.Embed(title="Reminders Here", description="\n", color=0x96c8da)
         for timer in timers:
-            em.description += f"\n{timer.data[3]} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=timer.created_at)}"
+            em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=timer.created_at)}"
         await ctx.send(embed=em)
 
     @remind.command(name="cancel", description="Cancel a reminder", aliases=["delete", "remove"])
