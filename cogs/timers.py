@@ -36,10 +36,10 @@ class Timers(commands.Cog):
         expires_at = reminder.time
         created_at = ctx.message.created_at
 
-        timer = await self.create_timer("reminder", [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content], expires_at, created_at)
-        await ctx.send(f":white_check_mark: Set a timer for `{human_time.timedelta(expires_at, when=created_at)}` with the message `{content}`")
+        await self.create_timer("reminder", [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content], expires_at, created_at)
+        await ctx.send(f"Set a reminder for `{human_time.timedelta(expires_at, when=created_at)}` with the message `{discord.utils.escape_markdown(content)}`.")
 
-    @remind.command(name="list", description="View your reminders")
+    @remind.command(name="list", description="List your reminders")
     async def remind_list(self, ctx):
         query = """SELECT * FROM timers
                    WHERE event = 'reminder'
@@ -48,15 +48,15 @@ class Timers(commands.Cog):
         timers = await self.bot.db.fetch(query, str(ctx.author.id))
         timers = [Timer(self.bot, **dict(timer)) for timer in timers]
         if not timers:
-            return await ctx.send("You don't have any reminders")
+            return await ctx.send("You don't have any reminders.")
 
         em = discord.Embed(title="Reminders", description="\n", color=0x96c8da)
         for timer in timers:
             em.description += f"\n{timer.data[3]} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=ctx.message.created_at)}"
         await ctx.send(embed=em)
 
-    @remind.command(name="here", description="View your reminders in this channel")
-    async def remind_here(self ,ctx):
+    @remind.command(name="here", description="List your reminders in this channel")
+    async def remind_here(self, ctx):
         query = """SELECT * FROM timers
                    WHERE event = 'reminder'
                    AND data #>> '{0}' = $1
@@ -66,9 +66,9 @@ class Timers(commands.Cog):
         timers = [Timer(self.bot, **dict(timer)) for timer in timers]
 
         if not timers:
-            return await ctx.send("You don't have any reminders in this channel")
+            return await ctx.send("You don't have any reminders in this channel.")
 
-        em = discord.Embed(title="Timers Here", description="\n", color=0x96c8da)
+        em = discord.Embed(title="Reminders Here", description="\n", color=0x96c8da)
         for timer in timers:
             em.description += f"\n{timer.data[3]} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=timer.created_at)}"
         await ctx.send(embed=em)
@@ -81,13 +81,13 @@ class Timers(commands.Cog):
                 """
         result = await self.bot.db.execute(query, "reminder", timer)
         if result == "DELETE 0":
-            return await ctx.send(":x: That is not a valid timer or you do not own it")
+            return await ctx.send("Couldn't find this reminder in your reminder list.")
 
         if self.current_timer and self.current_timer.event == "reminder" and self.current_timer.id == timer:
             # The timer running is the one we canceled, so we need to restart the loop
             self.restart_loop()
 
-        await ctx.send(":white_check_mark: Timer has been canceled")
+        await ctx.send("Reminder has been canceled.")
 
     @remind.command(name="clear", description="Clear all your reminders")
     async def remind_clear(self, ctx):
@@ -97,14 +97,14 @@ class Timers(commands.Cog):
                 """
         result = await self.bot.db.execute(query, str(ctx.author.id))
         if result == "DELETE 0":
-            return await ctx.send(":x: No reminders to cancel")
+            return await ctx.send("No reminders to clear.")
 
         if self.current_timer and self.current_timer.event == "reminder" and self.current_timer.data[0] == ctx.author.id:
             self.restart_loop()
 
-        await ctx.send(":white_check_mark: All your reminders have been cleared")
+        await ctx.send("All your reminders have been cleared.")
 
-    @commands.command(name="reminders", description="View your reminders")
+    @commands.command(name="reminders", description="List your reminders")
     async def reminders(self, ctx):
         await ctx.invoke(self.remind_list)
 
