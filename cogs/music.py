@@ -1320,7 +1320,7 @@ class Music(commands.Cog):
     async def get_player(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
         if not player:
-            raise errors.VoiceError("I am connected to any voice channel")
+            raise errors.VoiceError("I'm not connected to any voice channel.")
         ctx.player = player
 
     async def get_bin(self, url):
