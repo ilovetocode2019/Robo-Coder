@@ -1040,7 +1040,7 @@ class Music(commands.Cog):
     @queue.command(name="save", description="Save the queue")
     async def queue_save(self, ctx):
         if ctx.player.queue:
-            url = await ctx.playersave_queue(ctx.player)
+            url = await ctx.player.save_queue(ctx.player)
             await ctx.send(f"I saved the queue to {url}")
         else:
             await ctx.send("No queue to save")
