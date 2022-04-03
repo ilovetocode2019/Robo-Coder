@@ -679,7 +679,7 @@ class Internet(commands.Cog):
 
             em = discord.Embed(title=f"{'<:roblox_premium:809089466056310834> ' if premium is not None else ''}{display_name.text.strip()}", description="", url=f"{base_url}/profile", color=0x96c8da)
             em.set_author(name=f"@{profile['Username']}")
-            em.set_thumbnail(url=f"https://www.roblox.com/headshot-thumbnail/image?userId={profile['Id']}&width=420&height=420&format=png")
+            em.set_thumbnail(url=f"https://www.roblox.com/bust-thumbnail/image?userId={profile['Id']}&width=420&height=420&format=png")
             em.set_footer(text=f"ID: {profile['Id']}")
 
             if about is not None:
