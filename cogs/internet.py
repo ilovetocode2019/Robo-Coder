@@ -630,19 +630,35 @@ class Internet(commands.Cog):
     @commands.command(name="roblox", description="Get info on a Roblox user")
     @commands.cooldown(2, 20, commands.BucketType.user)
     async def roblox(self, ctx, username):
+        # Because of how the Roblox API is structured
+        # We have to get data from the user profile html page
+        # And make requests to multiple API endpoints
+
         async with ctx.typing():
             params = {"username": username}
-            async with self.bot.session.get(f"http://api.roblox.com/users/get-by-username", params=params) as resp:
+            # Search for user
+            async with self.bot.session.get(f"https://api.roblox.com/users/get-by-username", params=params) as resp:
                 if resp.status != 200:
                     return await ctx.send(f":x: Failed to find user (error code {resp.status})")
 
                 profile = await resp.json()
                 if "Id" not in profile:
-                    return await ctx.send(":x: I couldn't find that user")
+                    return await ctx.send("Roblox user not found")
 
                 user_id = profile["Id"]
                 base_url = f"https://www.roblox.com/users/{user_id}"
 
+            # Fetch user info that the API provides
+            async with self.bot.session.get(f"https://users.roblox.com/v1/users/{user_id}") as resp:
+                if resp.status != 200:
+                    return await ctx.send(f":x: Failed to fetch user data from users.roblox.com (error code {resp.status})")
+
+                user_data = await resp.json()
+
+                if user_data["isBanned"]:
+                    return await ctx.send(f"This Roblox user is banned")
+
+            # Get information about the user from the website profile page
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0"}
             async with self.bot.session.get(f"{base_url}/profile", headers=headers) as resp:
                 if resp.status != 200:
@@ -659,12 +675,12 @@ class Internet(commands.Cog):
             premium = root.find(".//span[@class='icon-premium-medium']")
             about = root.find(".//span[@class='profile-about-content-text linkify']")
             details = root.find(".//div[@class='hidden']")
-            avatar = root.find(".//span[@class='thumbnail-span-original hidden']/img")
+            display_name = root.find(".//h2[@class='profile-name text-overflow']")
 
-            em = discord.Embed(title=f"{'<:roblox_premium:809089466056310834> ' if premium is not None else ''}{profile['Username']}", description="", url=f"{base_url}/profile", color=0x96c8da)
-
-            if avatar is not None:
-                em.set_thumbnail(url=avatar.get("src"))
+            em = discord.Embed(title=f"{'<:roblox_premium:809089466056310834> ' if premium is not None else ''}{display_name.text.strip()}", description="", url=f"{base_url}/profile", color=0x96c8da)
+            em.set_author(name=f"@{profile['Username']}")
+            em.set_thumbnail(url=f"https://www.roblox.com/headshot-thumbnail/image?userId={profile['Id']}&width=420&height=420&format=png")
+            em.set_footer(text=f"ID: {profile['Id']}")
 
             if about is not None:
                 em.description += about.text
@@ -687,6 +703,20 @@ class Internet(commands.Cog):
             status = details.get("data-statustext")
             if status:
                 em.add_field(name="Status", value=status, inline=False)
+
+            on_website = root.find(".//span[@class='avatar-status online profile-avatar-status icon-online']")
+            in_game = root.find(".//span[@class='avatar-status game icon-game profile-avatar-status']")
+
+            if on_website is not None:
+                em.add_field(name="Presence", value="Website", inline=False)
+            elif in_game is not None:
+                em.add_field(name="Presence", value="Game", inline=False)
+            else:
+                em.add_field(name="Presence", value="Offline", inline=False)
+
+
+            created_at = parser.isoparse(user_data["created"])
+            em.add_field(name="Created At", value=created_at.strftime('%m/%d/%Y'))
 
         await ctx.send(embed=em)
 
