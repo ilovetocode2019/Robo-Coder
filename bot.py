@@ -17,9 +17,9 @@ logging.basicConfig(level=logging.INFO, format="(%(asctime)s) %(levelname)s %(me
 def get_prefix(bot, message):
     prefixes = [f"<@!{bot.user.id}> ", f"<@{bot.user.id}> "]
     if message.guild:
-        prefixes.extend(bot.prefixes.get(message.guild.id, ["r!", "r."]))
+        prefixes.extend(bot.prefixes.get(message.guild.id, bot.config.default_prefixes))
     else:
-        prefixes.extend(["r!", "r.", "!"])
+        prefixes.extend(bot.config.default_prefixes + ["!"])
     return prefixes
 
 extensions = [
@@ -78,7 +78,7 @@ class RoboCoder(commands.Bot):
         return self.prefixes.get(guild.id, [self.user.mention])[0]
 
     def get_guild_prefixes(self, guild):
-        return self.prefixes.get(guild.id, ["r!", "r."])
+        return self.prefixes.get(guild.id, self.config.default_prefixes)
 
     async def stop_players(self):
         for player in self.players.copy().values():

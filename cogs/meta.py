@@ -212,11 +212,11 @@ class Meta(commands.Cog):
         em.add_field(name="Functions", value=function_count)
         await ctx.send(embed=em)
 
-    @commands.group(name="prefix", description="Manage custom prefixes", invoke_without_command=True)
+    @commands.group(name="prefix", description="Manage custom prefixes for this server", invoke_without_command=True)
     async def prefix(self, ctx):
         await ctx.send_help(ctx.command)
 
-    @prefix.command(name="add", description="Add a prefix")
+    @prefix.command(name="add", description="Add a prefix to this server")
     @commands.has_permissions(manage_guild=True)
     async def prefix_add(self, ctx, *, prefix: Prefix):
         prefixes = self.bot.get_guild_prefixes(ctx.guild)
@@ -231,7 +231,7 @@ class Meta(commands.Cog):
 
         await ctx.send(f":white_check_mark: Added the prefix `{prefix}`")
 
-    @prefix.command(name="remove", description="Remove a prefix")
+    @prefix.command(name="remove", description="Remove a prefix from this server")
     @commands.has_permissions(manage_guild=True)
     async def prefix_remove(self, ctx, *, prefix: Prefix):
         prefixes = self.bot.get_guild_prefixes(ctx.guild)
@@ -268,14 +268,14 @@ class Meta(commands.Cog):
         await self.bot.prefixes.add(ctx.guild.id, [])
         await ctx.send(f":white_check_mark: Removed all prefixes")
 
-    @prefix.command(name="reset", description="Reset the prefixes to the default prefixes")
+    @prefix.command(name="reset", description="Reset the custom server prefixes to the default prefixes")
     @commands.has_permissions(manage_guild=True)
     async def prefix_reset(self, ctx):
         result = await menus.Confirm("Are you sure you want to clear all your prefixes?").prompt(ctx)
         if not result:
             return await ctx.send("Aborting")
 
-        await self.bot.prefixes.add(ctx.guild.id, ["r!", "r."])
+        await self.bot.prefixes.add(ctx.guild.id, self.bot.config.default_prefixes)
         await ctx.send(f":white_check_mark: Reset prefixes")
 
     @prefix.command(name="list", description="View the prefixes in this server")
