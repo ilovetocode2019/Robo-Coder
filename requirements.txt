@@ -8,5 +8,5 @@ parsedatetime
 pillow
 psutil
 python-dateutil
-git+https://github.com/ytdl-org/youtube-dl@refs/pull/30184/merge
+git+https://github.com/ytdl-org/youtube-dl
 git+https://github.com/Rapptz/discord-ext-menus
