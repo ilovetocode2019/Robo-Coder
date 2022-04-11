@@ -70,7 +70,7 @@ class Timers(commands.Cog):
 
         em = discord.Embed(title="Reminders Here", description="\n", color=0x96c8da)
         for timer in timers:
-            em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=timer.created_at)}"
+            em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=ctx.message.created_at)}"
         await ctx.send(embed=em)
 
     @remind.command(name="cancel", description="Cancel a reminder", aliases=["delete", "remove"])
