@@ -769,7 +769,7 @@ class Music(commands.Cog):
             else:
                 return True
 
-        # Prevent from un-supressing too soon and getting errors
+        # Prevent from un-suppressing too soon and getting errors
         await self.bot.wait_for("voice_state_update", timeout=10, check=check)
 
         log.info("Successfully moved player to %s", ctx.player)
