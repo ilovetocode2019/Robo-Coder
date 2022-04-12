@@ -16,7 +16,7 @@ class Fun(commands.Cog):
         result = random.choice(["Heads", "Tails"])
         await ctx.send(f":coin: You flipped {result}")
 
-    @commands.command(name="rolldice", description="Role some dice", aliases=["rolldie"])
+    @commands.command(name="rolldice", description="Roll some dice", aliases=["rolldie"])
     async def rolldice(self, ctx, dice=1, sides=6):
         if not dice:
             return await ctx.send(":x: You must roll at least 1 die")
