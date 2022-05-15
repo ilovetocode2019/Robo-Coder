@@ -610,7 +610,7 @@ class Song:
 
         if int(days) > 0:
             duration.append(days)
-        if int(hours) > 0:
+        if int(hours) > 0 or int(days) > 0:
             duration.append(f"{int(hours)}")
             duration.append(f"{int(minutes):02d}")
         else:
