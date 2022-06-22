@@ -462,7 +462,7 @@ class Song:
         except youtube_dl.DownloadError as exc:
             raise errors.SongError(str(exc)) from exc
         except asyncio.TimeoutError as exc:
-            raise errors.SongError(f"It took too long to download `{song.url}") from exc
+            raise errors.SongError(f"It took too long to download `{song.url}`") from exc
 
         if not info:
             raise errors.SongError(f"I Couldn't download `{song.url}`")
@@ -590,11 +590,11 @@ class Song:
         duration_str = []
         if days > 0:
             duration_str.append(f"{formats.plural(days):day}")
-        if hours > 0:
+        if hours > 0 or days > 0:
             duration_str.append(f"{formats.plural(hours):hour}")
-        if minutes > 0:
+        if minutes > 0 or hours > 0 or days > 0:
             duration_str.append(f"{formats.plural(minutes):minute}")
-        if seconds > 0:
+        if seconds > 0 or minutes > 0 or hours > 0 or days > 0:
             duration_str.append(f"{formats.plural(seconds):second}")
 
         return ", ".join(duration_str)
@@ -610,11 +610,17 @@ class Song:
 
         if int(days) > 0:
             duration.append(days)
-        if int(hours) > 0 or int(days) > 0:
-            duration.append(f"{int(hours)}")
+
+        if int(hours) > 0 and int(days) == 0:
+            duration.append(int(hours))
+        elif int(days) > 0:
+            duration.append(f"{int(hours):02d}")
+
+        if int(days) > 0 or int(hours) > 0:
             duration.append(f"{int(minutes):02d}")
-        else:
+        elif int(days) == 0 and int(hours) == 0:
             duration.append(int(minutes))
+
         duration.append(f"{int(seconds):02d}")
 
         return ":".join([str(x) for x in duration])
