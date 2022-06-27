@@ -675,11 +675,13 @@ class Internet(commands.Cog):
             premium = root.find(".//span[@class='icon-premium-medium']")
             about = root.find(".//span[@class='profile-about-content-text linkify']")
             details = root.find(".//div[@class='hidden']")
-            display_name = root.find(".//h2[@class='profile-name text-overflow']")
+            display_name = root.find(".//div[@class='profile-display-name font-caption-body text text-overflow']")
 
             em = discord.Embed(title=f"{'<:roblox_premium:809089466056310834> ' if premium is not None else ''}{display_name.text.strip()}", description="", url=f"{base_url}/profile", color=0x96c8da)
             em.set_author(name=f"@{profile['Username']}")
             em.set_thumbnail(url=f"https://www.roblox.com/bust-thumbnail/image?userId={profile['Id']}&width=420&height=420&format=png")
+            em.set_thumbnail(url=f"https://www.roblox.com/outfit-thumbnail/image?userOutfitId={profile['Id']}&width=420&height=420&format=png")
+            em.set_thumbnail(url=f"https://www.roblox.com/headshot-thumbnail/image?userId={profile['Id']}&width=420&height=420&format=png")
             em.set_footer(text=f"ID: {profile['Id']}")
 
             if about is not None:
