@@ -399,7 +399,7 @@ class Song:
         # Check if the search and result is already cached in the database
         possible_song = await cls.from_alias(ctx, search)
         if possible_song:
-            return possible_song
+            return await cls.confirm_download(ctx, possible_song)
 
         # This checks to see if the query is a youtube song name or id that is already cached in the database and returns the result if any is found
         youtube_id = cls.parse_youtube_id(search) or search
@@ -410,7 +410,8 @@ class Song:
         record = await ctx.bot.db.fetchrow(query, search, youtube_id)
         if record:
             await cls.create_alias(ctx, search, record["id"])
-            return cls.from_record(record, ctx)
+            song = cls.from_record(record, ctx)
+            return await cls.confirm_download(ctx, song)
 
         # Resolve the query into a full Song, so we can search the database
         song = await cls.resolve_query(ctx, search)
@@ -421,7 +422,8 @@ class Song:
         record = await ctx.bot.db.fetchrow(query, song.title, song.id, song.extractor)
         if record:
             await cls.create_alias(ctx, search, record["id"])
-            return cls.from_record(record, ctx)
+            song = cls.from_record(record, ctx)
+            return await cls.confirm_download(ctx, song)
 
         # We shouldn't get here unless the song isn't in the database
         song = await cls.download_song(ctx, song)
@@ -624,6 +626,22 @@ class Song:
         duration.append(f"{int(seconds):02d}")
 
         return ":".join([str(x) for x in duration])
+
+    @classmethod
+    async def confirm_download(cls, ctx, song):
+        if os.path.exists(song.filename):
+            new_song = song
+        else:
+            new_song = await cls.download_song(ctx, song)
+
+            if new_song.filename != song.filename:
+                query = """UPDATE songs
+                        SET filename=$1
+                        WHERE songs.id=$2;
+                        """
+                await ctx.bot.db.execute(query, new_song.filename, song.id)
+
+        return new_song
 
 class Queue(asyncio.Queue):
     def __getitem__(self, key):
