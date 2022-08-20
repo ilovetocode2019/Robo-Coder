@@ -293,7 +293,7 @@ class Meta(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.content == f"<@!{self.bot.user.id}>" and not message.author.bot:
+        if message.content == f"<@{self.bot.user.id}>" and not message.author.bot:
             prefix = self.bot.get_guild_prefix(message.guild)
             await message.channel.send(f":wave: Hello, I am Robo Coder!\nTo get more info use {prefix}help")
 
