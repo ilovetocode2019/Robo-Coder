@@ -92,9 +92,9 @@ class RoboCoder(commands.Bot):
             await player.cleanup()
 
     async def post_bin(self, content):
-        async with self.session.post("https://mystb.in/documents", data=content.encode("utf-8")) as resp:
+        async with self.session.post("https://hastebin.com/documents", data=content.encode("utf-8")) as resp:
             data = await resp.json()
-            return f"https://mystb.in/{data['key']}"
+            return f"<https://hastebin.com/{data['key']}>"
 
     async def on_ready(self):
         log.info(f"Logged in as {self.user.name} - {self.user.id}")
