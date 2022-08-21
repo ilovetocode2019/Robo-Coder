@@ -722,7 +722,7 @@ class Music(commands.Cog):
     def cog_check(self, ctx):
         return ctx.guild
 
-    @commands.command(name="connect", description="Connect the bot to a voice channel", aliases=["join"])
+    @commands.command(name="join", description="Connect the bot to a voice channel", aliases=["connect"])
     async def connect(self, ctx):
         try:
             channel = ctx.author.voice.channel
@@ -751,18 +751,6 @@ class Music(commands.Cog):
 
         self.bot.players[ctx.guild.id] = Player(ctx, voice_client)
         player = self.bot.players[ctx.guild.id]
-
-        if isinstance(channel, discord.StageChannel):
-            log.info("Attempting to become a speaker")
-
-            try:
-                await ctx.me.edit(suppress=False)
-                log.info("Successfully became a speaker")
-            except discord.Forbidden:
-                log.warning("In-sufficient permissions to become a speaker. Requesting to speak instead.")
-                await ctx.me.request_to_speak()
-
-                return await ctx.send(f"Connected to `{channel}` ")
 
         await ctx.send(f"Connected to `{channel}`")
         log.info("Successfully connected to channel ID %s (guild ID %s)", channel.id, ctx.guild.id)
@@ -798,18 +786,6 @@ class Music(commands.Cog):
 
         log.info("Successfully moved player to %s", ctx.player)
         ctx.player.ctx = ctx
-
-        if isinstance(channel, discord.StageChannel):
-            log.info("Attempting to become a speaker")
-
-            try:
-                await ctx.me.edit(suppress=False)
-                log.info("Successfully became a speaker")
-            except discord.Forbidden:
-                log.warning("In-sufficient permissions to become a speaker. Requesting to speak instead.")
-                await ctx.me.request_to_speak()
-
-                return await ctx.send(f"Connected to `{channel}` ")
 
         await ctx.send(f"Now connected to `{channel}` and bound to `{ctx.channel}`")
 
@@ -968,6 +944,9 @@ class Music(commands.Cog):
 
     @commands.group(name="loop", description="Loop the song", aliases=["repeat"], invoke_without_command=True)
     async def loop(self, ctx):
+        if not ctx.player.now:
+            return await ctx.send("Not playing anything")
+
         if ctx.author not in ctx.player.channel.members:
             return
 
@@ -980,6 +959,9 @@ class Music(commands.Cog):
 
     @loop.command(name="queue", description="Loop the queue")
     async def loop_queue(self, ctx):
+        if not ctx.player.now:
+            return await ctx.send("Not playing anything")
+
         if ctx.author not in ctx.player.channel.members:
             return
 
@@ -1090,7 +1072,7 @@ class Music(commands.Cog):
         ctx.player.queue.clear()
         await ctx.send(":wastebasket: Cleared queue")
 
-    @commands.command(name="disconnect", description="Disconnect the bot from a voice channel", aliases=["leave"])
+    @commands.command(name="leave", description="Disconnect the bot from a voice channel", aliases=["disconnect"])
     async def disconnect(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
 
@@ -1246,6 +1228,22 @@ class Music(commands.Cog):
         await self.bot.stop_players()
         await ctx.send("All players have been stopped")
         log.info("Stopped all players")
+
+    @commands.Cog.listener("on_voice_state_update")
+    async def on_bot_move(self, member, before, after):
+        player = self.bot.players.get(member.guild.id)
+        if not player or member != self.bot.user:
+            return
+
+        if isinstance(after.channel, discord.StageChannel):
+            log.info("Attempting to become a speaker")
+
+            try:
+                await ctx.me.edit(suppress=False)
+                log.info("Successfully became a speaker")
+            except discord.Forbidden:
+                log.warning("In-sufficient permissions to become a speaker. Requesting to speak instead.")
+                await ctx.me.request_to_speak()
 
     @commands.Cog.listener("on_voice_state_update")
     async def disconnect_on_inactivity(self, member, before, after):
