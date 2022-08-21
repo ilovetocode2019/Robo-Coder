@@ -862,7 +862,7 @@ class Music(commands.Cog):
         if ctx.author not in ctx.player.channel.members:
             return
         if not ctx.player.now or ctx.player.voice.is_paused():
-            return
+            return await ctx.send("Already paused!")
 
         ctx.player.pause()
         await ctx.send(":arrow_forward: Paused")
@@ -872,7 +872,7 @@ class Music(commands.Cog):
         if ctx.author not in ctx.player.channel.members:
             return
         if not ctx.player.now or ctx.player.voice.is_playing():
-            return
+            return await ctx.send("Already playing!")
 
         ctx.player.resume()
         await ctx.send(":pause_button: Resumed")
@@ -1235,15 +1235,51 @@ class Music(commands.Cog):
         if not player or member != self.bot.user:
             return
 
-        if isinstance(after.channel, discord.StageChannel):
-            log.info("Attempting to become a speaker")
+        # If we were moved to a stage channel, attempt to move to the stage
+        if isinstance(after.channel, discord.StageChannel) and not isinstance(before.channel, discord.StageChannel):
+            log.info("Attempting to become a speaker in %s", player)
 
             try:
-                await ctx.me.edit(suppress=False)
-                log.info("Successfully became a speaker")
+                await member.edit(suppress=False)
+                log.info("Successfully became a speaker in %s", player)
+                stage_success = True
             except discord.Forbidden:
-                log.warning("In-sufficient permissions to become a speaker. Requesting to speak instead.")
-                await ctx.me.request_to_speak()
+                # Note that we didn't succeede
+                # We'll request to speak after we make sure people have joined the channel
+                stage_success = False
+                log.warning("In-sufficient permissions to become a speaker %s.", player)
+
+        members = [member for member in player.channel.members if not member.bot]
+
+        # If the bot moves to an empty channel do the waiting stuff
+        if before.channel and after.channel and before.channel != after.channel and not members:
+            paused = player.voice.is_paused()
+            player.pause()
+            log.info("Moved to an empty channel (%s). Waiting for someone to join.", player)
+
+            try:
+                check = lambda member, before, after: (not member.bot and after.channel and after.channel == player.channel) or (member.id == self.bot.user.id and after.channel and after.channel != before.channel)
+                await self.bot.wait_for("voice_state_update", timeout=180, check=check)
+                log.info("Someone joined %s. Continuing player.", player)
+                # Someone joined so we can resume if we paused on disconnect
+                if not paused:
+                    player.resume()
+
+            except asyncio.TimeoutError:
+                log.info("Timed out while waiting for someone to join %s", player)
+                # If the voice channel is empty for 3 minutes then disconnect
+                if player.queue:
+                    url = await player.save_queue(player)
+                    await player.ctx.send(f"I left `{player.voice.channel}` because it was empty. The queue has been saved to {url}.")
+                await player.cleanup()
+
+                return
+
+        # If we are in a stage channel
+        # And we weren't able to move to the stage, request permission to speak
+        if (isinstance(after.channel, discord.StageChannel) and not isinstance(before.channel, discord.StageChannel)) and (not stage_success):
+            log.warning("Requesting to speak in %s", player)
+            await member.request_to_speak()
 
     @commands.Cog.listener("on_voice_state_update")
     async def disconnect_on_inactivity(self, member, before, after):
