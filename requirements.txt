@@ -10,3 +10,4 @@ psutil
 python-dateutil
 git+https://github.com/ytdl-org/youtube-dl@a0068bd6b
 git+https://github.com/Rapptz/discord-ext-menus
+yt-dlp

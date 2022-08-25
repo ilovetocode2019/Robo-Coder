@@ -11,7 +11,7 @@ import urllib
 
 import discord
 import humanize
-import youtube_dl
+import yt_dlp
 from discord.ext import commands, menus
 
 from .utils import errors, formats, human_time
@@ -347,7 +347,7 @@ class Song:
         "default_search": "auto",
         "source_address": "0.0.0.0",
     }
-    ytdl = youtube_dl.YoutubeDL(YTDL_OPTIONS)
+    ytdl = yt_dlp.YoutubeDL(YTDL_OPTIONS)
 
     def __init__(self, ctx, *, data, filename=None):
         self._data = data
@@ -444,7 +444,7 @@ class Song:
         partial = functools.partial(cls.ytdl.extract_info, search, download=False)
         try:
             info = await ctx.bot.loop.run_in_executor(None, partial)
-        except youtube_dl.DownloadError as exc:
+        except yt_dlp.DownloadError as exc:
             raise errors.SongError(str(exc)) from exc
 
         if not info:
@@ -461,7 +461,7 @@ class Song:
         try:
             partial = functools.partial(cls.ytdl.extract_info, song.url)
             info = await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
-        except youtube_dl.DownloadError as exc:
+        except yt_dlp.DownloadError as exc:
             raise errors.SongError(str(exc)) from exc
         except asyncio.TimeoutError as exc:
             raise errors.SongError(f"It took too long to download `{song.url}`") from exc
@@ -545,7 +545,7 @@ class Song:
         partial = functools.partial(cls.ytdl.extract_info, search, download=download)
         try:
             info = await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
-        except youtube_dl.DownloadError as exc:
+        except yt_dlp.DownloadError as exc:
             raise errors.SongError(str(exc)) from exc
         except asyncio.TimeoutError as exc:
             raise errors.SongError("It took to long to download that playlist")
