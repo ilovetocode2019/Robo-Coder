@@ -471,9 +471,9 @@ class Song:
                 raise errors.SongError(f"I Couldn't download `{song.url}`")
             if "entries" in info:
                 entries = info["entries"]
-            if not entries:
-                raise errors.SongError(f"I Couldn't find any results for `{search}`")
-            info = entries[0]
+                if not entries:
+                    raise errors.SongError(f"I Couldn't find any results for `{search}`")
+                info = entries[0]
 
             return cls(ctx, data=song._data, filename=cls.ytdl.prepare_filename(info))
         else:
