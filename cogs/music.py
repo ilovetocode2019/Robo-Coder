@@ -459,7 +459,7 @@ class Song:
     @classmethod
     async def download_song(cls, ctx, song):
         try:
-            partial = functools.partial(cls.ytdl.extract_info, song.url)
+            partial = functools.partial(cls.ytdl.process_info, song._data)
             info = await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
         except yt_dlp.DownloadError as exc:
             raise errors.SongError(str(exc)) from exc
