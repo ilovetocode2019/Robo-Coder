@@ -426,7 +426,7 @@ class Song:
             return await cls.confirm_download(ctx, song)
 
         # We shouldn't get here unless the song isn't in the database
-        song = await cls.download_song(ctx, song)
+        song = await cls.download_song(ctx, song, extract_info=False)
         data = song._data
 
         # Cache the song and search in the database
@@ -457,23 +457,35 @@ class Song:
         return cls(ctx, data=info, filename=cls.ytdl.prepare_filename(info))
 
     @classmethod
-    async def download_song(cls, ctx, song):
-        try:
-            partial = functools.partial(cls.ytdl.process_info, song._data)
-            info = await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
-        except yt_dlp.DownloadError as exc:
-            raise errors.SongError(str(exc)) from exc
-        except asyncio.TimeoutError as exc:
-            raise errors.SongError(f"It took too long to download `{song.url}`") from exc
+    async def download_song(cls, ctx, song, extract_info=True):
+        if extract_info:
+            try:
+                partial = functools.partial(cls.ytdl.extract_info, song.url)
+                info = await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
+            except yt_dlp.DownloadError as exc:
+                raise errors.SongError(str(exc)) from exc
+            except asyncio.TimeoutError as exc:
+                raise errors.SongError(f"It took too long to download `{song.url}`") from exc
 
-        if not info:
-            raise errors.SongError(f"I Couldn't download `{song.url}`")
-        if "entries" in info:
-            entries = info["entries"]
+            if not info:
+                raise errors.SongError(f"I Couldn't download `{song.url}`")
+            if "entries" in info:
+                entries = info["entries"]
             if not entries:
                 raise errors.SongError(f"I Couldn't find any results for `{search}`")
             info = entries[0]
-        return cls(ctx, data=info, filename=cls.ytdl.prepare_filename(info))
+
+            return cls(ctx, data=song._data, filename=cls.ytdl.prepare_filename(info))
+        else
+            try:
+                partial = functools.partial(cls.ytdl.process_info, song._data)
+                await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
+            except yt_dlp.DownloadError as exc:
+                    raise errors.SongError(str(exc)) from exc
+            except asyncio.TimeoutError as exc:
+                    raise errors.SongError(f"It took too long to download ’{song.url}’")
+
+            return cls(ctx, data=song._data, filename=cls.ytdl.prepare_filename(song._data))
 
     @classmethod
     async def from_database(cls, ctx, search):
