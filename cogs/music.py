@@ -476,7 +476,7 @@ class Song:
             info = entries[0]
 
             return cls(ctx, data=song._data, filename=cls.ytdl.prepare_filename(info))
-        else
+        else:
             try:
                 partial = functools.partial(cls.ytdl.process_info, song._data)
                 await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
