@@ -902,7 +902,7 @@ class Music(commands.Cog):
 
         await ctx.send(":rewind: Starting over")
 
-    @commands.command(name="skip", description="Skip the music")
+    @commands.command(name="skip", description="Skip the music", aliases=["s"])
     async def skip(self, ctx):
         if ctx.author not in ctx.player.channel.members:
             return
