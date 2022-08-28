@@ -1256,7 +1256,7 @@ class Music(commands.Cog):
                 log.info("Successfully became a speaker in %s", player)
                 stage_success = True
             except discord.Forbidden:
-                # Note that we didn't succeede
+                # Note that we didn't succeed
                 # We'll request to speak after we make sure people have joined the channel
                 stage_success = False
                 log.warning("In-sufficient permissions to become a speaker %s.", player)
