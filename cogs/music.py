@@ -405,9 +405,9 @@ class Song:
         youtube_id = cls.parse_youtube_id(search) or search
         query = """SELECT *
                    FROM songs
-                   WHERE (songs.title=$1 OR songs.song_id=$2) AND songs.extractor='youtube';
+                   WHERE songs.song_id=$1 AND songs.extractor='youtube';
                 """
-        record = await ctx.bot.db.fetchrow(query, search, youtube_id)
+        record = await ctx.bot.db.fetchrow(query, youtube_id)
         if record:
             await cls.create_alias(ctx, search, record["id"])
             song = cls.from_record(record, ctx)
@@ -417,9 +417,9 @@ class Song:
         song = await cls.resolve_query(ctx, search)
         query = """SELECT *
                    FROM songs
-                   WHERE (songs.title=$1 OR songs.song_id=$2) AND songs.extractor=$3;
+                   WHERE songs.song_id=$1 AND songs.extractor=$2;
                 """
-        record = await ctx.bot.db.fetchrow(query, song.title, song.id, song.extractor)
+        record = await ctx.bot.db.fetchrow(query, song.id, song.extractor)
         if record:
             await cls.create_alias(ctx, search, record["id"])
             song = cls.from_record(record, ctx)
