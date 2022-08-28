@@ -419,7 +419,7 @@ class Song:
                    FROM songs
                    WHERE songs.song_id=$1 AND songs.extractor=$2;
                 """
-        record = await ctx.bot.db.fetchrow(query, song.id, song.extractor)
+        record = await ctx.bot.db.fetchrow(query, song.song_id, song.extractor)
         if record:
             await cls.create_alias(ctx, search, record["id"])
             song = cls.from_record(record, ctx)
