@@ -230,13 +230,13 @@ class ReactionRoleView(BaseReactionRoleView):
                 permissions = channel.permissions_for(self.ctx.me)
 
                 if not permissions.send_messages:
-                    await ctx.send(":x: I don't have permission to send messages in this channel. Choose a different channel or fix the permissions, and then try again.")
+                    await self.ctx.send(":x: I don't have permission to send messages in this channel. Choose a different channel or fix the permissions, and then try again.")
                 elif not permissions.add_reactions:
-                    await ctx.send(":x: I don't havep permission to add reactions in this channel. Choose a diferent channel or fix the permissions, and then try again.")
+                    await self.ctx.send(":x: I don't have permission to add reactions in this channel. Choose a diferent channel or fix the permissions, and then try again.")
                 else:
                     break
             except commands.BadArgument:
-                await ctx.send(":x: That is not a valid channel. Try again.")
+                await self.ctx.send(":x: That is not a valid channel. Try again.")
 
         post = await channel.send(embed=get_reaction_roles_embed(self.title, self.color, self.reaction_roles))
 
