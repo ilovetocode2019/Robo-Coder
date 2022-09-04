@@ -36,7 +36,7 @@ class ShortTime:
 
     @classmethod
     async def convert(cls, ctx, argument):
-        return cls(argument, now=ctx.message.created_at)
+        return cls(argument, now=ctx.message.created_at.replace(tzinfo=None))
 
 class HumanTime:
     """Attempts to parse a time using parsedatetime."""
@@ -58,7 +58,7 @@ class HumanTime:
 
     @classmethod
     async def convert(cls, ctx, argument):
-        return cls(argument, now=ctx.message.created_at)
+        return cls(argument, now=ctx.message.created_at.replace(tzinfo=None))
 
 class Time:
     """Attempts to parse the time using HumanTime and then ShortTime."""
@@ -77,7 +77,7 @@ class Time:
 
     @classmethod
     async def convert(cls, ctx, argument):
-        return cls(argument, now=ctx.message.created_at)
+        return cls(argument, now=ctx.message.created_at.replace(tzinfo=None))
 
 class FutureTime(Time):
     """Attempts to parse a time using Time but then checks if it's in the future."""

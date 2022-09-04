@@ -27,12 +27,12 @@ class SnoozeModal(discord.ui.Modal, title="Snooze"):
         expires_at = future_time.time
         created_at = interaction.created_at
 
-        await self.parent.cog.create_timer("reminder", [self.parent.timer.data[0], self.parent.timer.data[1], self.parent.timer.data[2], self.parent.timer.data[3]], future_time.time, created_at)
+        timer = await self.parent.cog.create_timer("reminder", [self.parent.timer.data[0], self.parent.timer.data[1], self.parent.timer.data[2], self.parent.timer.data[3]], future_time.time, created_at)
 
         self.parent.snooze.disabled = True
         await interaction.response.edit_message(view=self.parent)
 
-        await interaction.followup.send(f"This timer has been snoozed for {human_time.timedelta(expires_at, when=created_at)}.")
+        await interaction.followup.send(f"This timer has been snoozed for {human_time.timedelta(timer.expires_at, when=timer.created_at)}.")
 
 class TimerView(discord.ui.View):
     def __init__(self, cog, timer):
@@ -73,10 +73,10 @@ class Timers(commands.Cog):
         self.bot = bot
         self.emoji = ":timer:"
 
-        self.loop = self.bot.loop.create_task(self.run_timers())
         self.current_timer = None
         self.timers_pending = asyncio.Event()
         self.timers_pending.set()
+        self.loop = self.bot.loop.create_task(self.run_timers())
 
     def cog_unload(self):
         self.loop.cancel()
@@ -87,8 +87,8 @@ class Timers(commands.Cog):
         expires_at = reminder.time
         created_at = ctx.message.created_at
 
-        await self.create_timer("reminder", [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content], expires_at, created_at)
-        await ctx.send(f"Set a reminder for {human_time.timedelta(expires_at, when=created_at)} with the message: {content}")
+        timer = await self.create_timer("reminder", [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content], expires_at, created_at)
+        await ctx.send(f"Set a reminder for {human_time.timedelta(timer.expires_at, when=timer.created_at)} with the message: {content}")
 
     @remind.command(name="list", description="List your reminders")
     async def remind_list(self, ctx):
