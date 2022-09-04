@@ -539,7 +539,7 @@ class Moderation(commands.Cog):
 
         expires_at = time.time
         created_at = ctx.message.created_at
-        delta = human_time.timedelta(expires_at, when=created_at)
+        delta = human_time.timedelta(expires_at, when=created_at.replace(tzinfo=None))
 
         if reason:
             reason = f"Tempmute by {ctx.author} (ID: {ctx.author.id}) for {delta} with reason {reason}"
