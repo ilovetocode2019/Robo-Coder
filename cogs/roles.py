@@ -566,7 +566,7 @@ class Roles(commands.Cog):
 
             role = reaction_roles[2].get(emoji)
             if role:
-                await member.add_roles(role)
+                await member.add_roles(role, reason="Add reaction role")
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
@@ -587,7 +587,7 @@ class Roles(commands.Cog):
 
             role = reaction_roles[2].get(emoji)
             if role:
-                await member.remove_roles(role)
+                await member.remove_roles(role, reason="Remove reaction role")
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
@@ -618,7 +618,7 @@ class Roles(commands.Cog):
             return
 
         roles = await self.get_autoroles(member.guild.id)
-        await member.add_roles(*(role for role in roles if role))
+        await member.add_roles(*(role for role in roles if role), reason="Add autorole to new user")
 
 async def setup(bot):
     await bot.add_cog(Roles(bot))

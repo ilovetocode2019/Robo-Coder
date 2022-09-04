@@ -255,12 +255,7 @@ class Player:
 
         except Exception as exc:
             log.error("Exception in player loop for %s. Shutting down player.", self, exc_info=exc)
-
-            if self.queue:
-                url = await self.save_queue(player)
-                await self.ctx.send(f"Sorry! Your player has crashed. If your confused or want to report this, join <{bot.support_server_link}>. You can start again with `{ctx.prefix}playbin {url}`.")
-            elif self.now:
-                await self.ctx.send(f"Sorry! Your player has crashed. If your confused or want to report this, join <{bot.support_server_link}>. You can start your song again with the play command.")
+            await self.ctx.send(f"Something went wrong and your music player crashed! Sorry about that.")
 
             log.info("Stopping music for %s", self)
             self.stop()
@@ -735,7 +730,7 @@ class Music(commands.Cog):
         return ctx.guild
 
     @commands.command(name="join", description="Connect the bot to a voice channel", aliases=["connect"])
-    async def connect(self, ctx):
+    async def join(self, ctx):
         try:
             channel = ctx.author.voice.channel
         except AttributeError:
@@ -746,9 +741,9 @@ class Music(commands.Cog):
         elif ctx.guild.id in self.bot.players or ctx.voice_client:
             return await ctx.send("Already connected to a voice channel")
         elif not channel.permissions_for(ctx.me).connect:
-            return await ctx.send(f":x: I don't have permission to connect to `{channel}`")
+            return await ctx.send(f":x: I don't have permission to connect to {channel.mention}")
         elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.me.guild_permissions.move_members:
-            return await ctx.send(f"I can't connect to `{channel}` because it's full")
+            return await ctx.send(f"I can't connect to {channel.mention} because it's full")
 
         log.info("Attempting to connect to channel ID %s (guild ID %s)", channel.id, ctx.guild.id)
         try:
@@ -759,12 +754,12 @@ class Music(commands.Cog):
                 return
             if ctx.voice_client:
                 await ctx.voice_client.disconnect()
-            return await ctx.send(f"I couldn't connect to `{channel}`")
+            return await ctx.send(f"I couldn't connect to {channel.mention}")
 
         self.bot.players[ctx.guild.id] = Player(ctx, voice_client)
         player = self.bot.players[ctx.guild.id]
 
-        await ctx.send(f"Connected to `{channel}`")
+        await ctx.send(f"Connected to {channel.mention}")
         log.info("Successfully connected to channel ID %s (guild ID %s)", channel.id, ctx.guild.id)
         return player
 
@@ -776,9 +771,9 @@ class Music(commands.Cog):
             return await ctx.send(":x: You are not connected to a voice channel")
 
         if not channel.permissions_for(ctx.me).connect:
-            await ctx.send(f"I don't have permission to connect to `{channel}`")
+            await ctx.send(f"I don't have permission to connect to {channel.mention}")
         elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.me.guild_permissions.move_members:
-            await ctx.send(f"I can't connect to `{channel}` because it's full")
+            await ctx.send(f"I can't connect to {channel.mention} because it's full")
 
         log.info("Moving player in %s to channel ID %s", ctx.player, channel.id)
         await ctx.player.update_voice(channel)
@@ -799,7 +794,7 @@ class Music(commands.Cog):
         log.info("Successfully moved player to %s", ctx.player)
         ctx.player.ctx = ctx
 
-        await ctx.send(f"Now connected to `{channel}` and bound to `{ctx.channel}`")
+        await ctx.send(f"Now connected to {channel.mention} and bound to {ctx.channel.mention}")
 
     @commands.command(name="play", description="Play a song", aliases=["p"])
     async def play(self, ctx, *, query: PossibleURL):
@@ -1086,7 +1081,7 @@ class Music(commands.Cog):
         await ctx.send(":wastebasket: Cleared queue")
 
     @commands.command(name="leave", description="Disconnect the bot from a voice channel", aliases=["disconnect"])
-    async def disconnect(self, ctx):
+    async def leave(self, ctx):
         player = self.bot.players.get(ctx.guild.id)
 
         # We have a player so we can disconnect normally
@@ -1102,7 +1097,7 @@ class Music(commands.Cog):
                 await ctx.send(f"I saved the queue to {url}")
 
             await player.cleanup()
-            await ctx.send(f"Disconnected from `{channel}`")
+            await ctx.send(f"Disconnected from {channel.mention}")
             log.info("Disconnected from %s normally", player)
 
         # Somehow discord.py have a voice client, but we don't have a player so we can disconnect the voice client and cleanup if needed
@@ -1114,7 +1109,7 @@ class Music(commands.Cog):
             if ctx.guild.id in self.bot._connection._voice_clients:
                 log.warning("Removing voice connection to channel ID %s (guild ID %s)", channel.id, ctx.guild.id)
                 self.bot._connection._voice_clients.pop(ctx.guild.id)
-            await ctx.send(f"Disconnected from `{channel}`")
+            await ctx.send(f"Disconnected from {channel.mention}")
             log.warning("Disconnected from channel ID %s (guild ID %s) forcefully", channel.id, ctx.guild.id)
 
     @commands.group(name="songs", description="View some stats about music", invoke_without_command=True, aliases=["song"])
@@ -1238,9 +1233,8 @@ class Music(commands.Cog):
     @commands.command(name="stopall", description="Stop all players")
     @commands.is_owner()
     async def stopall(self, ctx):
-        await self.bot.stop_players()
-        await ctx.send("All players have been stopped")
-        log.info("Stopped all players")
+        player_count = await self.bot.stop_players()
+        await ctx.send(f"{formats.plural(player_count):player} stopped.")
 
     @commands.Cog.listener("on_voice_state_update")
     async def on_bot_move(self, member, before, after):

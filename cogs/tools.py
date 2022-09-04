@@ -1,6 +1,7 @@
 import collections
 import functools
 import io
+import typing
 import unicodedata
 
 import discord
@@ -31,7 +32,7 @@ class Tools(commands.Cog):
         self.bot = bot
         self.emoji = ":toolbox:"
 
-    @commands.command(name="serverinfo", description="Get info on the server", aliases=["guildinfo"])
+    @commands.hybrid_command(name="serverinfo", description="Get info on the server", aliases=["guildinfo"])
     @commands.guild_only()
     async def serverinfo(self, ctx):
         guild = ctx.guild
@@ -65,9 +66,8 @@ class Tools(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.command(name="userinfo", description="Get info on a user", aliases=["ui", "whois"])
-    @commands.guild_only()
-    async def userinfo(self, ctx, *, user: AnyUser = None):
+    @commands.hybrid_command(name="userinfo", description="Get info on a user", aliases=["ui", "whois"])
+    async def userinfo(self, ctx, *, user: typing.Union[discord.User, discord.Member] = None):
         if not user:
             user = ctx.author
         is_member = isinstance(user, discord.Member)
@@ -157,7 +157,7 @@ class Tools(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.command(name="avatar", description="View someone's avatar", usage="[user] [--format FORMAT]")
+    @commands.hybrid_command(name="avatar", description="View someone's avatar", usage="[user] [--format FORMAT]")
     async def avatar(self, ctx, *, user = ""):
         if user in ("--format png", "--format jpg", "--format jpeg", "--format webp"):
             if user.endswith(("png", "jpg")):
@@ -189,7 +189,7 @@ class Tools(commands.Cog):
                 color = None
 
         avatar_formats = ["png", "jpg", "webp"]
-        if user.is_avatar_animated():
+        if user.avatar.is_animated():
             avatar_formats.append("gif")
 
         formats_text = [f"[{avatar_format.upper()}]({user.avatar.with_format(avatar_format)})" for avatar_format in avatar_formats]
@@ -199,7 +199,7 @@ class Tools(commands.Cog):
         em.set_image(url=user.avatar.with_format(view_format))
         await ctx.send(embed=em)
 
-    @commands.command(name="charinfo", description="Get info on a character")
+    @commands.hybrid_command(name="charinfo", description="Get info on a character")
     async def charinfo(self, ctx, *, text):
         if len(text) > 20:
             return await ctx.send(":x: Your text must be shorter than 20 characters")
@@ -210,6 +210,11 @@ class Tools(commands.Cog):
             name = unicodedata.name(character, "Name not found")
             info.append(f"`\\U{digit:>08}`: {name} - {character} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>")
         await ctx.send("\n".join(info))
+
+    @commands.command(name="snowstamp", description="Convert a Discord snowflake into a timestamp")
+    async def snowflake(self, ctx, *, snowflake: int):
+        time = discord.utils.snowflake_time(snowflake)
+        await ctx.send(human_time.format_time(time))
 
     @commands.command(name="poll", description="Create a poll")
     @commands.guild_only()
@@ -296,11 +301,6 @@ class Tools(commands.Cog):
 
         for reaction in reactions:
             await message.add_reaction(reaction)
-
-    @commands.command(name="snowstamp", description="Convert a Discord snowflake into a timestamp", hidden=True)
-    async def snowflake(self, ctx, *, snowflake: int):
-        time = discord.utils.snowflake_time(snowflake)
-        await ctx.send(human_time.format_time(time))
 
     async def average_image_color(self, icon):
         data = await icon.read()

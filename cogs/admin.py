@@ -27,7 +27,7 @@ class Admin(commands.Cog):
 
         self.update_packages_loop.start()
 
-    def cog_unload(self):
+    async def cog_unload(self):
         self.update_packages_loop.cancel()
 
     async def cog_check(self, ctx):

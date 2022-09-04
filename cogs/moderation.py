@@ -249,6 +249,8 @@ class Moderation(commands.Cog):
         self.bot = bot
         self.emoji = ":police_car:"
 
+        self.spam_detectors = True
+
     @commands.command(name="kick", description="Kick a member from the server")
     @commands.bot_has_permissions(kick_members=True)
     @commands.has_permissions(kick_members=True)
@@ -357,7 +359,7 @@ class Moderation(commands.Cog):
         else:
             reason = f"Mute by {ctx.author} (ID: {ctx.author.id})"
 
-        await user.add_roles(config.mute_role)
+        await user.add_roles(config.mute_role, reason=reason)
         await ctx.send(f":white_check_mark: Muted `{user}`")
 
     @mute.group(name="role", description="View the current mute role", invoke_without_command=True)
@@ -661,7 +663,7 @@ class Moderation(commands.Cog):
     @spam.command(name="reset", description="Reset a member's automatic mute time")
     @commands.has_permissions(manage_guild=True)
     async def spam_reset(self, ctx, *, user: discord.Member):
-        detector = self.bot.spam_detectors.get(ctx.guild.id)
+        detector = self.spam_detectors.get(ctx.guild.id)
         if (not detector) or (user.id not in detector.spammers):
             return await ctx.send(":x: This user isn't a spammer")
 
@@ -868,11 +870,11 @@ class Moderation(commands.Cog):
         if message.channel.id in config.ignore_spam_channels:
             return
 
-        if message.guild.id in self.bot.spam_detectors:
-            detector = self.bot.spam_detectors[message.guild.id]
+        if message.guild.id in self.spam_detectors:
+            detector = self.spam_detectors[message.guild.id]
         else:
             detector = SpamDetector(self.bot)
-            self.bot.spam_detectors[message.guild.id] = detector
+            self.spam_detectors[message.guild.id] = detector
 
         if detector.is_spamming(message):
             spammer = detector.get_spammer(message.author)

@@ -2,6 +2,7 @@ import asyncio
 import datetime
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from .utils import human_time, menus
@@ -40,7 +41,8 @@ class TimerView(discord.ui.View):
         self.cog = cog
         self.timer = timer
 
-        self.add_item(discord.ui.Button(url=timer.data[2], label="Original Message"))
+        if timer.data[2]:
+            self.add_item(discord.ui.Button(url=timer.data[2], label="Original Message"))
 
     @discord.ui.button(label="Snooze", style=discord.ButtonStyle.blurple)
     async def snooze(self, interaction, button):
@@ -78,10 +80,10 @@ class Timers(commands.Cog):
         self.timers_pending.set()
         self.loop = self.bot.loop.create_task(self.run_timers())
 
-    def cog_unload(self):
+    async def cog_unload(self):
         self.loop.cancel()
 
-    @commands.group(name="remind", description="Set a reminder", aliases=["timer", "reminder"], invoke_without_command=True)
+    @commands.hybrid_group(name="remind", description="Set a reminder", aliases=["timer", "reminder"], invoke_without_command=True)
     async def remind(self, ctx, *, reminder: human_time.TimeWithContent):
         content = reminder.content
         expires_at = reminder.time
@@ -89,6 +91,25 @@ class Timers(commands.Cog):
 
         timer = await self.create_timer("reminder", [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content], expires_at, created_at)
         await ctx.send(f"Set a reminder for {human_time.timedelta(timer.expires_at, when=timer.created_at)} with the message: {content}")
+
+    @remind.app_command.command(name="set", description="Set a reminder")
+    @app_commands.describe(when="When you want to be reminded", text="What you want to be reminded")
+    async def remind_set(self, interaction, when: human_time.TimeTransformer, text: str = "…"):
+        created_at = interaction.created_at
+
+        timer = await self.create_timer("reminder", [interaction.user.id, interaction.channel_id, None, text], when, created_at)
+        await interaction.response.send_message(f"Set a reminder for {human_time.timedelta(timer.expires_at, when=timer.created_at)} with the message: {text}")
+
+        # Update the timer to include the jump_url (from sending the response)
+        response = await interaction.original_response()
+
+        query = """UPDATE timers
+                   SET data=$1
+                   WHERE timers.id=$2;
+                """
+        result = await self.bot.db.execute(query, [interaction.user.id, interaction.channel_id, response.jump_url, text], timer.id)
+
+        self.restart_loop()
 
     @remind.command(name="list", description="List your reminders")
     async def remind_list(self, ctx):
@@ -230,7 +251,7 @@ class Timers(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reminder_complete(self, timer):
-        channel = self.bot.get_channel(timer.data[1])
+        channel = self.bot.get_channel(timer.data[1]) or await self.bot.fetch_channel(timer.data[1])
         created_at = timer.created_at
         content = timer.data[3]
 

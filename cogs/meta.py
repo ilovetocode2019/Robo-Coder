@@ -3,6 +3,7 @@ import sys
 import traceback
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from .utils import errors, formats, human_time, menus
@@ -14,7 +15,7 @@ class Prefix(commands.Converter):
         return prefix
 
 class RoboCoderHelpCommand(commands.HelpCommand):
-    bottom_text = "\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**. \nFor more help join the [support server]({0})."
+    bottom_text = "\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**."
 
     async def send_bot_help(self, mapping):
         ctx = self.context
@@ -22,7 +23,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
 
         em = discord.Embed(
             title=f"{bot.user.name} Help",
-            description=f"{bot.description}. Use `{ctx.clean_prefix}help [command]` or `{ctx.clean_prefix}help [Category]` for more specific help. If you need more help you can join the [support server]({bot.support_server_link}).",
+            description=f"{bot.description}. Use `{ctx.clean_prefix}help [command]` or `{ctx.clean_prefix}help [Category]` for more specific help.",
             color=0x96c8da
             )
 
@@ -43,7 +44,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         for command in commands:
             em.description += f"\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
 
-        em.description += self.bottom_text.format(bot.support_server_link)
+        em.description += self.bottom_text
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar.url)
 
         await ctx.send(embed=em)
@@ -55,7 +56,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         em = discord.Embed(title=f"{command.name} {command.signature.strip()}", description=command.description or "", color=0x96c8da)
         if command.aliases:
             em.description += f"\nAliases: {', '.join(command.aliases)}"
-        em.description += self.bottom_text.format(bot.support_server_link)
+        em.description += self.bottom_text
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar.url)
 
         await ctx.send(embed=em)
@@ -72,7 +73,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         for command in commands:
             em.description += f"\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
 
-        em.description += self.bottom_text.format(bot.support_server_link)
+        em.description += self.bottom_text
         em.set_footer(text=bot.user.name, icon_url=bot.user.avatar.url)
 
         await ctx.send(embed=em)
@@ -85,11 +86,15 @@ class Meta(commands.Cog):
         self.emoji = ":gear:"
 
         self._original_help_command = bot.help_command
+        self._original_tree_on_error = bot.tree.on_error
+
         bot.help_command = RoboCoderHelpCommand()
         bot.help_command.cog = self
+        bot.tree.on_error = self.on_interaction_error
 
-    def cog_unload(self):
+    async def cog_unload(self):
         self.bot.help_command = self._original_help_command
+        self.bot.tree.on_error = self._original_tree_on_error
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
@@ -122,15 +127,41 @@ class Meta(commands.Cog):
         if isinstance(error, commands.CommandInvokeError):
             em = discord.Embed(
                 title=":warning: Error",
-                description=f"An unexpected error has occured. If you're confused or think this is a bug you can join the [support server]({self.bot.support_server_link}). \n```py\n{error}```",
+                description=f"An unexpected error has occured. \n```py\n{error}```",
                 color=discord.Color.gold()
             )
             em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+
             await ctx.send(embed=em)
 
-            em = discord.Embed(title=":warning: Error", description="", color=discord.Color.gold())
+            em = discord.Embed(title=":warning: Command Error", description="", color=discord.Color.gold())
             em.description += f"\nCommand: `{ctx.command}`"
             em.description += f"\nLink: [Jump]({ctx.message.jump_url})"
+            em.description += f"\n\n```py\n{error}```\n"
+
+            await self.bot.console.send(embed=em)
+
+    async def on_interaction_error(self, interaction, error):
+        print(f"Ignoring exception in slash command {interaction.command.name}:", file=sys.stderr)
+        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+
+        if isinstance(error, app_commands.errors.CommandInvokeError):
+            em = discord.Embed(
+                title=":warning: Error",
+                description=f"An unexpected error has occured. \n```py\n{error}```",
+                color=discord.Color.gold()
+            )
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+
+            try:
+                await interaction.response.send_message(embed=em, ephemeral=True)
+            except:
+                # Don't send message as ephemeral, since it would be weird if it already responded with a non-ephemeral message
+                await interaction.followup.send(embed=em)
+
+            em = discord.Embed(title=":warning: Slash Command Error", description="", color=discord.Color.gold())
+            em.description += f"\nCommand: `{interaction.command.name}`"
+            em.description += f"\nLink: [Jump]({interaction.channel.jump_url})"
             em.description += f"\n\n```py\n{error}```\n"
 
             await self.bot.console.send(embed=em)

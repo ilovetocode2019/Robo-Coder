@@ -4,6 +4,7 @@ import re
 import dateutil
 import humanize
 import parsedatetime
+from discord import app_commands
 from discord.ext import commands
 
 from . import formats
@@ -171,6 +172,25 @@ def timedelta(time, *, when=None, accuracy=3):
         return "now"
     else:
         return formats.join(output, last="and") + suffix
+
+class BadTimeTransform(app_commands.AppCommandError):
+    pass
+
+
+class TimeTransformer(app_commands.Transformer):
+    async def transform(self, interaction, value):
+        now = interaction.created_at.replace(tzinfo=None)
+        try:
+            short = ShortTime(value, now=now)
+        except commands.BadArgument:
+            try:
+                human = FutureTime(value, now=now)
+            except commands.BadArgument as exc:
+                raise BadTimeTransform(str(exc)) from None
+            else:
+                return human.time
+        else:
+            return short.time
 
 def format_time(time):
     return time.strftime("%b %d, %Y at %H:%M:%S")

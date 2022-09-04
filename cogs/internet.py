@@ -589,7 +589,7 @@ class Internet(commands.Cog):
     async def docs_python(self, ctx, *, obj=None):
         await self.do_docs(ctx, "python", obj)
 
-    @docs.command(name="telegram", description="Search Telegram.py docs", aliases=["telegrampy", "telegram.py", "tpy"], hidden=True)
+    @docs.command(name="telegram", description="Search Telegram.py docs", aliases=["telegrampy", "telegram.py", "tpy"])
     async def docs_telegram(self, ctx, *, obj=None):
         await self.do_docs(ctx, "tpy", obj)
 
