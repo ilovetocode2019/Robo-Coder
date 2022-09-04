@@ -123,7 +123,7 @@ class Admin(commands.Cog):
             else:
                 try:
                     try:
-                        self.bot.reload_extension(module)
+                        await self.bot.reload_extension(module)
                     except commands.ExtensionNotLoaded:
                         self.bot.load_extension(module)
                     results.append((True, module))

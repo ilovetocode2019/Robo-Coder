@@ -214,8 +214,9 @@ class BaseReactionRoleView(discord.ui.View):
         try:
             self.now = await asyncio.wait_for(self.is_active.wait(), timeout=180)
         except asyncio.TimeoutError:
-            await self.message.reply("Reaction role creation has timed out.")
-            await self.done()
+            if not self.is_done:
+                await self.message.reply("Reaction role creation has timed out.")
+                await self.done()
 
 class ReactionRoleView(BaseReactionRoleView):
     @discord.ui.button(label="Post", style=discord.ButtonStyle.blurple, row=2)
