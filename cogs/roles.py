@@ -219,10 +219,10 @@ class ReactionRoleView(BaseReactionRoleView):
 
         await self.setup_action()
         await interaction.response.defer()
-        await self.ctx.typing()
+        await self.message.reply("Where should the reaction role menu be sent to?")
+
 
         while True:
-            await self.message.reply("Where should the reaction role menu be sent to?")
             message = await self.wait_for_message()
 
             try:
@@ -238,6 +238,7 @@ class ReactionRoleView(BaseReactionRoleView):
             except commands.BadArgument:
                 await self.ctx.send(":x: That is not a valid channel. Try again.")
 
+        await self.ctx.typing()
         post = await channel.send(embed=get_reaction_roles_embed(self.title, self.color, self.reaction_roles))
 
         for role_id in self.reaction_roles:
