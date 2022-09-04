@@ -27,7 +27,7 @@ class Fun(commands.Cog):
         if dice > 10:
             return await ctx.send(":x: You can't roll more than 10 dice")
         elif sides > 100000:
-            return await ctx.send(f":x: Your {'die' if dice == 1 else 'dice'} can't have more than 1000 sides") 
+            return await ctx.send(f":x: Your {'die' if dice == 1 else 'dice'} can't have more than 100,000 sides") 
 
         numbers = [str(random.randint(1, sides)) for x in range(dice)]
         await ctx.send(f":game_die: You rolled {formats.join(numbers, last='and')}")
