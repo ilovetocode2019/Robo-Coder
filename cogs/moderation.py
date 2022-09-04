@@ -31,10 +31,10 @@ class UserID(commands.Converter):
             arg = int(arg)
             user = ctx.bot.get_user(arg) or await ctx.bot.fetch_user(arg)
             if not user:
-                raise BadArgument()
+                raise commands.BadArgument()
             return user
         except ValueError:
-            raise BadArgument()
+            raise commands.BadArgument()
 
 class GuildConfig:
     __slots__ = ("cog", "guild_id", "mute_role_id", "muted", "spam_prevention", "ignore_spam_channels", "log_channel_id")

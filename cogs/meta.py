@@ -142,10 +142,13 @@ class Meta(commands.Cog):
             await self.bot.console.send(embed=em)
 
     async def on_interaction_error(self, interaction, error):
+        if not interaction.command:
+            return
+
         print(f"Ignoring exception in slash command {interaction.command.name}:", file=sys.stderr)
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
-        if isinstance(error, app_commands.errors.CommandInvokeError):
+        if isinstance(error, app_commands.CommandInvokeError):
             em = discord.Embed(
                 title=":warning: Error",
                 description=f"An unexpected error has occured. \n```py\n{error}```",

@@ -5,7 +5,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from .utils import human_time, menus
+from .utils import formats, human_time, menus
 
 
 class SnoozeModal(discord.ui.Modal, title="Snooze"):
@@ -111,6 +111,11 @@ class Timers(commands.Cog):
 
         self.restart_loop()
 
+    @remind_set.error
+    async def remind_set_error(self, interaction, error):
+        if isinstance(error, human_time.BadTimeTransform):
+            await interaction.response.send_message(str(error), ephemeral=True)
+
     @remind.command(name="list", description="List your reminders")
     async def remind_list(self, ctx):
         query = """SELECT * FROM timers
@@ -125,6 +130,8 @@ class Timers(commands.Cog):
         em = discord.Embed(title="Reminders", description="\n", color=0x96c8da)
         for timer in timers:
             em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in <t:{int(timer.expires_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>"
+        em.set_footer(f"{formats.plural(len(timers)):reminder}")
+
         await ctx.send(embed=em)
 
     @remind.command(name="here", description="List your reminders in this channel")
@@ -143,6 +150,8 @@ class Timers(commands.Cog):
         em = discord.Embed(title="Reminders Here", description="\n", color=0x96c8da)
         for timer in timers:
             em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in <t:{int(timer.expires_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>"
+        em.set_footer(f"{formats.plural(len(timers)):reminder}")
+
         await ctx.send(embed=em)
 
     @remind.command(name="cancel", description="Cancel a reminder", aliases=["delete", "remove"])
