@@ -12,12 +12,12 @@ class Fun(commands.Cog):
         self.bot = bot
         self.emoji = ":tada:"
 
-    @commands.command(name="flipcoin", description="Flip a coin")
+    @commands.hybrid_command(name="flipcoin", description="Flip a coin")
     async def flipcoin(self, ctx):
         result = random.choice(["Heads", "Tails"])
         await ctx.send(f":coin: You flipped {result}")
 
-    @commands.command(name="rolldice", description="Roll some dice", aliases=["rolldie"])
+    @commands.hybrid_command(name="rolldice", description="Roll some dice", aliases=["rolldie"])
     async def rolldice(self, ctx, dice=1, sides=6):
         if not dice:
             return await ctx.send(":x: You must roll at least 1 die")
@@ -32,7 +32,7 @@ class Fun(commands.Cog):
         numbers = [str(random.randint(1, sides)) for x in range(dice)]
         await ctx.send(f":game_die: You rolled {formats.join(numbers, last='and')}")
 
-    @commands.command(name="8ball", description="Ask me a question", aliases=["eightball"])
+    @commands.hybrid_command(name="8ball", description="Ask me a question", aliases=["eightball"])
     async def eightball(self, ctx, question):
         choice = random.choice(
             [
