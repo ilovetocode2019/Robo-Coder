@@ -87,7 +87,7 @@ class BaseReactionRoleView(discord.ui.View):
         if self.is_active.is_set():
             return await interaction.response.send_message("Complete the current action first!", ephemeral=True)
 
-        if len(self.reaction_roles) > 20:
+        if len(self.reaction_roles) >= 20:
             return await interaction.response.send_message("Sorry. The limit for reaction roles in a single menu is 20! In order to have more reaction roles, you must use multiple reaction role menus.", ephemeral=True)
 
         await self.setup_action()
@@ -127,14 +127,23 @@ class BaseReactionRoleView(discord.ui.View):
             message = await self.wait_for_message()
             self.messages.append(message)
 
-            if message.content in self.ctx.bot.default_emojis or re.match(r"^(<a?)?:\w+:(\d{18}>)$", message.content):
+            if message.content in self.ctx.bot.default_emojis:
                 if message.content in self.reaction_roles.values():
                     message = await message.reply(":x: That emoji is already in use for this reaction role menu. Try again.")
                 else:
                     emoji = message.content
                     break
             else:
-                message = await message.reply(":x: That is not a valid emoji. Make sure the emoji is supported by discord or a custom emoji that belongs to this server and then try again.")
+                try:
+                    emoji = await commands.EmojiConverter().convert(self.ctx, message.content)
+
+                    if emoji.guild != self.ctx.guild:
+                        raise commands.BadArgument()
+
+                    emoji = str(emoji)
+                    break
+                except commands.BadArgument:
+                    message = await message.reply(":x: That is not a valid emoji. Make sure the emoji is supported by discord or a custom emoji that belongs to this server and then try again.")
 
             self.messages.append(message)
 
@@ -163,7 +172,7 @@ class BaseReactionRoleView(discord.ui.View):
                 role = await commands.RoleConverter().convert(self.ctx, message.content)
 
                 if role.id not in self.reaction_roles.keys():
-                    message = await message.send(":x: This role is not in the reaction role menu. Try again.")
+                    message = await message.reply(":x: This role is not in the reaction role menu. Try again.")
                 else:
                     break
             except commands.BadArgument:
