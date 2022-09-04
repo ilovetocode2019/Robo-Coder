@@ -4,7 +4,58 @@ import datetime
 import discord
 from discord.ext import commands
 
-from .utils import human_time
+from .utils import human_time, menus
+
+
+class SnoozeModal(discord.ui.Modal, title="Snooze"):
+    duration = discord.ui.TextInput(
+        label="Duration",
+        placeholder="How long do you want to snooze for?",
+        default="5 minutes"
+    )
+
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+
+    async def on_submit(self, interaction):
+        try:
+            future_time = human_time.FutureTime(self.duration.value)
+        except commands.BadArgument as exc:
+            return await interaction.response.send_message(f":x: {str(exc)}", ephemeral=True)
+
+        expires_at = future_time.time
+        created_at = interaction.created_at
+
+        await self.parent.cog.create_timer("reminder", [self.parent.timer.data[0], self.parent.timer.data[1], self.parent.timer.data[2], self.parent.timer.data[3]], future_time.time, created_at)
+
+        self.parent.snooze.disabled = True
+        await interaction.response.edit_message(view=self.parent)
+
+        await interaction.followup.send(f"This timer has been snoozed for {human_time.timedelta(expires_at, when=created_at)}.")
+
+class TimerView(discord.ui.View):
+    def __init__(self, cog, timer):
+        super().__init__()
+        self.cog = cog
+        self.timer = timer
+
+        self.add_item(discord.ui.Button(url=timer.data[2], label="Original Message"))
+
+    @discord.ui.button(label="Snooze", style=discord.ButtonStyle.blurple)
+    async def snooze(self, interaction, button):
+        await interaction.response.send_modal(SnoozeModal(self))
+
+    async def interaction_check(self, interaction):
+        if interaction.user.id != int(self.timer.data[0]):
+            await interaction.response.send_message("You cannot snooze this timer, because you do not own it.", ephemeral=True)
+            return False
+
+        return True
+
+    async def on_timeout():
+        self.snooze.disabled = True
+        await self.response.edit_message(view=self)
 
 class Timer:
     __slots__ = ("bot", "id", "event", "data", "expires_at", "created_at")
@@ -24,7 +75,7 @@ class Timers(commands.Cog):
 
         self.loop = self.bot.loop.create_task(self.run_timers())
         self.current_timer = None
-        self.timers_pending = asyncio.Event(loop=self.bot.loop)
+        self.timers_pending = asyncio.Event()
         self.timers_pending.set()
 
     def cog_unload(self):
@@ -37,7 +88,7 @@ class Timers(commands.Cog):
         created_at = ctx.message.created_at
 
         await self.create_timer("reminder", [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content], expires_at, created_at)
-        await ctx.send(f"Set a reminder for `{human_time.timedelta(expires_at, when=created_at)}` with the message: `{content}`.")
+        await ctx.send(f"Set a reminder for {human_time.timedelta(expires_at, when=created_at)} with the message: {content}")
 
     @remind.command(name="list", description="List your reminders")
     async def remind_list(self, ctx):
@@ -52,7 +103,7 @@ class Timers(commands.Cog):
 
         em = discord.Embed(title="Reminders", description="\n", color=0x96c8da)
         for timer in timers:
-            em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=ctx.message.created_at)}"
+            em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in <t:{int(timer.expires_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>"
         await ctx.send(embed=em)
 
     @remind.command(name="here", description="List your reminders in this channel")
@@ -70,7 +121,7 @@ class Timers(commands.Cog):
 
         em = discord.Embed(title="Reminders Here", description="\n", color=0x96c8da)
         for timer in timers:
-            em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in {human_time.timedelta(timer.expires_at, when=ctx.message.created_at)}"
+            em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in <t:{int(timer.expires_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>"
         await ctx.send(embed=em)
 
     @remind.command(name="cancel", description="Cancel a reminder", aliases=["delete", "remove"])
@@ -91,13 +142,25 @@ class Timers(commands.Cog):
 
     @remind.command(name="clear", description="Clear all your reminders")
     async def remind_clear(self, ctx):
+        query = """SELECT COUNT(*)
+                   FROM timers
+                   WHERE event = 'reminder'
+                   AND data #>> '{0}' = $1;
+                """
+        result = await self.bot.db.fetchrow(query, str(ctx.author.id))
+
+        if not result["count"]:
+            return await ctx.send("No reminders to clear.")
+
+        result = await menus.Confirm(f"Are you sure you want to clear all your reminders?").prompt(ctx)
+        if not result:
+            return await ctx.send("Aborting")
+
         query = """DELETE FROM timers
                    WHERE event = 'reminder'
                    AND data #>> '{0}' = $1;
                 """
         result = await self.bot.db.execute(query, str(ctx.author.id))
-        if result == "DELETE 0":
-            return await ctx.send("No reminders to clear.")
 
         if self.current_timer and self.current_timer.event == "reminder" and self.current_timer.data[0] == ctx.author.id:
             self.restart_loop()
@@ -109,6 +172,9 @@ class Timers(commands.Cog):
         await ctx.invoke(self.remind_list)
 
     async def create_timer(self, event, data, expires_at, created_at):
+        expires_at = expires_at.replace(tzinfo=None)
+        created_at = created_at.replace(tzinfo=None)
+
         query = """INSERT INTO timers (event, data, expires_at, created_at)
                    VALUES ($1, $2, $3, $4)
                    RETURNING id;
@@ -164,15 +230,11 @@ class Timers(commands.Cog):
 
     @commands.Cog.listener()
     async def on_reminder_complete(self, timer):
-        created_at = timer.created_at
         channel = self.bot.get_channel(timer.data[1])
-        user = self.bot.get_user(timer.data[0])
+        created_at = timer.created_at
         content = timer.data[3]
-        jump_url = timer.data[2]
 
-        em = discord.Embed(title=content, description=f"\n[Jump]({jump_url})", color=0x96c8da)
-        em.add_field(name="When", value=f"{human_time.timedelta(datetime.datetime.utcnow(), when=timer.created_at)} ago")
-        await channel.send(content=user.mention, embed=em)
+        await channel.send(content=f"<t:{int(created_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>: {content}", view=TimerView(self, timer))
 
-def setup(bot):
-    bot.add_cog(Timers(bot))
+async def setup(bot):
+    await bot.add_cog(Timers(bot))

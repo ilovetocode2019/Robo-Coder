@@ -115,8 +115,8 @@ class Player:
     def __init__(self, ctx, voice):
         self.ctx = ctx
         self.voice = voice
-        self.queue = Queue(loop=self.bot.loop)
-        self._event = asyncio.Event(loop=self.bot.loop)
+        self.queue = Queue()
+        self._event = asyncio.Event()
 
         self.now = None
         self.notifications = True
@@ -212,7 +212,7 @@ class Player:
                 if not self.now:
                     log.info("Getting a song from the queue for %s", self)
                     try:
-                        self.now = await asyncio.wait_for(self.queue.get(), timeout=180, loop=self.bot.loop)
+                        self.now = await asyncio.wait_for(self.queue.get(), timeout=180)
                     except asyncio.TimeoutError:
                         log.info("Timed out while getting song from queue for %s. Cleaning up player.", self)
                         self.stop()
@@ -461,7 +461,7 @@ class Song:
         if extract_info:
             try:
                 partial = functools.partial(cls.ytdl.extract_info, song.url)
-                info = await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
+                info = await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180)
             except yt_dlp.DownloadError as exc:
                 raise errors.SongError(str(exc)) from exc
             except asyncio.TimeoutError as exc:
@@ -479,7 +479,7 @@ class Song:
         else:
             try:
                 partial = functools.partial(cls.ytdl.process_info, song._data)
-                await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
+                await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180)
             except yt_dlp.DownloadError as exc:
                     raise errors.SongError(str(exc)) from exc
             except asyncio.TimeoutError as exc:
@@ -556,7 +556,7 @@ class Song:
         # Extract the songs
         partial = functools.partial(cls.ytdl.extract_info, search, download=download)
         try:
-            info = await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180, loop=ctx.bot.loop)
+            info = await asyncio.wait_for(ctx.bot.loop.run_in_executor(None, partial), timeout=180)
         except yt_dlp.DownloadError as exc:
             raise errors.SongError(str(exc)) from exc
         except asyncio.TimeoutError as exc:
@@ -746,7 +746,7 @@ class Music(commands.Cog):
         elif ctx.guild.id in self.bot.players or ctx.voice_client:
             return await ctx.send("Already connected to a voice channel")
         elif not channel.permissions_for(ctx.me).connect:
-            return await ctx.send(f":x: I don't have permissions to connect to `{channel}`")
+            return await ctx.send(f":x: I don't have permission to connect to `{channel}`")
         elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.me.guild_permissions.move_members:
             return await ctx.send(f"I can't connect to `{channel}` because it's full")
 
@@ -776,7 +776,7 @@ class Music(commands.Cog):
             return await ctx.send(":x: You are not connected to a voice channel")
 
         if not channel.permissions_for(ctx.me).connect:
-            await ctx.send(f"I don't have permissions to connect to `{channel}`")
+            await ctx.send(f"I don't have permission to connect to `{channel}`")
         elif channel.user_limit and len(channel.members) >= channel.user_limit and not ctx.me.guild_permissions.move_members:
             await ctx.send(f"I can't connect to `{channel}` because it's full")
 
@@ -1004,7 +1004,8 @@ class Music(commands.Cog):
             return await ctx.send(":x: Volume must be between 0 and 100")
 
         ctx.player.volume = volume / 100
-        await ctx.send(f":loud_sound: Volume set to `{volume}%`")
+        emoji = ":loud_sound:" if volume >= 50 else ":sound:"
+        await ctx.send(f"{emoji} Volume set to `{volume}%`")
 
     @commands.command(name="notify", description="Toggle now playing messages")
     async def notify(self, ctx):
@@ -1259,7 +1260,7 @@ class Music(commands.Cog):
                 # Note that we didn't succeed
                 # We'll request to speak after we make sure people have joined the channel
                 stage_success = False
-                log.warning("In-sufficient permissions to become a speaker %s.", player)
+                log.warning("In-sufficient permission to become a speaker %s.", player)
 
         members = [member for member in player.channel.members if not member.bot]
 
@@ -1402,5 +1403,5 @@ class Music(commands.Cog):
             data = data.decode("utf-8")
             return data.split("\n")
 
-def setup(bot):
-    bot.add_cog(Music(bot))
+async def setup(bot):
+    await bot.add_cog(Music(bot))

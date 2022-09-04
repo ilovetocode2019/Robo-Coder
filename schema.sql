@@ -15,6 +15,15 @@ expires_at TIMESTAMP,
 created_at TIMESTAMP DEFAULT (now() at time zone 'utc')
 );
 
+CREATE TABLE IF NOT EXISTS reaction_roles (
+guild_id BIGINT,
+channel_id BIGINT,
+message_id BIGINT,
+title TEXT,
+color INT,
+roles jsonb DEFAULT ('{}'::jsonb)
+);
+
 CREATE TABLE IF NOT EXISTS autoroles (
 guild_id BIGINT,
 role_id BIGINT PRIMARY KEY

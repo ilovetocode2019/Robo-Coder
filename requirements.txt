@@ -1,5 +1,5 @@
 asyncpg
-discord.py[voice]==1.7.3
+discord.py[voice]
 googletrans==4.0.0rc1
 humanize
 jishaku

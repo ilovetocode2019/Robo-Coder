@@ -37,12 +37,12 @@ class UserID(commands.Converter):
             raise BadArgument()
 
 class GuildConfig:
-    __slots__ = ("bot", "guild_id", "mute_role_id", "muted", "spam_prevention", "ignore_spam_channels", "log_channel_id")
+    __slots__ = ("cog", "guild_id", "mute_role_id", "muted", "spam_prevention", "ignore_spam_channels", "log_channel_id")
 
     @classmethod
-    def from_record(cls, record, bot):
+    def from_record(cls, record, cog):
         self = cls()
-        self.bot = bot
+        self.cog = cog
 
         self.guild_id = record["guild_id"]
         self.mute_role_id = record["mute_role_id"]
@@ -55,7 +55,7 @@ class GuildConfig:
 
     @property
     def guild(self):
-        return self.bot.get_guild(self.guild_id)
+        return self.cog.bot.get_guild(self.guild_id)
 
     @property
     def mute_role(self):
@@ -67,7 +67,7 @@ class GuildConfig:
 
     @property
     def log_channel(self):
-        return self.bot.get_channel(self.log_channel_id)
+        return self.cog.bot.get_channel(self.log_channel_id)
 
     async def set_mute_role(self, role):
         self.muted = [member.id for member in role.members] if role else []
@@ -78,7 +78,8 @@ class GuildConfig:
                    ON CONFLICT (guild_id) DO UPDATE
                    SET mute_role_id=$2, muted=$3;
                 """
-        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        await self.cog.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        self.cog.get_guild_config.invalidate(self, self.guild_id)
 
     async def mute_member(self, member):
         self.muted.append(member.id)
@@ -88,7 +89,8 @@ class GuildConfig:
                    ON CONFLICT (guild_id) DO UPDATE
                    SET muted=$3;
                 """
-        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        await self.cog.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        self.cog.get_guild_config.invalidate(self, self.guild_id)
 
     async def unmute_member(self, member):
         self.muted.remove(member.id)
@@ -98,7 +100,8 @@ class GuildConfig:
                    ON CONFLICT (guild_id) DO UPDATE
                    SET muted=$3;
                 """
-        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        await self.cog.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        self.cog.get_guild_config.invalidate(self, self.guild_id)
 
     async def enable_spam_prevention(self):
         self.spam_prevention = True
@@ -108,7 +111,8 @@ class GuildConfig:
                    ON CONFLICT (guild_id) DO UPDATE
                    SET spam_prevention=$4;
                 """
-        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        await self.cog.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        self.cog.get_guild_config.invalidate(self, self.guild_id)
 
     async def disable_spam_prevention(self):
         self.spam_prevention = False
@@ -118,7 +122,8 @@ class GuildConfig:
                    ON CONFLICT (guild_id) DO UPDATE
                    SET spam_prevention=$4;
                 """
-        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        await self.cog.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        self.cog.get_guild_config.invalidate(self, self.guild_id)
 
     async def add_ignore_spam_channel(self, channel):
         self.ignore_spam_channels.append(channel.id)
@@ -128,7 +133,8 @@ class GuildConfig:
                    ON CONFLICT (guild_id) DO UPDATE
                    SET ignore_spam_channels=$5;
                 """
-        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        await self.cog.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        self.cog.get_guild_config.invalidate(self, self.guild_id)
 
     async def remove_ignore_spam_channel(self, channel):
         self.ignore_spam_channels.remove(channel.id)
@@ -138,7 +144,8 @@ class GuildConfig:
                    ON CONFLICT (guild_id) DO UPDATE
                    SET ignore_spam_channels=$5;
                 """
-        await self.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        await self.cog.bot.db.execute(query, self.guild_id, self.mute_role_id, self.muted, self.spam_prevention, self.ignore_spam_channels, self.log_channel_id)
+        self.cog.get_guild_config.invalidate(self, self.guild_id)
 
 class ArgumentParser(argparse.ArgumentParser):
     def __init__(self):
@@ -251,9 +258,9 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: Cannot kick user due to the role hierarchy")
 
         if reason:
-            reason = f"Kicked by {ctx.author} with reason {reason}"
+            reason = f"Kicked by {ctx.author} (ID: {ctx.author.id}) with reason {reason}"
         else:
-            reason = f"Kicked by {ctx.author}"
+            reason = f"Kicked by {ctx.author} (ID: {ctx.author.id})"
 
         await user.kick(reason=reason)
         await ctx.send(f":white_check_mark: Kicked `{user}`")
@@ -267,9 +274,9 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: Cannot ban user due to the role hierarchy")
 
         if reason:
-            reason = f"Banned by {ctx.author} with reason {reason}"
+            reason = f"Banned by {ctx.author} (ID: {ctx.author.id}) with reason {reason}"
         else:
-            reason = f"Banned by {ctx.author}"
+            reason = f"Banned by {ctx.author} (ID: {ctx.author.id})"
 
         await self.delete_timer("tempban", [ctx.guild.id, user.id])
 
@@ -289,9 +296,9 @@ class Moderation(commands.Cog):
         delta = human_time.timedelta(expires_at, when=created_at)
 
         if reason:
-            reason = f"Tempban by {ctx.author} for {delta} with reason {reason}"
+            reason = f"Tempban by {ctx.author} (ID: {ctx.author.id}) for {delta} with reason {reason}"
         else:
-            reason = f"Tempban by {ctx.author} for {delta}"
+            reason = f"Tempban by {ctx.author} (ID: {ctx.author.id}) for {delta}"
 
         await self.delete_timer("tempban", [ctx.guild.id, user.id])
 
@@ -299,6 +306,12 @@ class Moderation(commands.Cog):
         if not timers:
             return await ctx.send(":x: This feature is temporarily unavailable")
         await timers.create_timer("tempban", [ctx.guild.id, user.id], expires_at, created_at)
+
+        try:
+            await user.send(f"Just so you know, you've been banned from {ctx.guild.name} until <t:{int(expires_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:F>")
+        except discord.HTTPException:
+            # Oh well, I guess they won't know that it's a tempban
+            pass
 
         await ctx.guild.ban(user, reason=reason)
         await ctx.send(f":white_check_mark: Temporarily banned `{user}` for `{delta}`")
@@ -312,9 +325,9 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: Cannot ban user due to the role hierarchy")
 
         if reason:
-            reason = f"Softban by {ctx.author} with reason {reason}"
+            reason = f"Softban by {ctx.author} (ID: {ctx.author.id}) with reason {reason}"
         else:
-            reason = f"Softban by {ctx.author}"
+            reason = f"Softban by {ctx.author} (ID: {ctx.author.id})"
 
         await user.ban(reason=reason)
         await ctx.guild.unban(user, reason=reason)
@@ -325,9 +338,9 @@ class Moderation(commands.Cog):
     @commands.has_permissions(ban_members=True)
     async def unban(self, ctx, user: BannedMember, *, reason=None):
         if reason:
-            reason = f"Unban by {ctx.author} with reason {reason}"
+            reason = f"Unban by {ctx.author} (ID: {ctx.author.id}) with reason {reason}"
         else:
-            reason = f"Unban by {ctx.author}"
+            reason = f"Unban by {ctx.author} (ID: {ctx.author.id})"
 
         await ctx.guild.unban(user, reason=reason)
         await ctx.send(f":white_check_mark: Unbanned `{user}`")
@@ -336,13 +349,13 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_messages=True)
     async def mute(self, ctx, user: discord.Member, *, reason=None):
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
         await self.can_perform_mute(config, ctx, ctx.author, user)
 
         if reason:
-            reason = f"Mute by {ctx.author} with reason {reason}"
+            reason = f"Mute by {ctx.author} (ID: {ctx.author.id}) with reason {reason}"
         else:
-            reason = f"Mute by {ctx.author}"
+            reason = f"Mute by {ctx.author} (ID: {ctx.author.id})"
 
         await user.add_roles(config.mute_role)
         await ctx.send(f":white_check_mark: Muted `{user}`")
@@ -351,7 +364,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def mute_role(self, ctx):
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
         if not config.mute_role:
             return await ctx.send("No mute role has been set")
 
@@ -361,7 +374,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def mute_role_create(self, ctx, name="Muted"):
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
 
         if config.mute_role:
             result = await menus.Confirm("Are you sure you want to create a new mute role? All currently muted users will stay muted").prompt(ctx)
@@ -369,7 +382,7 @@ class Moderation(commands.Cog):
                 return await ctx.send("Aborting")
 
         async with ctx.typing():
-            reason = f"Mute role creation {ctx.author}"
+            reason = f"Mute role creation by {ctx.author} (ID: {ctx.author.id})"
             role = await ctx.guild.create_role(name="Muted", color=0x607d8b, reason=reason)
 
             channels = ctx.guild.text_channels + ctx.guild.categories
@@ -377,7 +390,13 @@ class Moderation(commands.Cog):
 
             for channel in channels:
                 try:
-                    overwrite = discord.PermissionOverwrite(send_messages=False, add_reactions=False)
+                    overwrite = discord.PermissionOverwrite()
+                    overwrite.send_messages = False
+                    overwrite.add_reactions = False
+                    overwrite.use_application_commands = False
+                    overwrite.create_private_threads = False
+                    overwrite.create_public_threads = False
+                    overwrite.send_messages_in_threads = False
                     await channel.set_permissions(role, overwrite=overwrite, reason=reason)
                 except discord.HTTPException:
                     failed += 1
@@ -393,14 +412,14 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def mute_role_set(self, ctx, *, role: discord.Role):
-        if role.is_default():
-            return await ctx.send(":x: Cannot use the default role")
+        if role.is_default() or role.managed:
+            return await ctx.send(":x: Cannot use this role")
         elif role > ctx.author.top_role:
             return await ctx.send(":x: This role is higher than your highest role")
         elif role > ctx.me.top_role:
             return await ctx.send(":x: This role is higher than my highest role")
 
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
 
         if config.mute_role:
             result = await menus.Confirm("Are you sure you want to set a new mute role? All currently muted users will stay muted").prompt(ctx)
@@ -415,7 +434,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def mute_role_sync(self, ctx):
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
 
         if not config.mute_role:
             return await ctx.send(":x: No mute role to update")
@@ -425,13 +444,19 @@ class Moderation(commands.Cog):
             return await ctx.send("Aborting")
 
         async with ctx.typing():
-            reason = f"Mute role updation by {ctx.author}"
+            reason = f"Mute role updation by {ctx.author} (ID: {ctx.author.id})"
             channels = ctx.guild.text_channels + ctx.guild.categories
             failed = 0
 
             for channel in channels:
                 try:
-                    overwrite = discord.PermissionOverwrite(send_messages=False, add_reactions=False)
+                    overwrite = discord.PermissionOverwrite()
+                    overwrite.send_messages = False
+                    overwrite.add_reactions = False
+                    overwrite.use_application_commands = False
+                    overwrite.create_private_threads = False
+                    overwrite.create_public_threads = False
+                    overwrite.send_messages_in_threads = False
                     await channel.set_permissions(config.mute_role, overwrite=overwrite, reason=reason)
                 except discord.HTTPException:
                     failed += 1
@@ -445,7 +470,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def mute_role_unbind(self, ctx):
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
 
         if not config.mute_role:
             return await ctx.send(":x: No mute role to unbind")
@@ -461,7 +486,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def mute_role_delete(self, ctx):
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
 
         if not config.mute_role:
             return await ctx.send(":x: No mute role to delete")
@@ -477,13 +502,13 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def unmute(self, ctx, user: typing.Union[discord.Member, int], *, reason=None):
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
         await self.can_perform_mute(config, ctx, ctx.author, user)
 
         if reason:
-            reason = f"Unmute by {ctx.author} with reason {reason}"
+            reason = f"Unmute by {ctx.author} (ID: {ctx.author.id}) with reason {reason}"
         else:
-            reason = f"Unmute by {ctx.author}"
+            reason = f"Unmute by {ctx.author} (ID: {ctx.author.id})"
 
         if isinstance(user, int):
             user = discord.Object(id=user)
@@ -492,9 +517,9 @@ class Moderation(commands.Cog):
             return await ctx.send(":x: This member is not muted")
 
         if reason:
-            reason = f"Unmute by {ctx.author} with reason {reason}"
+            reason = f"Unmute by {ctx.author} (ID: {ctx.author.id}) with reason {reason}"
         else:
-            reason = f"Unmute by {ctx.author}"
+            reason = f"Unmute by {ctx.author} (ID: {ctx.author.id})"
 
         await user.remove_roles(config.mute_role, reason=reason)
 
@@ -507,7 +532,7 @@ class Moderation(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def tempmute(self, ctx, user: discord.Member, time: human_time.FutureTime, *, reason=None):
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
         await self.can_perform_mute(config, ctx, ctx.author, user)
 
         expires_at = time.time
@@ -515,9 +540,9 @@ class Moderation(commands.Cog):
         delta = human_time.timedelta(expires_at, when=created_at)
 
         if reason:
-            reason = f"Tempmute by {ctx.author} for {delta} with reason {reason}"
+            reason = f"Tempmute by {ctx.author} (ID: {ctx.author.id}) for {delta} with reason {reason}"
         else:
-            reason = f"Tempmute by {ctx.author} for {delta}"
+            reason = f"Tempmute by {ctx.author} (ID: {ctx.author.id}) for {delta}"
 
         await self.delete_timer("tempmute", [ctx.guild.id, user.id])
 
@@ -531,12 +556,12 @@ class Moderation(commands.Cog):
 
     @commands.command(name="selfmute", description="Mute yourself")
     @commands.bot_has_permissions(manage_roles=True)
-    async def selfmute(self, ctx, time: human_time.FutureTime, *, reason=None):
-        config = await self.get_guild_config(ctx.guild)
+    async def selfmute(self, ctx, time: human_time.FutureTime, reason=None):
+        config = await self.get_guild_config(ctx.guild.id)
         await self.can_perform_mute(config, ctx, ctx.author, ctx.author)
 
-        expires_at = time.time
-        created_at = ctx.message.created_at
+        expires_at = time.time.replace(tzinfo=None)
+        created_at = ctx.message.created_at.replace(tzinfo=None)
 
         delta = expires_at-datetime.datetime.utcnow()
         if delta > datetime.timedelta(days=1):
@@ -547,34 +572,31 @@ class Moderation(commands.Cog):
         human_delta = human_time.timedelta(expires_at, when=created_at)
 
         if reason:
-            reason = f"Selfmute by {ctx.author} for {human_delta} with reason {reason}"
+            reason = f"Selfmute by {ctx.author} (ID: {ctx.author.id}) for {human_delta} with reason {reason}"
         else:
-            reason = f"Selfmute by {ctx.author} for {human_delta}"
+            reason = f"Selfmute by {ctx.author} (ID: {ctx.author.id}) for {human_delta}"
 
         timers = self.bot.get_cog("Timers")
         if not timers:
             return await ctx.send(":x: This feature is temporarily unavailable")
-        await timers.create_timer("tempmute", [ctx.guild.id, ctx.author.id], expires_at, created_at)
 
         result = await menus.Confirm(f"Are you sure you want to mute yourself for `{human_delta}`?").prompt(ctx)
         if not result:
             return await ctx.send("Aborting")
 
-        await ctx.author.add_roles(config.mute_role, reason=reason)
+        await timers.create_timer("tempmute", [ctx.guild.id, ctx.author.id], expires_at, created_at)
+
+        await ctx.author.add_roles(config.mute_role, reason=f"Selfmute for {human_delta}")
         await ctx.send(f":white_check_mark: You have been muted for `{human_delta}`")
 
     @commands.command(name="muted", description="List muted members")
     @commands.bot_has_permissions(manage_roles=True)
     @commands.has_permissions(manage_roles=True)
     async def muted(self, ctx):
-        config = await self.get_guild_config(ctx.guild)
-
-        if not ctx.guild.chunked:
-            async with ctx.typing():
-                await ctx.guild.chunk(cache=True)
+        config = await self.get_guild_config(ctx.guild.id)
 
         if not config.muted_members:
-            return await ctx.send("No muted members")
+            return await ctx.send("No muted members.")
 
         muted = [f"[{counter+1}] {str(member)} {f'({member.id})' if isinstance(member, discord.Member) else ''}" for counter, member in enumerate(config.muted_members)]
         muted = "\n".join(muted)
@@ -584,7 +606,7 @@ class Moderation(commands.Cog):
     @commands.group(name="spam", description="View the current spam prevention settings", invoke_without_command=True)
     @commands.has_permissions(manage_guild=True)
     async def spam(self, ctx):
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
 
         if config.spam_prevention:
             await ctx.send(f"Spam prevention is enabled")
@@ -595,7 +617,7 @@ class Moderation(commands.Cog):
     @commands.has_permissions(manage_guild=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def spam_enable(self, ctx):
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
 
         if not config.mute_role:
             return await ctx.send(":x: There must be a mute role set for spam prevention")
@@ -606,7 +628,7 @@ class Moderation(commands.Cog):
     @spam.command(name="disable", description="Disable spam prevention", aliases=["off"])
     @commands.has_permissions(manage_guild=True)
     async def spam_disable(self, ctx):
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
         await config.disable_spam_prevention()
         await ctx.send(":white_check_mark: Spam prevention is now disabled")
 
@@ -616,7 +638,7 @@ class Moderation(commands.Cog):
         if not channel:
             channel = ctx.channel
 
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
         if channel.id in config.ignore_spam_channels:
             return await ctx.send(":x: Channel is already being ignored")
 
@@ -629,7 +651,7 @@ class Moderation(commands.Cog):
         if not channel:
             channel = ctx.channel
 
-        config = await self.get_guild_config(ctx.guild)
+        config = await self.get_guild_config(ctx.guild.id)
         if channel.id not in config.ignore_spam_channels:
             return await ctx.send(":x: Channel is not ignored")
 
@@ -655,10 +677,6 @@ class Moderation(commands.Cog):
            [--emojis EMOJIS=False] [--reactions REACTIONS=False] [--files FILES=False] [--embeds EMBEDS=False] [--bots BOTS=False]
            [--before BEFORE] [--after AFTER]
         """
-
-        if not ctx.guild.chunked:
-            async with ctx.typing():
-                await ctx.guild.chunk(cache=True)
 
         if flags:
             parser = ArgumentParser()
@@ -772,16 +790,16 @@ class Moderation(commands.Cog):
         await ctx.send(f":white_check_mark: Deleted {formats.plural(len(deleted)):message}", delete_after=5)
 
     @cache.cache()
-    async def get_guild_config(self, guild):
+    async def get_guild_config(self, guild_id):
         query = """SELECT *
                    FROM guild_config
                    WHERE guild_config.guild_id=$1;
                 """
-        record = await self.bot.db.fetchrow(query, guild.id)
+        record = await self.bot.db.fetchrow(query, guild_id)
 
         if not record:
             record =  {
-                "guild_id": guild.id,
+                "guild_id": guild_id,
                 "mute_role_id": None,
                 "muted": [],
                 "spam_prevention": False,
@@ -789,7 +807,7 @@ class Moderation(commands.Cog):
                 "log_channel_id": None
             }
 
-        return GuildConfig.from_record(dict(record), self.bot)
+        return GuildConfig.from_record(dict(record), self)
 
     async def basic_cleanup(self, ctx, limit):
         deleted = []
@@ -843,7 +861,7 @@ class Moderation(commands.Cog):
         if message.author.bot:
             return
 
-        config = await self.get_guild_config(message.guild)
+        config = await self.get_guild_config(message.guild.id)
 
         if not config.spam_prevention:
             return
@@ -872,7 +890,7 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        config = await self.get_guild_config(after.guild)
+        config = await self.get_guild_config(after.guild.id)
         if not config.mute_role:
             return
 
@@ -889,21 +907,21 @@ class Moderation(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
-        config = await self.get_guild_config(member.guild)
+        config = await self.get_guild_config(member.guild.id)
 
         if member.id in config.muted and config.mute_role:
             await member.add_roles(config.mute_role, reason=f"User was muted when they left")
 
     @commands.Cog.listener()
     async def on_guild_role_delete(self, role):
-        config = await self.get_guild_config(role.guild)
+        config = await self.get_guild_config(role.guild.id)
 
         if role.id == config.mute_role_id:
             await config.set_mute_role(None)
 
     @commands.Cog.listener()
     async def on_guild_channel_delete(self, channel):
-        config = await self.get_guild_config(channel.guild)
+        config = await self.get_guild_config(channel.guild.id)
 
         if channel.id in config.ignore_spam_channels:
             await config.remove_ignore_spam_channel(channel)
@@ -918,12 +936,12 @@ class Moderation(commands.Cog):
     async def on_tempmute_complete(self, timer):
         guild = self.bot.get_guild(timer.data[0])
         user = guild.get_member(timer.data[1])
-        config = await self.get_guild_config(guild)
+        config = await self.get_guild_config(guild.id)
 
         if user:
             await user.remove_roles(config.mute_role, reason=f"Tempmute is over")
         else:
             await config.unmute_member(discord.Object(id=timer.data[1]))
 
-def setup(bot):
-    bot.add_cog(Moderation(bot))
+async def setup(bot):
+    await bot.add_cog(Moderation(bot))

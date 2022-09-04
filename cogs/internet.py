@@ -578,7 +578,7 @@ class Internet(commands.Cog):
         summary = summary.replace("==", "**")
         description = f"{summary[:1000]}{'...' if len(summary) > 1000 else ''}\n\n[Read more]({page['fullurl']})"
 
-        em = discord.Embed(title=f"{page['title']} ({page_id})", description=description, url=page["fullurl"], color=0x96c8da)
+        em = discord.Embed(title=f"{page['title']}", description=description, url=page["fullurl"], color=0x96c8da)
         await ctx.send(embed=em)
 
     @commands.group(name="docs", description="Search Discord.py docs", invoke_without_command=True)
@@ -985,5 +985,5 @@ class Internet(commands.Cog):
 
         return pages
 
-def setup(bot):
-    bot.add_cog(Internet(bot))
+async def setup(bot):
+    await bot.add_cog(Internet(bot))

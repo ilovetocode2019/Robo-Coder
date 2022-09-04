@@ -22,7 +22,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
 
         em = discord.Embed(
             title=f"{bot.user.name} Help",
-            description=f"{bot.description}. Use `{self.clean_prefix}help [command]` or `{self.clean_prefix}help [Category]` for more specific help. If you need more help you can join the [support server]({bot.support_server_link}).",
+            description=f"{bot.description}. Use `{ctx.clean_prefix}help [command]` or `{ctx.clean_prefix}help [Category]` for more specific help. If you need more help you can join the [support server]({bot.support_server_link}).",
             color=0x96c8da
             )
 
@@ -31,7 +31,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             if not getattr(cog, "hidden", False):
                 message += f"\n{getattr(cog, 'emoji', '')} {cog.qualified_name}"
         em.add_field(name="Categories", value=message)
-        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
+        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar.url)
         await ctx.send(embed=em)
 
     async def send_cog_help(self, cog):
@@ -44,7 +44,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             em.description += f"\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
 
         em.description += self.bottom_text.format(bot.support_server_link)
-        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
+        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar.url)
 
         await ctx.send(embed=em)
 
@@ -56,7 +56,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         if command.aliases:
             em.description += f"\nAliases: {', '.join(command.aliases)}"
         em.description += self.bottom_text.format(bot.support_server_link)
-        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
+        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar.url)
 
         await ctx.send(embed=em)
 
@@ -73,7 +73,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             em.description += f"\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
 
         em.description += self.bottom_text.format(bot.support_server_link)
-        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar_url)
+        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar.url)
 
         await ctx.send(embed=em)
 
@@ -125,7 +125,7 @@ class Meta(commands.Cog):
                 description=f"An unexpected error has occured. If you're confused or think this is a bug you can join the [support server]({self.bot.support_server_link}). \n```py\n{error}```",
                 color=discord.Color.gold()
             )
-            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar_url)
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
             await ctx.send(embed=em)
 
             em = discord.Embed(title=":warning: Error", description="", color=discord.Color.gold())
@@ -163,17 +163,13 @@ class Meta(commands.Cog):
         perms.attach_files = True
         perms.read_message_history = True
         perms.external_emojis = True
-        perms.mute_members = True
-        perms.move_members = True
+        perms.connect = True
+        perms.speak = True
         perms.manage_roles = True
         perms.request_to_speak = True
 
-        invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms, guild=None, redirect_uri=None)
+        invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms)
         await ctx.send(f"<{invite}>")
-
-    @commands.command(name="support", description="Get an invite link for my support server")
-    async def support(self, ctx):
-        await ctx.send(self.bot.support_server_link)
 
     @commands.command(name="code", description="Find out what I'm made of")
     async def code(self, ctx):
@@ -271,11 +267,11 @@ class Meta(commands.Cog):
     @prefix.command(name="reset", description="Reset the custom server prefixes to the default prefixes")
     @commands.has_permissions(manage_guild=True)
     async def prefix_reset(self, ctx):
-        result = await menus.Confirm("Are you sure you want to clear all your prefixes?").prompt(ctx)
+        result = await menus.Confirm("Are you sure you want to reset your prefixes to the default prefixes?").prompt(ctx)
         if not result:
             return await ctx.send("Aborting")
 
-        await self.bot.prefixes.add(ctx.guild.id, self.bot.config.default_prefixes)
+        await self.bot.prefixes.remove(ctx.guild.id)
         await ctx.send(f":white_check_mark: Reset prefixes")
 
     @prefix.command(name="list", description="View the prefixes in this server")
@@ -293,9 +289,10 @@ class Meta(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message(self, message):
-        if message.content == f"<@{self.bot.user.id}>" and not message.author.bot:
+        if message.content in (f"<@{self.bot.user.id}>", f"<@!{self.bot.user.id}>") and not message.author.bot:
             prefix = self.bot.get_guild_prefix(message.guild)
-            await message.channel.send(f":wave: Hello, I am Robo Coder!\nTo get more info use {prefix}help")
+            display_prefix = prefix if prefix != self.bot.user.mention else f"@{self.bot.user.display_name}"
+            await message.reply(f":wave: Hello, I'm Robo Coder!\nTo get more info type `{prefix}help`")
 
-def setup(bot):
-    bot.add_cog(Meta(bot))
+async def setup(bot):
+    await bot.add_cog(Meta(bot))

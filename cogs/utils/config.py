@@ -5,10 +5,9 @@ import os
 class Config:
     """Represents a configuration file."""
 
-    def __init__(self, filename, *, loop=None):
+    def __init__(self, filename):
         self.filename = filename
-        self.loop = loop
-        self.lock = asyncio.Lock(loop=loop)
+        self.lock = asyncio.Lock()
 
         self.load()
 
@@ -40,6 +39,9 @@ class Config:
 
         # Use lock to insure that we don't modify the file twice at the same time
         async with self.lock:
+            if str(key) not in self.data:
+                return
+
             del self.data[str(key)]
             self.dump()
 

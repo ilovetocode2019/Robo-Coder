@@ -37,21 +37,18 @@ class Tools(commands.Cog):
         guild = ctx.guild
 
         async with ctx.typing():
-            if not guild.chunked:
-                await guild.chunk(cache=True)
-
             try:
-                color = await self.average_image_color(guild.icon_url_as(format="png"))
+                color = await self.average_image_color(guild.icon.with_format("png"))
             except:
-                color = discord.Embed.Empty
+                color = None
 
         em = discord.Embed(color=color)
-        em.set_author(name=f"{guild.name} ({guild.id})", icon_url=ctx.guild.icon_url)
-        em.set_thumbnail(url=guild.icon_url)
+        em.set_author(name=f"{guild.name} ({guild.id})", icon_url=ctx.guild.icon.url)
+        em.set_thumbnail(url=guild.icon.url)
 
         em.add_field(name=":crown: Owner", value=guild.owner.mention)
-        em.add_field(name=":clock3: Created", value=f"{human_time.fulltime(guild.created_at)}")
-        em.add_field(name="<:subscriber:808884446739693609> Nitro Boosts", value=guild.premium_tier)
+        em.add_field(name=":clock3: Created", value=f"{human_time.fulltime(guild.created_at.replace(tzinfo=None))}")
+        em.add_field(name="<:subscriber:808884446739693609> Nitro Boosts", value=f"Tier {guild.premium_tier} with {len(guild.premium_subscribers)} boosters")
         bots = len([member for member in guild.members if member.bot])
         em.add_field(name=":family: Members", value=f"{len(guild.members)} ({formats.plural(bots):bot})")
         em.add_field(name=":speech_balloon: Channels", value=f"<:text_channel:822911982319173642> {str(len(guild.text_channels))} \N{BULLET} <:voice_channel:822912006947733504> {str(len(guild.voice_channels))}")
@@ -95,11 +92,8 @@ class Tools(commands.Cog):
                 badges += emoji
 
         async with ctx.typing():
-            if is_member and not ctx.guild.chunked:
-                await ctx.guild.chunk(cache=True)
-
             try:
-                color = await self.average_image_color(user.avatar_url_as(format="png"))
+                color = await self.average_image_color(user.avatar.with_format("png"))
             except:
                 color = user.color
 
@@ -109,8 +103,8 @@ class Tools(commands.Cog):
             name = f"{user} - {user.id}"
 
         em = discord.Embed(description=badges, color=color)
-        em.set_author(name=name, icon_url=user.avatar_url)
-        em.set_thumbnail(url=user.avatar_url)
+        em.set_author(name=name, icon_url=user.avatar.url)
+        em.set_thumbnail(url=user.avatar.url)
 
         if user.id == ctx.guild.owner.id:
             em.description += "\n:crown: This user owns the server"
@@ -124,10 +118,10 @@ class Tools(commands.Cog):
         if user.public_flags.system:
             em.description += "\n:gear: This user is a system user"
 
-        em.add_field(name=":clock3: Created", value=human_time.fulltime(user.created_at))
+        em.add_field(name=":clock3: Created", value=human_time.fulltime(user.created_at.replace(tzinfo=None)))
 
         if is_member:
-            em.add_field(name="<:join:922185698587586591> Joined", value=f"{human_time.fulltime(user.joined_at)}")
+            em.add_field(name="<:join:922185698587586591> Joined", value=f"{human_time.fulltime(user.joined_at.replace(tzinfo=None))}")
 
             sorted_members = sorted(ctx.guild.members, key=lambda x: x.joined_at)
             for position, member in enumerate(sorted_members):
@@ -190,19 +184,19 @@ class Tools(commands.Cog):
 
         async with ctx.typing():
             try:
-                color = await self.average_image_color(user.avatar_url_as(format="png"))
+                color = await self.average_image_color(user.avatar.with_format("png"))
             except:
-                color = discord.Embed.Empty
+                color = None
 
         avatar_formats = ["png", "jpg", "webp"]
         if user.is_avatar_animated():
             avatar_formats.append("gif")
 
-        formats_text = [f"[{avatar_format.upper()}]({user.avatar_url_as(format=avatar_format)})" for avatar_format in avatar_formats]
+        formats_text = [f"[{avatar_format.upper()}]({user.avatar.with_format(avatar_format)})" for avatar_format in avatar_formats]
 
         em = discord.Embed(description=f"View as {formats.join(formats_text, last='or')}", color=color)
-        em.set_author(name=user.display_name, icon_url=user.avatar_url)
-        em.set_image(url=user.avatar_url_as(static_format=view_format))
+        em.set_author(name=user.display_name, icon_url=user.avatar.url)
+        em.set_image(url=user.avatar.with_format(view_format))
         await ctx.send(embed=em)
 
     @commands.command(name="charinfo", description="Get info on a character")
@@ -297,13 +291,13 @@ class Tools(commands.Cog):
             reactions.append(emoji)
 
         em = discord.Embed(title=title, description=description)
-        em.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar_url)
+        em.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
         message = await ctx.send(embed=em)
 
         for reaction in reactions:
             await message.add_reaction(reaction)
 
-    @commands.command(name="snowstamp", description="Get the timestamp from a Discord snowflake", hidden=True)
+    @commands.command(name="snowstamp", description="Convert a Discord snowflake into a timestamp", hidden=True)
     async def snowflake(self, ctx, *, snowflake: int):
         time = discord.utils.snowflake_time(snowflake)
         await ctx.send(human_time.format_time(time))
@@ -323,5 +317,5 @@ class Tools(commands.Cog):
 
         return(discord.Color(int("0x{:02x}{:02x}{:02x}".format(*color), 16)))
 
-def setup(bot):
-    bot.add_cog(Tools(bot))
+async def setup(bot):
+    await bot.add_cog(Tools(bot))
