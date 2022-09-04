@@ -49,7 +49,7 @@ class Fun(commands.Cog):
                 "Not a change",
                 "Definitely not",
                 "Obviously not",
-                "Certinaly not",
+                "Certainly not",
                 "It's unlikely",
                 "Maybe",
                 "Quite possibly",
