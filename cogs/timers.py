@@ -267,7 +267,7 @@ class Timers(commands.Cog):
         content = timer.data[3]
 
         message = await channel.send(content=f"<t:{int(created_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>: {content}")
-        await message.edit(view=TimerView(self, timer))
+        await message.edit(view=TimerView(message, self, timer))
 
 async def setup(bot):
     await bot.add_cog(Timers(bot))

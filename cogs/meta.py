@@ -139,7 +139,8 @@ class Meta(commands.Cog):
             em.description += f"\nLink: [Jump]({ctx.message.jump_url})"
             em.description += f"\n\n```py\n{error}```\n"
 
-            await self.bot.console.send(embed=em)
+            if self.bot.console:
+                await self.bot.console.send(embed=em)
 
     async def on_interaction_error(self, interaction, error):
         if not interaction.command:
@@ -167,7 +168,8 @@ class Meta(commands.Cog):
             em.description += f"\nLink: [Jump]({interaction.channel.jump_url})"
             em.description += f"\n\n```py\n{error}```\n"
 
-            await self.bot.console.send(embed=em)
+            if self.bot.console:
+                await self.bot.console.send(embed=em)
 
     @commands.command(name="hello", description="Say hello", aliases=["hi"])
     async def hi(self, ctx):
