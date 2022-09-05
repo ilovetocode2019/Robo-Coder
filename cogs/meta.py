@@ -32,7 +32,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             if not getattr(cog, "hidden", False):
                 message += f"\n{getattr(cog, 'emoji', '')} {cog.qualified_name}"
         em.add_field(name="Categories", value=message)
-        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar.url)
+        em.set_footer(text=bot.user.name, icon_url=bot.user.display_avatar.url)
         await ctx.send(embed=em)
 
     async def send_cog_help(self, cog):
@@ -45,7 +45,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             em.description += f"\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
 
         em.description += self.bottom_text
-        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar.url)
+        em.set_footer(text=bot.user.name, icon_url=bot.user.display_avatar.url)
 
         await ctx.send(embed=em)
 
@@ -57,7 +57,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         if command.aliases:
             em.description += f"\nAliases: {', '.join(command.aliases)}"
         em.description += self.bottom_text
-        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar.url)
+        em.set_footer(text=bot.user.name, icon_url=bot.user.display_avatar.url)
 
         await ctx.send(embed=em)
 
@@ -74,7 +74,7 @@ class RoboCoderHelpCommand(commands.HelpCommand):
             em.description += f"\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
 
         em.description += self.bottom_text
-        em.set_footer(text=bot.user.name, icon_url=bot.user.avatar.url)
+        em.set_footer(text=bot.user.name, icon_url=bot.user.display_avatar.url)
 
         await ctx.send(embed=em)
 
@@ -105,24 +105,26 @@ class Meta(commands.Cog):
             await ctx.send("This command can only be used in DMs")
         elif isinstance(error, commands.NoPrivateMessage):
             await ctx.send("This command cannot be used in DMs")
-        elif isinstance(error, commands.errors.BotMissingPermissions):
+        elif isinstance(error, commands.BotMissingPermissions):
             perms_text = "\n".join([f"- {perm.replace('_', ' ').capitalize()}" for perm in error.missing_perms])
-            await ctx.send(f":x: I am missing some permissions:\n {perms_text}") 
-        elif isinstance(error, commands.errors.MissingRequiredArgument):
-            await ctx.send(f":x: You are missing a required argument: `{error.param.name}`")
+            await ctx.send(f"I am missing some permissions:\n {perms_text}") 
+        elif isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(f"You are missing a required argument: `{error.param.name}`")
+        elif isinstance(error, commands.BadUnionArgument):
+            await ctx.send(f"{error.errors[0]}")
         elif isinstance(error, commands.UserInputError):
-            await ctx.send(f":x: {error}")
+            await ctx.send(f"{error}")
         elif isinstance(error, commands.ArgumentParsingError):
-            await ctx.send(f":x: {error}")
-        elif isinstance(error, commands.errors.CommandOnCooldown):
-            await ctx.send(f"You are on cooldown. Try again in {formats.plural(int(error.retry_after)):second}.")
+            await ctx.send(f"{error}")
         elif isinstance(error, commands.MaxConcurrencyReached):
-            await ctx.send(f":x: {error}")
+            await ctx.send(f"{error}")
+        elif isinstance(error, commands.CommandOnCooldown):
+            await ctx.send(f"You are on cooldown. Try again in {formats.plural(int(error.retry_after)):second}.")
 
         if isinstance(error, errors.SongError):
-            await ctx.send(f":x: {error}")
+            await ctx.send(f"{error}")
         elif isinstance(error, errors.VoiceError) and str(error):
-            await ctx.send(f":x: {error}")
+            await ctx.send(f"{error}")
 
         if isinstance(error, commands.CommandInvokeError):
             em = discord.Embed(
@@ -130,7 +132,7 @@ class Meta(commands.Cog):
                 description=f"An unexpected error has occured. \n```py\n{error}```",
                 color=discord.Color.gold()
             )
-            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.display_avatar.url)
 
             await ctx.send(embed=em)
 
@@ -155,7 +157,7 @@ class Meta(commands.Cog):
                 description=f"An unexpected error has occured. \n```py\n{error}```",
                 color=discord.Color.gold()
             )
-            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.avatar.url)
+            em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.display_avatar.url)
 
             try:
                 await interaction.response.send_message(embed=em, ephemeral=True)

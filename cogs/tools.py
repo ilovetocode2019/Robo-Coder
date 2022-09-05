@@ -38,14 +38,14 @@ class Tools(commands.Cog):
         guild = ctx.guild
 
         async with ctx.typing():
-            try:
+            if guild.icon:
                 color = await self.average_image_color(guild.icon.with_format("png"))
-            except:
+            else:
                 color = None
 
         em = discord.Embed(color=color)
-        em.set_author(name=f"{guild.name} ({guild.id})", icon_url=ctx.guild.icon.url)
-        em.set_thumbnail(url=guild.icon.url)
+        em.set_author(name=f"{guild.name} ({guild.id})", icon_url=ctx.guild.icon.url if ctx.guild.icon else None)
+        em.set_thumbnail(url=guild.icon.url if ctx.guild.icon else None)
 
         em.add_field(name=":crown: Owner", value=guild.owner.mention)
         em.add_field(name=":clock3: Created", value=f"{human_time.fulltime(guild.created_at.replace(tzinfo=None))}")
@@ -67,7 +67,7 @@ class Tools(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.hybrid_command(name="userinfo", description="Get info on a user", aliases=["ui", "whois"])
-    async def userinfo(self, ctx, *, user: typing.Union[discord.User, discord.Member] = None):
+    async def userinfo(self, ctx, *, user: typing.Union[discord.Member, discord.User] = None):
         if not user:
             user = ctx.author
         is_member = isinstance(user, discord.Member)
@@ -92,10 +92,10 @@ class Tools(commands.Cog):
                 badges += emoji
 
         async with ctx.typing():
-            try:
+            if user.avatar:
                 color = await self.average_image_color(user.avatar.with_format("png"))
-            except:
-                color = user.color
+            else:
+                color = None
 
         if is_member:
             name = f"{user}{f' ({user.nick})' if user.nick else ''} - {user.id}"
@@ -103,8 +103,8 @@ class Tools(commands.Cog):
             name = f"{user} - {user.id}"
 
         em = discord.Embed(description=badges, color=color)
-        em.set_author(name=name, icon_url=user.avatar.url)
-        em.set_thumbnail(url=user.avatar.url)
+        em.set_author(name=name, icon_url=user.display_avatar.url)
+        em.set_thumbnail(url=user.display_avatar.url)
 
         if user.id == ctx.guild.owner.id:
             em.description += "\n:crown: This user owns the server"
@@ -157,52 +157,32 @@ class Tools(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.hybrid_command(name="avatar", description="View someone's avatar", usage="[user] [--format FORMAT]")
-    async def avatar(self, ctx, *, user = ""):
-        if user in ("--format png", "--format jpg", "--format jpeg", "--format webp"):
-            if user.endswith(("png", "jpg")):
-                view_format = user[-3:]
-                user = ""
-            elif user.endswith(("jpeg", "webp")):
-                view_format = user[-4:]
-                user = ""
-        elif user.endswith((" --format png", " --format jpg", " --format jpeg", " --format webp")):
-            if user.endswith(("png", "jpg")):
-                view_format = user[-3:]
-                user = user[:len(user)-13]
-            elif user.endswith(("jpeg", "webp")):
-                view_format = user[-4:]
-                user = user[:len(user)-14]
-
-        else:
-            view_format = "png"
-
-        if user:
-            user = await commands.MemberConverter().convert(ctx, user)
-        else:
+    @commands.hybrid_command(name="avatar", description="View someone's avatar")
+    async def avatar(self, ctx, *, user: typing.Union[discord.Member, discord.User] = None):
+        if not user:
             user = ctx.author
 
         async with ctx.typing():
-            try:
+            if user.avatar:
                 color = await self.average_image_color(user.avatar.with_format("png"))
-            except:
+            else:
                 color = None
 
         avatar_formats = ["png", "jpg", "webp"]
-        if user.avatar.is_animated():
+        if user.display_avatar.is_animated():
             avatar_formats.append("gif")
 
-        formats_text = [f"[{avatar_format.upper()}]({user.avatar.with_format(avatar_format)})" for avatar_format in avatar_formats]
+        formats_text = [f"[{avatar_format.upper()}]({user.display_avatar.with_format(avatar_format)})" for avatar_format in avatar_formats]
 
         em = discord.Embed(description=f"View as {formats.join(formats_text, last='or')}", color=color)
-        em.set_author(name=user.display_name, icon_url=user.avatar.url)
-        em.set_image(url=user.avatar.with_format(view_format))
+        em.set_author(name=user.display_name, icon_url=user.display_avatar.url)
+        em.set_image(url=user.display_avatar.with_format("png"))
         await ctx.send(embed=em)
 
     @commands.hybrid_command(name="charinfo", description="Get info on a character")
     async def charinfo(self, ctx, *, text):
         if len(text) > 20:
-            return await ctx.send(":x: Your text must be shorter than 20 characters")
+            return await ctx.send("Your text must be shorter than 20 characters.")
 
         info = []
         for character in text:
@@ -296,7 +276,7 @@ class Tools(commands.Cog):
             reactions.append(emoji)
 
         em = discord.Embed(title=title, description=description)
-        em.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar.url)
+        em.set_author(name=ctx.author.display_name, icon_url=ctx.author.display_avatar.url)
         message = await ctx.send(embed=em)
 
         for reaction in reactions:
