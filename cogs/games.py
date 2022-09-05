@@ -5,53 +5,6 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-class Hangman:
-    __slots__ = ("ctx", "message", "word", "incorrect", "correct", "owner")
-    def __init__(self, ctx, word):
-        self.ctx = ctx
-        self.message = None
-        self.word = word
-        self.incorrect = []
-        self.correct = []
-        self.owner = ctx.author
-
-    @property
-    def bot(self):
-        return self.ctx.bot
-
-    @property
-    def guessed(self):
-        word = ""
-        for letter in self.word:
-            if letter in self.correct:
-                word += letter
-            else:
-                word += "_"
-        return word
-
-    @property
-    def won(self):
-        if self.word == self.guessed:
-            return True
-        elif 10-len(self.incorrect) == 0:
-            return False
-
-    @property
-    def embed(self):
-        em = discord.Embed(title="Hangman", color=0x96c8da)
-        if self.guessed:
-            em.add_field(name="Word", value=discord.utils.escape_markdown(self.guessed.replace("", " ")))
-
-        if self.won:
-            em.description = ":tada: You Won!"
-        elif self.won == False:
-            em.description = f"You Lost. The word was ||{self.word}||"
-
-        if self.incorrect:
-            em.add_field(name="Incorrect Guesses", value=", ".join(self.incorrect))
-            em.add_field(name="Guess Remaining", value=10-len(self.incorrect))
-        return em
-
 class TicTacToeButton(discord.ui.Button):
     def __init__(self, parent, space):
         super().__init__(label="\u200b", style=discord.ButtonStyle.primary, row=int(space/3))
@@ -105,11 +58,11 @@ class HangmanGuessModal(discord.ui.Modal, title="Hangman Guess"):
             return await interaction.response.send_message("This letter has already been guessed.", view=HangmanJumpBackView(interaction.message.jump_url), ephemeral=True)
         elif guess not in self.parent.word:
             self.parent.incorrect.append(guess)
-            self.parent.guess_history.append(f":x: {interaction.user.mention} incorrectly guessed `{guess}`")
+            self.parent.guess_history.append(f"{interaction.user.mention} incorrectly guessed `{guess}` :x:")
             await interaction.response.send_message("Your guess was incorrect.", view=HangmanJumpBackView(interaction.message.jump_url), ephemeral=True)
         elif guess in self.parent.word:
             self.parent.correct.append(guess)
-            self.parent.guess_history.append(f":white_check_mark: {interaction.user.mention} correctly guessed `{guess}`")
+            self.parent.guess_history.append(f"{interaction.user.mention} correctly guessed `{guess}` :white_check_mark:")
             await interaction.response.send_message("Your guess was correct.", view=HangmanJumpBackView(interaction.message.jump_url), ephemeral=True)
 
         while len("\n".join(self.parent.guess_history)) > 1024:
@@ -118,25 +71,27 @@ class HangmanGuessModal(discord.ui.Modal, title="Hangman Guess"):
         if all([True if letter in self.parent.correct else False for letter in self.parent.word]):
             self.parent.disable_buttons()
             self.parent.stop()
-        elif len(self.parent.incorrect) == 10:
+        elif len(self.parent.incorrect) == self.parent.ALLOWED_INCORRECT_GUESSES:
             self.parent.disable_buttons()
             self.parent.stop()
 
         await interaction.message.edit(embed=self.parent.get_embed(), view=self.parent)
 
 class HangmanView(discord.ui.View):
+    ALLOWED_INCORRECT_GUESSES = 6
+
     def __init__(self, word, creator):
         super().__init__(timeout=180)
         self.word = word
         self.incorrect = []
         self.correct = []
-        self.guess_history = []
+        self.guess_history = [f"{creator.mention} created the game"]
         self.creator = creator
 
     @discord.ui.button(label="Guess", style=discord.ButtonStyle.primary)
     async def guess(self, interaction, button):
         if interaction.user == self.creator:
-            return await interaction.response.send_message("You cannot guess in your own hangman game.", ephemeral=True)
+            return await interaction.response.send_message("You cannot guess in your own hangman game.", view=HangmanJumpBackView(interaction.message.jump_url), ephemeral=True)
 
         await interaction.response.send_modal(HangmanGuessModal(self))
 
@@ -149,14 +104,18 @@ class HangmanView(discord.ui.View):
         em.set_author(name=self.creator, icon_url=self.creator.display_avatar.url)
 
         if all([True if letter in self.correct else False for letter in self.word]):
-            em.description = ":tada: You guessed the word!"
-        elif len(self.incorrect) == 10:
-            em.description = f"You ran out of guesses. The word was ||{self.word}||"
+            em.description = ":tada: The word was guessed!"
+        elif len(self.incorrect) == self.ALLOWED_INCORRECT_GUESSES:
+            em.description = f"You ran out of guesses. The word was ||{self.word}||."
 
         word = " ".join([letter if letter in self.correct else "_" for letter in self.word])
+        guesses_left = self.ALLOWED_INCORRECT_GUESSES-len(self.incorrect)
+
+        em.set_thumbnail(url=f"https://raw.githubusercontent.com/ilovetocode2019/Robo-Coder/master/assets/hangman/hangman{guesses_left}.png")
+
         em.add_field(name="Word", value=discord.utils.escape_markdown(word))
         em.add_field(name="Incorrect Guesses", value=", ".join(self.incorrect) if self.incorrect else "No incorrect guesses yet.")
-        em.add_field(name="Guesses Left", value=10-len(self.incorrect))
+        em.add_field(name="Guesses Left", value=guesses_left)
         em.add_field(name="Guess History", value="\n".join(self.guess_history) if self.guess_history else "No guess history yet.", inline=False)
 
         return em
@@ -265,45 +224,6 @@ class Games(commands.Cog):
     @commands.guild_only()
     async def hangman_slash(self, interaction):
         await interaction.response.send_modal(HangmanStartModal())
-
-    """@hangman.command(name="guess", description="Guess a word in a hangman game", aliases=["g"])
-    async def hangman_guess(self, ctx, letter):
-        hangman = self.hangman_games.get(ctx.channel.id)
-        if not hangman:
-            return await ctx.send(":x: No hangman game in this channel,")
-        if hangman.owner == ctx.author:
-            return await ctx.send(":x: You cannot guess in your own game")
-        if not letter.isalpha():
-            return await ctx.send(":x: That is not a valid guess")
-
-        if len(letter) != 1 or letter in hangman.correct + hangman.incorrect:
-            await ctx.message.add_reaction("\N{HEAVY EXCLAMATION MARK SYMBOL}")
-        elif letter in hangman.word:
-            hangman.correct.append(letter)
-            await ctx.message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
-        else:
-            hangman.incorrect.append(letter)
-            await ctx.message.add_reaction("\N{CROSS MARK}")
-        await hangman.message.edit(embed=hangman.embed)
-
-        if hangman.won in (True, False):
-            self.hangman_games.pop(ctx.channel.id)
-
-    @hangman.command(name="stop", description="Stop the hangman game")
-    async def hangman_stop(self, ctx):
-        hangman = self.hangman_games.get(ctx.channel.id)
-        if not hangman:
-            return await ctx.send(":x: No hangman game is running this channel")
-        if hangman.owner.id != ctx.author.id and not ctx.author.guild_permissions.manage_messages:
-            return await ctx.send(":x: You do not own the hangman game")
-    
-
-        self.hangman_games.pop(ctx.channel.id)
-        await ctx.send(":white_check_mark: Hangman game stopped")
-
-    @commands.command(name="guess", description="Guess a letter in hangman")
-    async def guess(self, ctx, letter):
-        await ctx.invoke(self.hangman_guess, letter)"""
 
     @commands.hybrid_command(name="tictactoe", description="Play a game of tic tac toe", aliases=["ttt"])
     @commands.guild_only()
