@@ -1356,7 +1356,7 @@ class Music(commands.Cog):
     async def create_player(self, ctx):
         if ctx.guild.id not in self.bot.players:
             log.info("Connecting to voice before invoking command")
-            await self.connect(ctx)
+            await self.join(ctx)
 
             if ctx.guild.id not in self.bot.players:
                 raise errors.VoiceError()

@@ -23,7 +23,7 @@ class SnoozeModal(discord.ui.Modal, title="Snooze"):
         try:
             future_time = human_time.FutureTime(self.duration.value)
         except commands.BadArgument as exc:
-            return await interaction.response.send_message(f":x: {str(exc)}", ephemeral=True)
+            return await interaction.response.send_message(f"{str(exc)}", ephemeral=True)
 
         expires_at = future_time.time
         created_at = interaction.created_at
@@ -36,9 +36,8 @@ class SnoozeModal(discord.ui.Modal, title="Snooze"):
         await interaction.followup.send(f"This timer has been snoozed for {human_time.timedelta(timer.expires_at, when=timer.created_at)}.")
 
 class TimerView(discord.ui.View):
-    def __init__(self, message, cog, timer):
+    def __init__(self, cog, timer):
         super().__init__()
-        self.message = message
         self.cog = cog
         self.timer = timer
 
@@ -56,7 +55,7 @@ class TimerView(discord.ui.View):
 
         return True
 
-    async def on_timeout():
+    async def on_timeout(self):
         self.snooze.disabled = True
         await self.message.edit(view=self)
 
@@ -266,8 +265,8 @@ class Timers(commands.Cog):
         created_at = timer.created_at
         content = timer.data[3]
 
-        message = await channel.send(content=f"<t:{int(created_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>: {content}")
-        await message.edit(view=TimerView(message, self, timer))
+        view = TimerView(self, timer)
+        view.message = await channel.send(content=f"<@!{timer.data[0]}> <t:{int(created_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>: {content}", view=view)
 
 async def setup(bot):
     await bot.add_cog(Timers(bot))
