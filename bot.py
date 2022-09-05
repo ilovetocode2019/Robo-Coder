@@ -48,6 +48,7 @@ class RoboCoder(commands.Bot):
         self.prefixes = config.Config("prefixes.json")
         self.translator = googletrans.Translator()
         self.players = {}
+        self.console = None
 
     async def setup_hook(self):
         logging.info("Setting up bot...")

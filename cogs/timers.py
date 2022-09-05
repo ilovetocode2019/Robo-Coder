@@ -36,8 +36,9 @@ class SnoozeModal(discord.ui.Modal, title="Snooze"):
         await interaction.followup.send(f"This timer has been snoozed for {human_time.timedelta(timer.expires_at, when=timer.created_at)}.")
 
 class TimerView(discord.ui.View):
-    def __init__(self, cog, timer):
+    def __init__(self, message, cog, timer):
         super().__init__()
+        self.message = message
         self.cog = cog
         self.timer = timer
 
@@ -57,7 +58,7 @@ class TimerView(discord.ui.View):
 
     async def on_timeout():
         self.snooze.disabled = True
-        await self.response.edit_message(view=self)
+        await self.message.edit(view=self)
 
 class Timer:
     __slots__ = ("bot", "id", "event", "data", "expires_at", "created_at")
@@ -90,7 +91,7 @@ class Timers(commands.Cog):
         created_at = ctx.message.created_at
 
         timer = await self.create_timer("reminder", [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content], expires_at, created_at)
-        await ctx.send(f"Set a reminder for {human_time.timedelta(timer.expires_at, when=timer.created_at)} with the message: {content}")
+        await ctx.send(f"Set a reminder for {human_time.timedelta(timer.expires_at, when=timer.created_at)}: {content}")
 
     @remind.app_command.command(name="set", description="Set a reminder")
     @app_commands.describe(when="When you want to be reminded", text="What you want to be reminded")
@@ -98,7 +99,7 @@ class Timers(commands.Cog):
         created_at = interaction.created_at
 
         timer = await self.create_timer("reminder", [interaction.user.id, interaction.channel_id, None, text], when, created_at)
-        await interaction.response.send_message(f"Set a reminder for {human_time.timedelta(timer.expires_at, when=timer.created_at)} with the message: {text}")
+        await interaction.response.send_message(f"Set a reminder for {human_time.timedelta(timer.expires_at, when=timer.created_at)}: {text}")
 
         # Update the timer to include the jump_url (from sending the response)
         response = await interaction.original_response()
@@ -125,12 +126,12 @@ class Timers(commands.Cog):
         timers = await self.bot.db.fetch(query, str(ctx.author.id))
         timers = [Timer(self.bot, **dict(timer)) for timer in timers]
         if not timers:
-            return await ctx.send("You don't have any reminders.")
+            return await ctx.send("You don't have any reminders.", ephemeral=True)
 
         em = discord.Embed(title="Reminders", description="\n", color=0x96c8da)
         for timer in timers:
             em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in <t:{int(timer.expires_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>"
-        em.set_footer(f"{formats.plural(len(timers)):reminder}")
+        em.set_footer(text=f"{formats.plural(len(timers)):reminder}")
 
         await ctx.send(embed=em)
 
@@ -150,21 +151,22 @@ class Timers(commands.Cog):
         em = discord.Embed(title="Reminders Here", description="\n", color=0x96c8da)
         for timer in timers:
             em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in <t:{int(timer.expires_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>"
-        em.set_footer(f"{formats.plural(len(timers)):reminder}")
+        em.set_footer(text=f"{formats.plural(len(timers)):reminder}")
 
         await ctx.send(embed=em)
 
     @remind.command(name="cancel", description="Cancel a reminder", aliases=["delete", "remove"])
-    async def remind_cancel(self, ctx, timer: int):
+    async def remind_cancel(self, ctx, reminder: int):
         query = """DELETE FROM timers
-                   WHERE
-                   timers.event=$1 AND timers.id=$2;
+                   WHERE event = 'reminder'
+                   AND data #>> '{0}' = $1 AND id = $2;
                 """
-        result = await self.bot.db.execute(query, "reminder", timer)
-        if result == "DELETE 0":
-            return await ctx.send("Couldn't find this reminder in your reminder list.")
+        result = await self.bot.db.execute(query, str(ctx.author.id), reminder)
 
-        if self.current_timer and self.current_timer.event == "reminder" and self.current_timer.id == timer:
+        if result == "DELETE 0":
+            return await ctx.send("This reminder doesn't exist. Make sure you use a valid reminder ID.", ephemeral=True)
+
+        if self.current_timer and self.current_timer.event == "reminder" and self.current_timer.id == reminder:
             # The timer running is the one we canceled, so we need to restart the loop
             self.restart_loop()
 
@@ -180,7 +182,7 @@ class Timers(commands.Cog):
         result = await self.bot.db.fetchrow(query, str(ctx.author.id))
 
         if not result["count"]:
-            return await ctx.send("No reminders to clear.")
+            return await ctx.send("No reminders to clear.", ephemeral=True)
 
         result = await menus.Confirm(f"Are you sure you want to clear all your reminders?").prompt(ctx)
         if not result:
@@ -264,7 +266,8 @@ class Timers(commands.Cog):
         created_at = timer.created_at
         content = timer.data[3]
 
-        await channel.send(content=f"<t:{int(created_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>: {content}", view=TimerView(self, timer))
+        message = await channel.send(content=f"<t:{int(created_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>: {content}")
+        await message.edit(view=TimerView(self, timer))
 
 async def setup(bot):
     await bot.add_cog(Timers(bot))
