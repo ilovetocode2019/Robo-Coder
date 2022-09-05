@@ -8,7 +8,7 @@ from discord.ext import commands
 from .utils import formats, human_time, menus
 
 
-class SnoozeModal(discord.ui.Modal, title="Snooze"):
+class SnoozeModal(discord.ui.Modal, title="Snooze Reminder"):
     duration = discord.ui.TextInput(
         label="Duration",
         placeholder="How long do you want to snooze for?",
@@ -98,11 +98,9 @@ class Timers(commands.Cog):
         created_at = interaction.created_at
 
         timer = await self.create_timer("reminder", [interaction.user.id, interaction.channel_id, None, text], when, created_at)
-        await interaction.response.send_message(f"Set a reminder for {human_time.timedelta(timer.expires_at, when=timer.created_at)}: {text}")
+        response = await interaction.response.send_message(f"Set a reminder for {human_time.timedelta(timer.expires_at, when=timer.created_at)}: {text}")
 
         # Update the timer to include the jump_url (from sending the response)
-        response = await interaction.original_response()
-
         query = """UPDATE timers
                    SET data=$1
                    WHERE timers.id=$2;
@@ -120,7 +118,9 @@ class Timers(commands.Cog):
     async def remind_list(self, ctx):
         query = """SELECT * FROM timers
                    WHERE event = 'reminder'
-                   AND data #>> '{0}' = $1;
+                   AND data #>> '{0}' = $1
+                   ORDER BY expires_at
+                   LIMIT 10;
                 """
         timers = await self.bot.db.fetch(query, str(ctx.author.id))
         timers = [Timer(self.bot, **dict(timer)) for timer in timers]
@@ -129,8 +129,12 @@ class Timers(commands.Cog):
 
         em = discord.Embed(title="Reminders", description="\n", color=0x96c8da)
         for timer in timers:
-            em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in <t:{int(timer.expires_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>"
-        em.set_footer(text=f"{formats.plural(len(timers)):reminder}")
+            em.add_field(name=timer.id, value=f"{discord.utils.escape_markdown(timer.data[3])} in <t:{int(timer.expires_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>", inline=False)
+
+        if len(timers) == 10:
+            em.set_footer(text="Showing up to 10 reminders")
+        else:
+            em.set_footer(text=f"{formats.plural(len(timers)):reminder}")
 
         await ctx.send(embed=em)
 
@@ -139,7 +143,9 @@ class Timers(commands.Cog):
         query = """SELECT * FROM timers
                    WHERE event = 'reminder'
                    AND data #>> '{0}' = $1
-                   AND data #>> '{1}' = $2;
+                   AND data #>> '{1}' = $2
+                   ORDER BY expires_at
+                   LIMIT 10;
                 """
         timers = await self.bot.db.fetch(query, str(ctx.author.id), str(ctx.channel.id))
         timers = [Timer(self.bot, **dict(timer)) for timer in timers]
@@ -149,8 +155,12 @@ class Timers(commands.Cog):
 
         em = discord.Embed(title="Reminders Here", description="\n", color=0x96c8da)
         for timer in timers:
-            em.description += f"\n{discord.utils.escape_markdown(timer.data[3])} `({timer.id})` in <t:{int(timer.expires_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>"
-        em.set_footer(text=f"{formats.plural(len(timers)):reminder}")
+            em.add_field(name=timer.id, value=f"{discord.utils.escape_markdown(timer.data[3])} in <t:{int(timer.expires_at.replace(tzinfo=datetime.timezone.utc).timestamp())}:R>", inline=False)
+
+        if len(timers) == 10:
+            em.set_footer(text="Showing up to 10 reminders")
+        else:
+            em.set_footer(text=f"{formats.plural(len(timers)):reminder}")
 
         await ctx.send(embed=em)
 
@@ -183,7 +193,7 @@ class Timers(commands.Cog):
         if not result["count"]:
             return await ctx.send("No reminders to clear.", ephemeral=True)
 
-        result = await menus.Confirm(f"Are you sure you want to clear all your reminders?").prompt(ctx)
+        result = await menus.Confirm(f"Are you sure you want to clear {formats.plural(result['count']):reminder}?").prompt(ctx)
         if not result:
             return await ctx.send("Aborting")
 
