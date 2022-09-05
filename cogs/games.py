@@ -2,6 +2,7 @@ import asyncio
 import random
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 class Hangman:
@@ -51,104 +52,225 @@ class Hangman:
             em.add_field(name="Guess Remaining", value=10-len(self.incorrect))
         return em
 
-class TicTacToe:
-    __slots__ = ("ctx", "message", "players", "turn", "next", "board")
-    def __init__(self, ctx, players):
-        self.ctx = ctx
-        self.message = None
+class TicTacToeButton(discord.ui.Button):
+    def __init__(self, parent, space):
+        super().__init__(label="\u200b", style=discord.ButtonStyle.primary, row=int(space/3))
+        self.parent = parent
+        self.space = space
+
+    async def callback(self, interaction):
+        await self.parent.on_action(self.space, self, interaction)
+
+class HangmanStartModal(discord.ui.Modal, title="Start Hangman"):
+    word = discord.ui.TextInput(
+        label="Word",
+        placeholder="Enter a word for hangman",
+        max_length=100
+    )
+
+    def __init__(self):
+        super().__init__()
+
+    async def on_submit(self, interaction):
+        if not self.word.value.isalpha():
+            return await interaction.response.send_message("The hangman game was not created because your word is invalid. Make sure your word only contains alphabet characters, and has no spaces.", ephemeral=True)
+
+        await interaction.response.defer()
+        view = HangmanView(self.word.value.lower(), interaction.user)
+        view.message = await interaction.channel.send(embed=view.get_embed(), view=view)
+
+class HangmanJumpBackView(discord.ui.View):
+    def __init__(self, jump_url):
+        super().__init__()
+        self.add_item(discord.ui.Button(url=jump_url, label="Jump to Game"))
+
+class HangmanGuessModal(discord.ui.Modal, title="Hangman Guess"):
+    guess = discord.ui.TextInput(
+        label="Guess",
+        placeholder="Guess a letter",
+        max_length=1
+    )
+
+    def __init__(self, parent):
+        super().__init__()
+        self.parent = parent
+
+    async def on_submit(self, interaction):
+        guess = self.guess.value.lower()
+
+        if not guess.isalpha():
+            return await interaction.response.send_message("You guess must be a letter in the alphabet.", ephemeral=True)
+
+        if guess in self.parent.correct + self.parent.incorrect:
+            return await interaction.response.send_message("This letter has already been guessed.", view=HangmanJumpBackView(interaction.message.jump_url), ephemeral=True)
+        elif guess not in self.parent.word:
+            self.parent.incorrect.append(guess)
+            self.parent.guess_history.append(f":x: {interaction.user.mention} incorrectly guessed `{guess}`")
+            await interaction.response.send_message("Your guess was incorrect.", view=HangmanJumpBackView(interaction.message.jump_url), ephemeral=True)
+        elif guess in self.parent.word:
+            self.parent.correct.append(guess)
+            self.parent.guess_history.append(f":white_check_mark: {interaction.user.mention} correctly guessed `{guess}`")
+            await interaction.response.send_message("Your guess was correct.", view=HangmanJumpBackView(interaction.message.jump_url), ephemeral=True)
+
+        while len("\n".join(self.parent.guess_history)) > 1024:
+            self.parent.guess_history.pop(-1)
+
+        if all([True if letter in self.parent.correct else False for letter in self.parent.word]):
+            self.parent.disable_buttons()
+            self.parent.stop()
+        elif len(self.parent.incorrect) == 10:
+            self.parent.disable_buttons()
+            self.parent.stop()
+
+        await interaction.message.edit(embed=self.parent.get_embed(), view=self.parent)
+
+class HangmanView(discord.ui.View):
+    def __init__(self, word, creator):
+        super().__init__(timeout=180)
+        self.word = word
+        self.incorrect = []
+        self.correct = []
+        self.guess_history = []
+        self.creator = creator
+
+    @discord.ui.button(label="Guess", style=discord.ButtonStyle.primary)
+    async def guess(self, interaction, button):
+        if interaction.user == self.creator:
+            return await interaction.response.send_message("You cannot guess in your own hangman game.", ephemeral=True)
+
+        await interaction.response.send_modal(HangmanGuessModal(self))
+
+    async def on_timeout(self):
+        self.disable_buttons()
+        await self.message.edit(content="This game has ended because it was inactive.", view=self)
+
+    def get_embed(self):
+        em = discord.Embed(title="Hangman", description="Use the button below to make a guess.", color=0x96c8da)
+        em.set_author(name=self.creator, icon_url=self.creator.display_avatar.url)
+
+        if all([True if letter in self.correct else False for letter in self.word]):
+            em.description = ":tada: You guessed the word!"
+        elif len(self.incorrect) == 10:
+            em.description = f"You ran out of guesses. The word was ||{self.word}||"
+
+        word = " ".join([letter if letter in self.correct else "_" for letter in self.word])
+        em.add_field(name="Word", value=discord.utils.escape_markdown(word))
+        em.add_field(name="Incorrect Guesses", value=", ".join(self.incorrect) if self.incorrect else "No incorrect guesses yet.")
+        em.add_field(name="Guesses Left", value=10-len(self.incorrect))
+        em.add_field(name="Guess History", value="\n".join(self.guess_history) if self.guess_history else "No guess history yet.", inline=False)
+
+        return em
+
+    def disable_buttons(self):
+        for item in self.children:
+            item.disabled = True
+
+class TicTacToeView(discord.ui.View):
+    def __init__(self, players):
+        super().__init__(timeout=180)
+
         self.players = players
-        self.turn = players[0]
-        self.next = players[1]
+        self.current_player = 0
         self.board = [None, None, None, None, None, None, None, None, None]
 
-    @property
-    def bot(self):
-        return self.ctx.bot
+        for space in range(9):
+            button = TicTacToeButton(self, space)
+            self.add_item(button)
 
-    @property
-    def winner(self):
-        for x in [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]:
-                if self.board[x[0]] == self.board[x[1]] == self.board[x[2]] == True:
-                    return self.players[0]
+    async def on_action(self, space, button, interaction):
+        if self.current_player == 0:
+            button.label = "X"
+            button.style = discord.ButtonStyle.danger
+            button.disabled = True
+            self.board[space] = True
+            self.current_player = 1
+        elif self.current_player == 1:
+            button.label = "0"
+            button.style = discord.ButtonStyle.success
+            button.disabled = True
+            self.board[space] = False
+            self.current_player = 0
 
-                if self.board[x[0]] == self.board[x[1]] == self.board[x[2]] == False:
-                    return self.players[1]
-
-    @property
-    def tie(self):
-        tie = True
-        for piece in self.board:
-            if piece == None:
-                tie = False
-        return tie
-
-    @property
-    def board_string(self):
-        board = ""
-        for counter, piece in enumerate(self.board):
-            if counter%3 == 0:
-                board += "\n"
-
-            if piece:
-                board += ":x:"
-            elif piece == False:
-                board += ":o:"
+        for spaces in [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]:
+            if self.board[spaces[0]] == self.board[spaces[1]] == self.board[spaces[2]] == True:
+                winner = self.players[0]
+                break
+            elif self.board[spaces[0]] == self.board[spaces[1]] == self.board[spaces[2]] == False:
+                winner = self.players[1]
+                break
             else:
-                numbers = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight", 9: "nine"}
-                board += f":{numbers[counter+1]}:"
-        return board
+                winner = None
 
-    @property
-    def embed(self):
-        if self.winner:
-            message = f":tada: {self.winner} won!"
-        elif self.tie:
-            message = "Game was a tie"
+        tie = all([space is not None for space in self.board])
+
+        if winner:
+            self.disable_buttons()
+            await interaction.response.edit_message(content=f"{self.players[0].mention} :x: vs. {self.players[1].mention} :o: \n:tada: {winner} won!", view=self)
+            self.stop()
+        elif tie:
+            self.disable_buttons()
+            await interaction.response.edit_message(content=f"{self.players[0].mention} :x: vs. {self.players[1].mention} :o: \nIt's a tie!", view=self)
+            self.stop()
         else:
-            message = f"It is {self.turn}'s turn"
+            await interaction.response.edit_message(content=f"{self.players[0].mention} :x: vs. {self.players[1].mention} :o: \nCurrent player is {self.players[self.current_player].mention}", view=self)
 
-        em = discord.Embed(title="Tic Tac Toe", description=f"{self.board_string}\n\n{message}", color=0x96c8da)
-        em.set_footer(text=f"{self.players[0]} (\N{CROSS MARK}) vs {self.players[1]} (\N{HEAVY LARGE CIRCLE})")
-        return em
+    def disable_buttons(self):
+        for item in self.children:
+            item.disabled = True
+
+    async def on_timeout(self):
+        self.disable_buttons()
+        await self.message.edit(content=f"{self.players[0]} :x: vs. {self.players[1]} :o: \nGame is inactive - No winner", view=self)
+
+    async def interaction_check(self, interaction):
+        if interaction.user in self.players and interaction.user != self.players[self.current_player]:
+            await interaction.response.send_message("It isn't your turn.", ephemeral=True)
+            return False
+        elif interaction.user not in self.players:
+            await interaction.response.send_message("You aren't in this game.", ephemeral=True)
+            return False
+        else:
+            return True
 
 class Games(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.emoji = ":video_game:"
         self.hangman_games = {}
-        self.tic_tac_toe_games = {}
 
     def cog_check(self, ctx):
         return ctx.guild
 
-    @commands.group(name="hangman", description="Play hangman in Discord", invoke_without_command=True)
-    @commands.max_concurrency(1, commands.BucketType.channel)
+    @commands.command(name="hangman", description="Play hangman in Discord", invoke_without_command=True)
+    @commands.guild_only()
     async def hangman(self, ctx):
-        if ctx.channel.id in self.hangman_games:
-            return await ctx.send(":x: A hangman game already exists in this channel")
-
         try:
             await ctx.author.send("What is your word?")
         except discord.Forbidden:
-            return await ctx.send(":x: You need to have DMs enabled to send me your word")
+            return await ctx.send("You don't have DMs enabled for this server. In order for you to secretly send me your word, either enable DMs in this server or use the `/hangman start` slash command.")
 
         try:
-            msg = await self.bot.wait_for("message", check=lambda message: message.channel == ctx.author.dm_channel and message.author.id == ctx.author.id, timeout=180)
-            word = msg.content.lower()
+            message = await self.bot.wait_for("message", check=lambda message: message.channel == ctx.author.dm_channel and message.author.id == ctx.author.id, timeout=180)
+            word = message.content.lower()
         except asyncio.TimeoutError:
-            return await ctx.send(":x: Hangman creation timed out")
+            return await ctx.send("The hangman game was not created because you didn't send your word in time.")
 
         if not word.isalpha():
-            return await ctx.author.send(":x: That is not a valid word")
+            return await ctx.author.send("The hangman game was not created because your word is invalid. Make sure your word only contains alphabet characters, and has no spaces.")
 
-        self.hangman_games[ctx.channel.id] = hangman = Hangman(ctx, word)
-        self.hangman_games[ctx.channel.id].message = await ctx.send(embed=self.hangman_games[ctx.channel.id].embed)
+        view = HangmanView(word, ctx.author)
+        await ctx.send(embed=view.get_embed(), view=view)
 
-    @hangman.command(name="guess", description="Guess a word in a hangman game", aliases=["g"])
+    @app_commands.command(name="hangman", description="Start a hangman game")
+    @commands.guild_only()
+    async def hangman_slash(self, interaction):
+        await interaction.response.send_modal(HangmanStartModal())
+
+    """@hangman.command(name="guess", description="Guess a word in a hangman game", aliases=["g"])
     async def hangman_guess(self, ctx, letter):
         hangman = self.hangman_games.get(ctx.channel.id)
         if not hangman:
-            return await ctx.send(":x: No hangman game in this channel")
+            return await ctx.send(":x: No hangman game in this channel,")
         if hangman.owner == ctx.author:
             return await ctx.send(":x: You cannot guess in your own game")
         if not letter.isalpha():
@@ -174,61 +296,28 @@ class Games(commands.Cog):
             return await ctx.send(":x: No hangman game is running this channel")
         if hangman.owner.id != ctx.author.id and not ctx.author.guild_permissions.manage_messages:
             return await ctx.send(":x: You do not own the hangman game")
+    
 
         self.hangman_games.pop(ctx.channel.id)
         await ctx.send(":white_check_mark: Hangman game stopped")
 
     @commands.command(name="guess", description="Guess a letter in hangman")
     async def guess(self, ctx, letter):
-        await ctx.invoke(self.hangman_guess, letter)
+        await ctx.invoke(self.hangman_guess, letter)"""
 
-    @commands.command(name="tictactoe", description="Play a tic tac toe", aliases=["ttt"])
+    @commands.hybrid_command(name="tictactoe", description="Play a game of tic tac toe", aliases=["ttt"])
+    @commands.guild_only()
     async def tictactoe(self, ctx, *, opponent: discord.Member):
+        if opponent == ctx.author:
+            return await ctx.send("You cannot play against yourself.", ephemeral=True)
         if opponent.bot:
-            return await ctx.send(":x: You can't play tic tac toe against a bot")
-        elif ctx.author == opponent:
-            return await ctx.send(":x: Don't play against yourself!")
+            return await ctx.send("You cannot play against a bot.", ephemeral=True)
 
         players = [ctx.author, opponent]
         random.shuffle(players)
-        game = TicTacToe(ctx, players)
-        game.message = await ctx.send(embed=game.embed)
 
-        def check(reaction, user):
-            return user == game.turn and reaction.message.id == game.message.id and str(reaction.emoji) in emojis
-
-        emojis = {
-            "1\N{combining enclosing keycap}": 1,
-            "2\N{combining enclosing keycap}": 2,
-            "3\N{combining enclosing keycap}": 3,
-            "4\N{combining enclosing keycap}": 4,
-            "5\N{combining enclosing keycap}": 5,
-            "6\N{combining enclosing keycap}": 6,
-            "7\N{combining enclosing keycap}": 7,
-            "8\N{combining enclosing keycap}": 8,
-            "9\N{combining enclosing keycap}": 9
-        }
-        for emoji in emojis:
-            await game.message.add_reaction(emoji)
-
-        while True:
-            while True:
-                reaction, user = await self.bot.wait_for("reaction_add", check=check)
-
-                index = emojis[str(reaction.emoji)]
-                if game.players[0] == game.turn:
-                    icon = True
-                else:
-                    icon = False
-
-                if game.board[index-1] == None:
-                    game.board[index-1] = icon
-                    game.turn, game.next = game.next, game.turn
-                    break
-
-            await game.message.edit(embed=game.embed)
-            if game.winner or game.tie:
-                break
+        view = view=TicTacToeView(players)
+        view.message = await ctx.send(f"{players[0].mention} :x: vs. {players[1].mention} :o: \nCurrent player is {players[0].mention}", view=view)
 
 async def setup(bot):
     await bot.add_cog(Games(bot))
