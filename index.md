@@ -7,7 +7,7 @@ Invite the bot to your server with [this link](https://discord.com/oauth2/author
 
 If you have any questions or issues, feel free to [join the support server on Discord](https://discord.gg/6jQpPeEtQM).
 
-The bot is open source, so the code is [available on GitHub](https://github.com/ilovetocode2019/Robo-Coder)
+The bot is open source, so the code is [available on GitHub](https://github.com/ilovetocode2019/Robo-Coder).
 
 ![Commands](https://raw.githubusercontent.com/ilovetocode2019/Robo-Coder/master/assets/commands.gif)
 
