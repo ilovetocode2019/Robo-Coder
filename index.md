@@ -1,7 +1,7 @@
 <link rel="shortcut icon" type="image/x-icon" href="favicon.png">
 
 # Robo Coder
-Robo Coder is a multipurpose and easy to use discord bot. It has everything you need for your discord server like music, moderation, reaction roles, games, reminders, utility commands, and many other useful features.
+Robo Coder is a multipurpose and easy to use discord bot. It has everything you need for your discord server with music, moderation, reaction roles, games, reminders, utility commands, and many other useful features.
 
 Invite the bot to your server with [this link](https://discord.com/oauth2/authorize?client_id=639607732202110977&scope=bot+applications.commands&permissions=4566936822).
 
