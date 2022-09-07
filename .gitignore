@@ -1,8 +1,5 @@
-*.pyc
-*.json
-*.html
-
-ffmpeg.exe
-/config.py
-
-songs/*
+_site
+.sass-cache
+.jekyll-cache
+.jekyll-metadata
+vendor
