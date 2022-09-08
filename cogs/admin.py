@@ -25,10 +25,12 @@ class Admin(commands.Cog):
         self.bot = bot
         self.hidden = True
 
+    """
         self.update_packages_loop.start()
 
     async def cog_unload(self):
         self.update_packages_loop.cancel()
+    """
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
@@ -198,9 +200,9 @@ class Admin(commands.Cog):
         await ctx.send(":wave: Logging out")
         await self.bot.close()
 
-    @tasks.loop(hours=12)
+    """@tasks.loop(hours=12)
     async def update_packages_loop(self):
-        """Updates outdated packages twice a day."""
+        "Updates outdated packages twice a day."
         with open("requirements.txt") as file:
             requirements = file.read().replace("\n", " ")
 
@@ -220,6 +222,7 @@ class Admin(commands.Cog):
     @update_packages_loop.before_loop
     async def wait_to_update(self):
         await self.bot.wait_until_ready()
+    """
 
 
 async def setup(bot):

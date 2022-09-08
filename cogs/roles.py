@@ -452,7 +452,7 @@ class Roles(commands.Cog):
 
         await ctx.send("Reaction role menu was synced, and any issues should be fixed.")
 
-    @commands.group(name="autorole", description="Automaticly assign roles to users with they join", aliases=["autoroles"], invoke_without_command=True)
+    @commands.hybrid_group(name="autorole", description="Automaticly assign roles to users with they join", aliases=["autoroles"], invoke_without_command=True)
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def autorole(self, ctx):
@@ -465,7 +465,7 @@ class Roles(commands.Cog):
         autoroles = await self.get_autoroles(ctx.guild.id)
 
         if not autoroles:
-            return await ctx.send("No autoroles registered")
+            return await ctx.send("No autoroles registered.")
 
         roles = [f"{counter+1}. {str(role.mention)}" for counter, role in enumerate(autoroles)]
         roles = "\n".join(roles)
@@ -477,18 +477,18 @@ class Roles(commands.Cog):
     @commands.bot_has_permissions(manage_roles=True)
     async def autorole_add(self, ctx, *, role: discord.Role):
         if role.is_default() or role.managed:
-            return await ctx.send(":x: You can't use this role as an autorole")
+            return await ctx.send("You can't use this role as an autorole.")
         elif role > ctx.author.top_role:
-            return await ctx.send(":x: This role is higher than your highest role")
+            return await ctx.send("This role is higher than your highest role.")
         elif role > ctx.me.top_role:
-            return await ctx.send(":x: This role is higher than my highest role")
+            return await ctx.send("This role is higher than my highest role.")
 
         autoroles = await self.get_autoroles(ctx.guild.id)
         if len(autoroles) >= 5:
-            return await ctx.send(":x: You are not allowed to have more than 5 autoroles")
+            return await ctx.send("You are not allowed to have more than 5 autoroles in a a server.")
 
         if role in autoroles:
-            return await ctx.send(":x: This role is already set as an autorole")
+            return await ctx.send("This role is already set as an autorole.")
 
         query = """INSERT INTO autoroles (guild_id, role_id)
                    VALUES ($1, $2)
@@ -497,7 +497,7 @@ class Roles(commands.Cog):
 
         self.get_autoroles.invalidate(self, ctx.guild.id)
 
-        await ctx.send(":white_check_mark: Added role to autorole list")
+        await ctx.send("Added role to the autorole list.")
 
     @autorole.command(name="remove", description="Remove a role from the autorole list")
     @commands.has_permissions(manage_roles=True)
@@ -509,11 +509,11 @@ class Roles(commands.Cog):
         result = await self.bot.db.execute(query, role.id)
 
         if result == "DELETE 0":
-            return await ctx.send(":x: This role is not set as an autorole")
+            return await ctx.send("This role is not set as an autorole.")
 
         self.get_autoroles.invalidate(self, role.guild.id)
 
-        await ctx.send(":white_check_mark: Removed role from autorole list")
+        await ctx.send("Removed role from the autorole list.")
 
     @cache.cache()
     async def get_autoroles(self, guild_id):

@@ -10,23 +10,6 @@ from PIL import Image
 
 from .utils import formats, human_time
 
-class AnyUser(commands.Converter):
-    async def convert(self, ctx, arg):
-        try:
-            return await commands.MemberConverter().convert(ctx, arg)
-        except commands.BadArgument:
-            pass
-
-        try:
-            return await commands.UserConverter().convert(ctx, arg)
-        except commands.BadArgument:
-            pass
-
-        try:
-            return await ctx.bot.fetch_user(arg)
-        except:
-            raise commands.BadArgument(f"User `{arg}` not found")
-
 class Tools(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -67,10 +50,11 @@ class Tools(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.hybrid_command(name="userinfo", description="Get info on a user", aliases=["ui", "whois"])
-    async def userinfo(self, ctx, *, user: typing.Union[discord.Member, discord.User] = None):
+    async def userinfo(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, discord.User]]):
         if not user:
             user = ctx.author
-        is_member = isinstance(user, discord.Member)
+
+        is_member = isinstance(user, discord.Member) and ctx.guild
 
         pubilic_flags_mapping = {
             discord.UserFlags.staff: "<:staff:808882362820984853>",
@@ -106,7 +90,7 @@ class Tools(commands.Cog):
         em.set_author(name=name, icon_url=user.display_avatar.url)
         em.set_thumbnail(url=user.display_avatar.url)
 
-        if user.id == ctx.guild.owner.id:
+        if ctx.guild and user == ctx.guild.owner:
             em.description += "\n:crown: This user owns the server"
         if user.bot:
             verified = " verified" if user.public_flags.verified_bot else ""
@@ -158,7 +142,7 @@ class Tools(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.hybrid_command(name="avatar", description="View someone's avatar")
-    async def avatar(self, ctx, *, user: typing.Union[discord.Member, discord.User] = None):
+    async def avatar(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, discord.User]]):
         if not user:
             user = ctx.author
 
@@ -191,7 +175,7 @@ class Tools(commands.Cog):
             info.append(f"`\\U{digit:>08}`: {name} - {character} \N{EM DASH} <http://www.fileformat.info/info/unicode/char/{digit}>")
         await ctx.send("\n".join(info))
 
-    @commands.command(name="snowstamp", description="Convert a Discord snowflake into a timestamp")
+    @commands.hybrid_command(name="snowstamp", description="Convert a Discord snowflake into a timestamp")
     async def snowflake(self, ctx, *, snowflake: int):
         time = discord.utils.snowflake_time(snowflake)
         await ctx.send(human_time.format_time(time))

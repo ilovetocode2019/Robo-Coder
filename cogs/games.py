@@ -116,7 +116,7 @@ class HangmanView(discord.ui.View):
         em.add_field(name="Word", value=discord.utils.escape_markdown(word))
         em.add_field(name="Incorrect Guesses", value=", ".join(self.incorrect) if self.incorrect else "No incorrect guesses yet.")
         em.add_field(name="Guesses Left", value=guesses_left)
-        em.add_field(name="Guess History", value="\n".join(self.guess_history) if self.guess_history else "No guess history yet.", inline=False)
+        em.add_field(name="Action History", value="\n".join(self.guess_history) if self.guess_history else "No guess history yet.", inline=False)
 
         return em
 
@@ -197,6 +197,12 @@ class Games(commands.Cog):
         self.emoji = ":video_game:"
         self.hangman_games = {}
 
+        self.tictactoe_context_menu = app_commands.ContextMenu(name="Tic Tac Toe", callback=self.context_menu_tictactoe)
+        self.bot.tree.add_command(self.tictactoe_context_menu)
+
+    async def cog_unload(self):
+        self.bot.tree.remove_command(self.tictactoe_context_menu.name, type=self.tictactoe_context_menu.type)
+
     def cog_check(self, ctx):
         return ctx.guild
 
@@ -206,7 +212,7 @@ class Games(commands.Cog):
         try:
             await ctx.author.send("What is your word?")
         except discord.Forbidden:
-            return await ctx.send("You don't have DMs enabled for this server. In order for you to secretly send me your word, either enable DMs in this server or use the `/hangman start` slash command.")
+            return await ctx.send("You don't have DMs enabled for this server. In order for you to secretly send me your word, either enable DMs in this server or use the `/hangman` slash command.")
 
         try:
             message = await self.bot.wait_for("message", check=lambda message: message.channel == ctx.author.dm_channel and message.author.id == ctx.author.id, timeout=180)
@@ -238,6 +244,16 @@ class Games(commands.Cog):
 
         view = view=TicTacToeView(players)
         view.message = await ctx.send(f"{players[0].mention} :x: vs. {players[1].mention} :o: \nCurrent player is {players[0].mention}", view=view)
+
+    async def context_menu_tictactoe(self, interaction, opponent: discord.Member):
+        if opponent.bot:
+            return await interaction.response.send_message("You cannot play against a bot.", ephemeral=True)
+
+        players = [interaction.user, opponent]
+        random.shuffle(players)
+
+        view = view=TicTacToeView(players)
+        view.message = await interaction.response.send_message(f"{players[0].mention} :x: vs. {players[1].mention} :o: \nCurrent player is {players[0].mention}", view=view)
 
 async def setup(bot):
     await bot.add_cog(Games(bot))

@@ -23,9 +23,9 @@ class RoboCoderHelpCommand(commands.HelpCommand):
 
         em = discord.Embed(
             title=f"{bot.user.name} Help",
-            description=f"{bot.description}. Use `{ctx.clean_prefix}help [command]` or `{ctx.clean_prefix}help [Category]` for more specific help.",
+            description=f"{bot.description}. Use `{ctx.clean_prefix}help [command]` or `{ctx.clean_prefix}help [Category]` for more specific help. If you have any questions or issues, feel free to [join the support server]({bot.support_server_invite}).",
             color=0x96c8da
-            )
+        )
 
         message = ""
         for name, cog in sorted(bot.cogs.items()):
@@ -102,24 +102,26 @@ class Meta(commands.Cog):
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
         if isinstance(error, commands.PrivateMessageOnly):
-            await ctx.send("This command can only be used in DMs")
+            await ctx.send("This command can only be used in DMs.")
         elif isinstance(error, commands.NoPrivateMessage):
-            await ctx.send("This command cannot be used in DMs")
+            await ctx.send("This command cannot be used in DMs.")
         elif isinstance(error, commands.BotMissingPermissions):
             perms_text = "\n".join([f"- {perm.replace('_', ' ').capitalize()}" for perm in error.missing_perms])
             await ctx.send(f"I am missing some permissions:\n {perms_text}") 
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(f"You are missing a required argument: `{error.param.name}`")
         elif isinstance(error, commands.BadUnionArgument):
-            await ctx.send(f"{error.errors[0]}")
+            await ctx.send(error.errors[0])
         elif isinstance(error, commands.UserInputError):
-            await ctx.send(f"{error}")
+            await ctx.send(error)
         elif isinstance(error, commands.ArgumentParsingError):
-            await ctx.send(f"{error}")
+            await ctx.send(error)
         elif isinstance(error, commands.MaxConcurrencyReached):
-            await ctx.send(f"{error}")
+            await ctx.send(error)
         elif isinstance(error, commands.CommandOnCooldown):
-            await ctx.send(f"You are on cooldown. Try again in {formats.plural(int(error.retry_after)):second}.")
+            await ctx.send(f"You are on cooldown. Try again in {formats.plural(int(error.retry_after)):second}.", ephemeral=True)
+        elif isinstance(error, commands.ConversionError):
+            await ctx.send(f"Command failed while converting {error.converter.__name__}: `{error.original}`")
 
         if isinstance(error, errors.SongError):
             await ctx.send(f"{error}")
@@ -129,7 +131,7 @@ class Meta(commands.Cog):
         if isinstance(error, commands.CommandInvokeError):
             em = discord.Embed(
                 title=":warning: Error",
-                description=f"An unexpected error has occured. \n```py\n{error}```",
+                description=f"An unexpected error has occured. If you're confused or need help, feel free to [join the support server]({self.bot.support_server_invite}). \n```py\n{error}```",
                 color=discord.Color.gold()
             )
             em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.display_avatar.url)
@@ -154,7 +156,7 @@ class Meta(commands.Cog):
         if isinstance(error, app_commands.CommandInvokeError):
             em = discord.Embed(
                 title=":warning: Error",
-                description=f"An unexpected error has occured. \n```py\n{error}```",
+                description=f"An unexpected error has occured. If you're confused or need help, feel free to [join the support server]({self.bot.support_server_invite}). \n```py\n{error}```",
                 color=discord.Color.gold()
             )
             em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.display_avatar.url)
@@ -162,8 +164,7 @@ class Meta(commands.Cog):
             try:
                 await interaction.response.send_message(embed=em, ephemeral=True)
             except:
-                # Don't send message as ephemeral, since it would be weird if it already responded with a non-ephemeral message
-                await interaction.followup.send(embed=em)
+                await interaction.followup.send(embed=em, ephemeral=True)
 
             em = discord.Embed(title=":warning: Slash Command Error", description="", color=discord.Color.gold())
             em.description += f"\nCommand: `{interaction.command.name}`"
@@ -173,19 +174,34 @@ class Meta(commands.Cog):
             if self.bot.console:
                 await self.bot.console.send(embed=em)
 
-    @commands.command(name="hello", description="Say hello", aliases=["hi"])
-    async def hi(self, ctx):
-        await ctx.send(f":wave: Hello, I am Robo Coder!\nTo get more info use {ctx.prefix}help")
+    @app_commands.command(name="help", description="Get help on the bot")
+    async def help(self, interaction):
+        em = discord.Embed(
+            title=f"{self.bot.user.name} Help",
+            description=f"{self.bot.description}. If you have any questions or issues, feel free to [join the support server]({self.bot.support_server_invite}). \n\nIn order to use slash commands, type / and then the command name to use a command, or type / and then select the {self.bot.user.mention} section to view a list of commands. \n\nDiscord may remove prefixed commands in the future, so slash commands are the recommended way to use commands.",
+            color=0x96c8da
+        )
+        em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.display_avatar.url)
 
-    @commands.command(name="ping", description="Check my latency")
+        await interaction.response.send_message(embed=em)
+
+    @commands.hybrid_command(name="hi", description="Say hello", aliases=["hello"])
+    async def hi(self, ctx):
+        await ctx.send(f":wave: Hello, I am Robo Coder!\nTo get more info type: {ctx.prefix}help")
+
+    @commands.hybrid_command(name="ping", description="Check my latency")
     async def ping(self, ctx):
         await ctx.send(f"My latency is {int(self.bot.latency*1000)}ms")
 
-    @commands.group(name="uptime", description="Get the uptime", aliases=["up"], invoke_without_command=True)
+    @commands.hybrid_command(name="uptime", description="Get the uptime", aliases=["up"], invoke_without_command=True)
     async def uptime(self, ctx):
         await ctx.send(f"I started up {human_time.timedelta(self.bot.uptime, accuracy=None)}")
 
-    @commands.command(name="invite", description="Get a link to add me to your server")
+    @commands.hybrid_command(name="support", description="Get a link to join the support server")
+    async def support(self, ctx):
+        await ctx.send(self.bot.support_server_invite)
+
+    @commands.hybrid_command(name="invite", description="Get a link to add me to your server")
     async def invite(self, ctx):
         perms  = discord.Permissions.none()
         perms.kick_members = True
@@ -209,7 +225,7 @@ class Meta(commands.Cog):
         invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms)
         await ctx.send(f"<{invite}>")
 
-    @commands.command(name="code", description="Find out what I'm made of")
+    @commands.hybrid_command(name="code", description="Find out what I'm made of")
     async def code(self, ctx):
         file_count = 0
         line_count = 0
@@ -253,44 +269,44 @@ class Meta(commands.Cog):
     @prefix.command(name="add", description="Add a prefix to this server")
     @commands.has_permissions(manage_guild=True)
     async def prefix_add(self, ctx, *, prefix: Prefix):
-        prefixes = self.bot.get_guild_prefixes(ctx.guild)
+        prefixes = self.bot.get_guild_prefixes(ctx.guild.id)
         if prefix in prefixes:
-            return await ctx.send(":x: That prefix is already added")
+            return await ctx.send("That prefix is already added.")
 
         if len(prefixes) > 10:
-            return await ctx.send(":x: You cannot have more than 10 custom prefixes")
+            return await ctx.send("You cannot have more than 10 custom prefixes.")
 
         prefixes.append(prefix)
         await self.bot.prefixes.add(ctx.guild.id, prefixes)
 
-        await ctx.send(f":white_check_mark: Added the prefix `{prefix}`")
+        await ctx.send(f"Added the prefix `{prefix}`.")
 
     @prefix.command(name="remove", description="Remove a prefix from this server")
     @commands.has_permissions(manage_guild=True)
     async def prefix_remove(self, ctx, *, prefix: Prefix):
-        prefixes = self.bot.get_guild_prefixes(ctx.guild)
+        prefixes = self.bot.get_guild_prefixes(ctx.guild.id)
         if prefix not in prefixes:
-            return await ctx.send(":x: That prefix is not added")
+            return await ctx.send("That prefix is not added.")
 
         prefixes.remove(prefix)
         await self.bot.prefixes.add(ctx.guild.id, prefixes)
 
-        await ctx.send(f":white_check_mark: Removed the prefix `{prefix}`")
+        await ctx.send(f"Removed the prefix `{prefix}`.")
 
     @prefix.command(name="default", description="Set a prefix as the first prefix")
     @commands.has_permissions(manage_guild=True)
     async def prefix_default(self, ctx, *, prefix: Prefix):
-        prefixes = self.bot.get_guild_prefixes(ctx.guild)
+        prefixes = self.bot.get_guild_prefixes(ctx.guild.id)
         if prefix in prefixes:
             prefixes.remove(prefix)
 
         if len(prefixes) >= 10:
-            return await ctx.send(":x: You cannot have more than 10 prefixes")
+            return await ctx.send("You cannot have more than 10 prefixes.")
 
         prefixes = [prefix] + prefixes
         await self.bot.prefixes.add(ctx.guild.id, prefixes)
 
-        await ctx.send(f":white_check_mark: Set `{prefix}` as the default prefix")
+        await ctx.send(f"Set `{prefix}` as the default prefix.")
 
     @prefix.command(name="clear", description="Clear all the prefixes in this server")
     @commands.has_permissions(manage_guild=True)
@@ -300,7 +316,7 @@ class Meta(commands.Cog):
             return await ctx.send("Aborting")
 
         await self.bot.prefixes.add(ctx.guild.id, [])
-        await ctx.send(f":white_check_mark: Removed all prefixes")
+        await ctx.send(f"Removed all prefixes.")
 
     @prefix.command(name="reset", description="Reset the custom server prefixes to the default prefixes")
     @commands.has_permissions(manage_guild=True)
@@ -310,7 +326,7 @@ class Meta(commands.Cog):
             return await ctx.send("Aborting")
 
         await self.bot.prefixes.remove(ctx.guild.id)
-        await ctx.send(f":white_check_mark: Reset prefixes")
+        await ctx.send(f"Reset prefixes to default prefixes.")
 
     @prefix.command(name="list", description="View the prefixes in this server")
     async def prefix_list(self, ctx):
@@ -328,9 +344,8 @@ class Meta(commands.Cog):
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.content in (f"<@{self.bot.user.id}>", f"<@!{self.bot.user.id}>") and not message.author.bot:
-            prefix = self.bot.get_guild_prefix(message.guild)
-            display_prefix = prefix if prefix != self.bot.user.mention else f"@{self.bot.user.display_name}"
-            await message.reply(f":wave: Hello, I'm Robo Coder!\nTo get more info type `{prefix}help`")
+            prefix = self.bot.get_guild_prefix(message.guild.id)
+            await message.reply(f":wave: Hello, I'm Robo Coder!\nTo get more info type: {prefix}help")
 
 async def setup(bot):
     await bot.add_cog(Meta(bot))

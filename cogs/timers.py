@@ -7,6 +7,29 @@ from discord.ext import commands
 
 from .utils import formats, human_time, menus
 
+class RemindContextMenuModal(discord.ui.Modal, title="Remind Me"):
+    duration = discord.ui.TextInput(
+        label="Duration",
+        placeholder="How long do you want to be reminded about this in?",
+        default="5 minutes"
+    )
+
+    def __init__(self, cog, message):
+        super().__init__()
+        self.cog = cog
+        self.message = message
+
+    async def on_submit(self, interaction):
+        try:
+            future_time = human_time.FutureTime(self.duration.value)
+        except commands.BadArgument as exc:
+            return await interaction.response.send_message(f"{str(exc)}", ephemeral=True)
+
+        expires_at = future_time.time
+        created_at = interaction.created_at
+
+        timer = await self.cog.create_timer("reminder", [interaction.user.id, interaction.channel_id, self.message.jump_url, self.message.content or "..."], future_time.time, created_at)
+        await interaction.response.send_message(f"Alright, I'll remind you about {self.message.jump_url} in {human_time.timedelta(timer.expires_at, when=timer.created_at)}.")
 
 class SnoozeModal(discord.ui.Modal, title="Snooze Reminder"):
     duration = discord.ui.TextInput(
@@ -80,6 +103,12 @@ class Timers(commands.Cog):
         self.timers_pending.set()
         self.loop = self.bot.loop.create_task(self.run_timers())
 
+        self.remind_context_menu = app_commands.ContextMenu(name="Remind Later", callback=self.context_menu_remind)
+        self.bot.tree.add_command(self.remind_context_menu)
+
+    async def cog_unload(self):
+        self.bot.tree.remove_command(self.remind_context_menu.name, type=self.remind_context_menu.type)
+
     async def cog_unload(self):
         self.loop.cancel()
 
@@ -91,6 +120,9 @@ class Timers(commands.Cog):
 
         timer = await self.create_timer("reminder", [ctx.author.id, ctx.channel.id, ctx.message.jump_url, content], expires_at, created_at)
         await ctx.send(f"Set a reminder for {human_time.timedelta(timer.expires_at, when=timer.created_at)}: {content}")
+
+    async def context_menu_remind(self, interaction, message: discord.Message):
+        await interaction.response.send_modal(RemindContextMenuModal(self, message))
 
     @remind.app_command.command(name="set", description="Set a reminder")
     @app_commands.describe(when="When you want to be reminded", text="What you want to be reminded")

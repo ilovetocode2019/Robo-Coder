@@ -5,13 +5,18 @@ import io
 import json
 import os
 import re
+import typing
 import zlib
 
 import discord
 from dateutil import parser
+from discord import app_commands
 from discord.ext import commands, menus
+import googletrans
 from lxml import etree
 from PIL import Image
+
+from .utils import formats
 
 LANGUAGES = {
     "af": "afrikaans",
@@ -123,6 +128,20 @@ LANGUAGES = {
     "zu": "zulu"
 }
 
+PAGE_TYPES = {
+    "latest": "https://discordpy.readthedocs.io/en/latest",
+    "asyncpg": "https://magicstack.github.io/asyncpg/current/",
+    "pillow": "https://pillow.readthedocs.io/en/latest",
+    "tpy": "https://telegrampy.readthedocs.io/en/latest",
+    "python": "https://docs.python.org/3"
+}
+
+
+class JumpBackView(discord.ui.View):
+    def __init__(self, jump_url):
+        super().__init__()
+        self.add_item(discord.ui.Button(url=jump_url, label="Original Message"))
+
 class GoogleResultPages(menus.ListPageSource):
     def __init__(self, entries, query):
         super().__init__(entries, per_page=1)
@@ -138,22 +157,18 @@ class GoogleResultPages(menus.ListPageSource):
         return em
 
 class DocumentationPages(menus.ListPageSource):
-    def __init__(self, entries, *, query, code=True):
+    def __init__(self, entries, *, query):
         super().__init__(entries, per_page=10)
 
         self.entries = entries
         self.query = query
-        self.code = code
 
     async def format_page(self, menu, entries):
         offset = menu.current_page * self.per_page
         em = discord.Embed(title=f"Results for '{self.query}'", description="", color=0x96c8da)
 
         for counter, entry in enumerate(entries, start=offset):
-            if self.code:
-                em.description += f"\n[`{entry[0]}`]({entry[1]})"
-            else:
-                em.description += f"\n[{entry[0]}]({entry[1]})"
+            em.description += f"\n[`{entry[0]}`]({entry[1]})"
 
         em.set_footer(text=f"{len(self.entries)} results | Page {menu.current_page+1}/{int(len(self.entries)/10)+1}")
 
@@ -191,7 +206,7 @@ class SphinxObjectFileReader:
                 buf = buf[pos + 1:]
                 pos = buf.find(b"\n")
 
-def finder(text, collection, *, key=None, lazy=True):
+def finder(text, collection, *, key=None):
     suggestions = []
     text = str(text)
     pat = ".*?".join(map(re.escape, text))
@@ -207,10 +222,7 @@ def finder(text, collection, *, key=None, lazy=True):
             return tup[0], tup[1], key(tup[2])
         return tup
 
-    if lazy:
-        return (z for _, _, z in sorted(suggestions, key=sort_key))
-    else:
-        return [z for _, _, z in sorted(suggestions, key=sort_key)]
+    return [z for _, _, z in sorted(suggestions, key=sort_key)]
 
 class Internet(commands.Cog):
     """Internet commands."""
@@ -218,6 +230,13 @@ class Internet(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.emoji = ":globe_with_meridians:"
+
+        self.translator = googletrans.Translator()
+        self.translate_context_menu = app_commands.ContextMenu(name="Translate", callback=self.context_menu_translate)
+        self.bot.tree.add_command(self.translate_context_menu)
+
+    async def cog_unload(self):
+        self.bot.tree.remove_command(self.translate_context_menu.name, type=self.translate_context_menu.type)
 
     def parse_object_inv(self, stream, url):
         # key: URL
@@ -277,9 +296,9 @@ class Internet(commands.Cog):
 
         return result
 
-    async def build_docs_lookup_table(self, page_types):
+    async def build_docs_lookup_table(self):
         cache = {}
-        for key, page in page_types.items():
+        for key, page in PAGE_TYPES.items():
             sub = cache[key] = {}
             async with self.bot.session.get(page + "/objects.inv") as resp:
                 if resp.status != 200:
@@ -293,7 +312,7 @@ class Internet(commands.Cog):
         self._docs_cache = cache
 
     async def do_docs(self, ctx, key, obj):
-        page_types = {
+        PAGE_TYPES = {
             "latest": "https://discordpy.readthedocs.io/en/latest",
             "asyncpg": "https://magicstack.github.io/asyncpg/current/",
             "pillow": "https://pillow.readthedocs.io/en/latest",
@@ -302,12 +321,12 @@ class Internet(commands.Cog):
         }
 
         if obj is None:
-            await ctx.send(page_types[key])
+            await ctx.send(PAGE_TYPES[key])
             return
 
         if not hasattr(self, "_docs_cache"):
             async with ctx.typing():
-                await self.build_docs_lookup_table(page_types)
+                await self.build_docs_lookup_table()
 
         obj = re.sub(r"^(?:discord\.(?:ext\.)?)?(?:commands\.)?(.+)", r"\1", obj)
         obj = re.sub(r"^(?:telegrampy\.(?:ext\.)?)?(?:commands\.)?(.+)", r"\1", obj)
@@ -324,16 +343,34 @@ class Internet(commands.Cog):
 
         cache = list(self._docs_cache[key].items())
 
-        def transform(tup):
-            return tup[0]
-
-        matches = finder(obj, cache, key=lambda t: t[0], lazy=False)
+        matches = finder(obj, cache, key=lambda t: t[0])
 
         if not matches:
-            return await ctx.send("Could not find anything")
+            return await ctx.send("Couldn't find anything.")
 
-        pages = menus.MenuPages(source=DocumentationPages(matches, query=obj), clear_reactions_after=True)
-        await pages.start(ctx)
+        if ctx.interaction or len(matches) <=  10:
+            em = discord.Embed(title=f"Results for '{obj}'", description="", color=0x96c8da)
+
+            for match in matches[:10]:
+                em.description += f"\n[`{match[0]}`]({match[1]})"
+
+            em.set_footer(text=f"Showing {len(matches[:10])}/{formats.plural(len(matches)):result}")
+
+            await ctx.send(embed=em)
+        else:
+            pages = menus.MenuPages(source=DocumentationPages(matches, query=obj), clear_reactions_after=True)
+            await pages.start(ctx)
+
+    async def slash_docs_autocomplete(self, interaction, current):
+        if not hasattr(self, "_docs_cache"):
+            await self.build_docs_lookup_table()
+
+        if not current:
+            return []
+
+        cache = list(self._docs_cache[interaction.command.name].items())
+        matches = finder(current, cache, key=lambda t: t[0])[:10]
+        return [app_commands.Choice(name=match[0], value=match[0]) for match in matches]
 
     @commands.command(name="google", description="Search google", aliases=["g"])
     @commands.cooldown(1, 20, commands.BucketType.user)
@@ -533,11 +570,11 @@ class Internet(commands.Cog):
         pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
         await pages.start(ctx)
 
-    @commands.command(name="translate", description="Translate something using google translate")
+    @commands.hybrid_command(name="translate", description="Translate something using google translate")
     @commands.cooldown(1, 20, commands.BucketType.user)
-    async def translate(self, ctx, *, query):
+    async def translate(self, ctx, *, query: str):
         async with ctx.typing():
-            partial = functools.partial(self.bot.translator.translate, query)
+            partial = functools.partial(self.translator.translate, query)
             translated = await self.bot.loop.run_in_executor(None, partial)
 
             src_lang = LANGUAGES.get(translated.src.lower(), "???").title()
@@ -549,7 +586,23 @@ class Internet(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.command(name="wikipedia", description="Search wikipedia", aliases=["wiki"])
+    async def context_menu_translate(self, interaction, message: discord.Message):
+        if not message.content:
+            return await interaction.response.send_message("There is no text to translate in this message.", ephemeral=True)
+
+        partial = functools.partial(self.translator.translate, message.content)
+        translated = await self.bot.loop.run_in_executor(None, partial)
+
+        src_lang = LANGUAGES.get(translated.src.lower(), "???").title()
+        dest_lang = LANGUAGES.get(translated.dest.lower(), "???").title()
+
+        em = discord.Embed(title="Translator", color=0x4285F3)
+        em.add_field(name=f"From {src_lang}", value=message.content)
+        em.add_field(name=f"To {dest_lang}", value=translated.text, inline=False)
+
+        await interaction.response.send_message(embed=em, view=JumpBackView(message.jump_url), ephemeral=True)
+
+    @commands.hybrid_command(name="wikipedia", description="Search wikipedia", aliases=["wiki"])
     @commands.cooldown(2, 20, commands.BucketType.user)
     async def wikipedia(self, ctx, *, search):
         async with ctx.typing():
@@ -558,19 +611,19 @@ class Internet(commands.Cog):
 
             async with self.bot.session.get(url, params=data) as resp:
                 if resp.status != 200:
-                    return await ctx.send(f":x: Failed to fetch page data (error code {resp.status})")
+                    return await ctx.send(f"Failed to fetch page data (error code {resp.status}).")
 
                 page_data = await resp.json()
                 pages = page_data["query"]["pages"]
                 page_id = list(page_data["query"]["pages"].keys())[0]
                 page = pages[page_id]
                 if "pageid" not in page:
-                    return await ctx.send(f":x: Could not find a page with the name '{search}'")
+                    return await ctx.send(f"Couldn't find a page with the name '{search}'")
 
             data = {"prop": "extracts", "explaintext": "", "pageids": page_id, "format": "json", "action": "query"}
             async with self.bot.session.get(url, params=data) as resp:
                 if resp.status != 200:
-                    return await ctx.send(f":x: Failed to fetch page data (error code {resp.status})")
+                    return await ctx.send(f"Failed to fetch page data (error code {resp.status}).")
                 summary_data = await resp.json()
                 summary = summary_data["query"]["pages"][page_id]["extract"]
 
@@ -581,53 +634,98 @@ class Internet(commands.Cog):
         em = discord.Embed(title=f"{page['title']}", description=description, url=page["fullurl"], color=0x96c8da)
         await ctx.send(embed=em)
 
-    @commands.group(name="docs", description="Search Discord.py docs", invoke_without_command=True)
-    async def docs(self, ctx, *, obj=None):
+    @commands.hybrid_group(name="docs", fallback="latest", description="Search the discord.py docs", invoke_without_command=True)
+    @app_commands.autocomplete(obj=slash_docs_autocomplete)
+    async def docs(self, ctx, *, obj: typing.Optional[str]):
         await self.do_docs(ctx, "latest", obj)
 
-    @docs.command(name="python", description="Search Python docs", aliases=["py"])
-    async def docs_python(self, ctx, *, obj=None):
+    @docs.command(name="python", description="Search the python docs", aliases=["py"])
+    @app_commands.autocomplete(obj=slash_docs_autocomplete)
+    async def docs_python(self, ctx, *, obj: typing.Optional[str]):
         await self.do_docs(ctx, "python", obj)
 
-    @docs.command(name="telegram", description="Search Telegram.py docs", aliases=["telegrampy", "telegram.py", "tpy"])
-    async def docs_telegram(self, ctx, *, obj=None):
+    @docs.command(name="telegram", with_app_command=False, description="Search the telegram.py docs", aliases=["telegrampy", "telegram.py", "tpy"], hidden=True)
+    async def docs_telegram(self, ctx, *, obj: typing.Optional[str]):
         await self.do_docs(ctx, "tpy", obj)
 
-    @commands.command(name="api", description="Search the Discord API docs", aliases=["dapi", "discord"])
-    async def api(self, ctx, *, obj=None):
+    @commands.hybrid_command(name="api", description="Search the Discord API docs", aliases=["dapi", "discord"])
+    async def api(self, ctx, *, obj: typing.Optional[str]):
         if not obj:
             return await ctx.send("https://discord.com/developers/docs/intro")
 
         async with ctx.typing():
-            if not hasattr(self.bot, "api_docs"):
-                self.bot.api_docs = await self.build_api_docs()
+            if not hasattr(self, "_api_docs"):
+                self._api_docs = await self.build_api_docs()
 
-            results = finder(obj, self.bot.api_docs, key=lambda t: t[0], lazy=False)
+            matches = finder(obj, self._api_docs, key=lambda t: t[0])
 
-        if not results:
-            return await ctx.send("Could not find anything")
+        if not matches:
+            return await ctx.send("Couldn't find anything.")
 
-        pages = menus.MenuPages(DocumentationPages(results, query=obj), clear_reactions_after=True)
-        await pages.start(ctx)
+        if ctx.interaction or len(matches) <= 10:
+            em = discord.Embed(title=f"Results for '{obj}'", description="", color=0x96c8da)
 
-    @commands.command(name="faq", desciption="Search the Discord.py faq")
-    async def faq(self, ctx, *, query=None):
+            for match in matches[:10]:
+                em.description += f"\n[`{match[0]}`]({match[1]})"
+
+            em.set_footer(text=f"Showing {len(matches[:10])}/{formats.plural(len(matches)):result}")
+
+            await ctx.send(embed=em)
+        else:
+            pages = menus.MenuPages(DocumentationPages(matches, query=obj), clear_reactions_after=True)
+            await pages.start(ctx)
+
+    @api.autocomplete("obj")
+    async def slash_api_docs_autocomplete(self, interaction, current):
+        if not hasattr(self, "_api_docs"):
+            self._api_docs = await self.build_api_docs()
+
+        if not current:
+            return []
+
+        cache = list(self._docs_cache[interaction.command.name].items())
+        matches = finder(current, self._api_docs, key=lambda t: t[0])[:10]
+        return [app_commands.Choice(name=match[0], value=match[0]) for match in matches]
+
+    @commands.hybrid_command(name="faq", description="Search the discord.py faq")
+    async def faq(self, ctx, *, query: typing.Optional[str]):
         if not query:
             return await ctx.send("https://discordpy.readthedocs.io/en/latest/faq.html")
 
         async with ctx.typing():
-            if not hasattr(self.bot, "faq_entries"):
-                self.bot.faq_entries = await self.build_faq_entries()
+            if not hasattr(self, "_faq_entries"):
+                self._faq_entries = await self.build_faq_entries()
 
-            matches = finder(query, self.bot.faq_entries, key=lambda entry: entry[0], lazy=False)
+            matches = finder(query, self._faq_entries, key=lambda entry: entry[0])
 
         if not matches:
-            return await ctx.send("Could not find anything")
+            return await ctx.send("Couldn't find anything.")
 
-        pages = menus.MenuPages(DocumentationPages(matches, query=query, code=False), clear_reactions_after=True)
-        await pages.start(ctx)
+        if ctx.interaction or len(matches) <= 10:
+            em = discord.Embed(title=f"Results for '{query}'", description="", color=0x96c8da)
 
-    @commands.command(name="roblox", description="Get info on a Roblox user")
+            for match in matches[:10]:
+                em.description += f"\n[`{match[0]}`]({match[1]})"
+
+            em.set_footer(text=f"Showing {len(matches[:10])}/{formats.plural(len(matches)):result}")
+
+            await ctx.send(embed=em)
+        else:
+            pages = menus.MenuPages(DocumentationPages(matches, query=obj), clear_reactions_after=True)
+            await pages.start(ctx)
+
+    @faq.autocomplete("query")
+    async def slash_faq_autocomplete(self, interaction, current):
+        if not hasattr(self, "_faq_entries"):
+            self._faq_entries = await self.build_faq_entries()
+
+        if not current:
+            return []
+
+        matches = finder(current, self._faq_entries, key=lambda t: t[0])[:10]
+        return [app_commands.Choice(name=match[0], value=match[0]) for match in matches]
+
+    @commands.hybrid_command(name="roblox", description="Get info on a Roblox user")
     @commands.cooldown(2, 20, commands.BucketType.user)
     async def roblox(self, ctx, username):
         # Because of how the Roblox API is structured
@@ -639,11 +737,11 @@ class Internet(commands.Cog):
             # Search for user
             async with self.bot.session.get(f"https://api.roblox.com/users/get-by-username", params=params) as resp:
                 if resp.status != 200:
-                    return await ctx.send(f":x: Failed to find user (error code {resp.status})")
+                    return await ctx.send(f"Failed to find user (error code {resp.status}).")
 
                 profile = await resp.json()
                 if "Id" not in profile:
-                    return await ctx.send("Roblox user not found")
+                    return await ctx.send("Roblox user not found.")
 
                 user_id = profile["Id"]
                 base_url = f"https://www.roblox.com/users/{user_id}"
@@ -651,18 +749,18 @@ class Internet(commands.Cog):
             # Fetch user info that the API provides
             async with self.bot.session.get(f"https://users.roblox.com/v1/users/{user_id}") as resp:
                 if resp.status != 200:
-                    return await ctx.send(f":x: Failed to fetch user data from users.roblox.com (error code {resp.status})")
+                    return await ctx.send(f"Failed to fetch user data from users.roblox.com (error code {resp.status}).")
 
                 user_data = await resp.json()
 
                 if user_data["isBanned"]:
-                    return await ctx.send(f"This Roblox user is banned")
+                    return await ctx.send("This Roblox user is banned.")
 
             # Get information about the user from the website profile page
             headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0"}
             async with self.bot.session.get(f"{base_url}/profile", headers=headers) as resp:
                 if resp.status != 200:
-                    return await ctx.send(f":x: Failed to fetch user data (error code {resp.status})")
+                    return await ctx.send(f"Failed to fetch user data (error code {resp.status}).")
 
                 html = await resp.text("utf-8")
 
@@ -722,13 +820,13 @@ class Internet(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.command(name="minecraft", description="Get info on a Minecraft user", aliases=["mc"])
+    @commands.hybrid_command(name="minecraft", description="Get info on a Minecraft user", aliases=["mc"])
     @commands.cooldown(1, 20, commands.BucketType.user)
     async def minecraft(self, ctx, username):
         async with ctx.typing():
             async with self.bot.session.get(f"https://api.mojang.com/users/profiles/minecraft/{username}") as resp:
                 if resp.status != 200:
-                    return await ctx.send(":x: I couldn't find that user")
+                    return await ctx.send("I couldn't find that user.")
 
                 data = await resp.json()
 
@@ -782,14 +880,16 @@ class Internet(commands.Cog):
 
         await ctx.send(embed=em, file=discord.File(output, filename="face.png"))
 
-    @commands.command(name="github", description="Get info on a GitHub item", aliases=["gh"])
+    @commands.hybrid_command(name="github", description="Get info on a GitHub item", aliases=["gh"])
     @commands.cooldown(3, 20, commands.BucketType.user)
     async def github(self, ctx, item):
+        headers = {"Authorization": f"token {self.bot.config.github_token}"} if getattr(self.bot.config, "github_token", None) else None
+
         async with ctx.typing():
             if "/" in item:
-                async with self.bot.session.get(f"https://api.github.com/repos/{item}") as resp:
+                async with self.bot.session.get(f"https://api.github.com/repos/{item}", headers=headers) as resp:
                     if resp.status != 200:
-                        return await ctx.send(":x: I couldn't find that GitHub repository")
+                        return await ctx.send("I couldn't find that GitHub repository.")
 
                     data = await resp.json()
                     owner = data["owner"]
@@ -803,9 +903,9 @@ class Internet(commands.Cog):
                 em.add_field(name="Forks", value=data["forks_count"])
                 em.set_footer(text="Created")
             else:
-                async with self.bot.session.get(f"https://api.github.com/users/{item}") as resp:
+                async with self.bot.session.get(f"https://api.github.com/users/{item}", headers=headers) as resp:
                     if resp.status != 200:
-                        return await ctx.send(":x: I couldn't find that GitHub user")
+                        return await ctx.send("I couldn't find that GitHub user.")
                     data = await resp.json()
 
                 em = discord.Embed(title=data["login"], description=data["bio"], url=data["html_url"], timestamp=parser.isoparse(data["created_at"]), color=0x96c8da)
@@ -820,9 +920,9 @@ class Internet(commands.Cog):
 
         await ctx.send(embed=em)
 
-    @commands.command(name="pypi", description="Search for a project on PyPI", aliases=["pip", "project"])
+    @commands.hybrid_command(name="pypi", description="Search for a project on PyPI", aliases=["pip", "project"])
     @commands.cooldown(3, 20, commands.BucketType.user)
-    async def pypi(self, ctx, project, release=None):
+    async def pypi(self, ctx, project, release: typing.Optional[str]):
         async with ctx.typing():
             if release:
                 url = f"https://pypi.org/pypi/{project}/{release}/json"
@@ -831,11 +931,11 @@ class Internet(commands.Cog):
 
             async with self.bot.session.get(url) as resp:
                 if resp.status != 200:
-                    return await ctx.send(f":x: I couldn't find that package")
+                    return await ctx.send(f"I couldn't find that package.")
 
                 data = await resp.json()
                 info = data["info"]
-                releases = data["releases"]
+                releases = data["releases"] if not release else None
 
         em = discord.Embed(title=f"{info['name']} {info['version']}", description=info["summary"], url=info["package_url"], color=0x96c8da)
         em.set_thumbnail(url="https://i.imgur.com/6WHMGed.png")
@@ -916,11 +1016,13 @@ class Internet(commands.Cog):
         return list(entries.items())
 
     async def build_api_docs(self):
-        """Buils the Discord API docs."""
+        """Builds the Discord API docs."""
 
-        async with self.bot.session.get("https://api.github.com/repos/discord/discord-api-docs/contents/docs") as resp:
+        headers = {"Authorization": f"token {self.bot.config.github_token}"} if getattr(self.bot.config, "github_token", None) else None
+
+        async with self.bot.session.get("https://api.github.com/repos/discord/discord-api-docs/contents/docs", headers=headers) as resp:
             if resp.status != 200:
-                raise RuntimeError(f"GitHub returned the Status code {resp.status}")
+                raise RuntimeError(f"GitHub returned the status code {resp.status}")
 
             data = await resp.json()
             pages = await self.fetch_api_docs(data)
@@ -975,9 +1077,11 @@ class Internet(commands.Cog):
                     pages[path] = markdown
 
             else:
-                async with self.bot.session.get(f"https://api.github.com/repos/discord/discord-api-docs/contents/{file['path']}") as resp:
+                headers = {"Authorization": f"token {self.bot.config.github_token}"} if getattr(self.bot.config, "github_token", None) else None
+
+                async with self.bot.session.get(f"https://api.github.com/repos/discord/discord-api-docs/contents/{file['path']}", headers=headers) as resp:
                     if resp.status != 200:
-                        raise RuntimeError(f"GitHub returned the Status code {resp.status}")
+                        raise RuntimeError(f"GitHub returned the status code {resp.status}")
 
                     data = await resp.json()
                     docs = await self.fetch_api_docs(data)

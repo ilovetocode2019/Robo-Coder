@@ -7,6 +7,7 @@ import os
 import random
 import re
 import time
+import typing
 import urllib
 
 import discord
@@ -988,7 +989,7 @@ class Music(commands.Cog):
         await ctx.send(":twisted_rightwards_arrows: Shuffled music")
 
     @commands.command(name="volume", description="Set the volume")
-    async def volume(self, ctx, volume: int = None):
+    async def volume(self, ctx, volume: typing.Optional[int]):
         if ctx.author not in ctx.player.channel.members:
             return
 
@@ -1038,7 +1039,7 @@ class Music(commands.Cog):
         await ctx.send(embed=song.embed)
 
     @commands.group(name="queue", description="View the queue", invoke_without_command=True)
-    async def queue(self, ctx, position: int = None):
+    async def queue(self, ctx, position: typing.Optional[int]):
         if not ctx.player.queue:
             return await ctx.send("The queue is empty")
 
