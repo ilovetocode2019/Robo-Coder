@@ -246,6 +246,8 @@ class Games(commands.Cog):
         view.message = await ctx.send(f"{players[0].mention} :x: vs. {players[1].mention} :o: \nCurrent player is {players[0].mention}", view=view)
 
     async def context_menu_tictactoe(self, interaction, opponent: discord.Member):
+        if opponent == interaction.user:
+            return await interaction.response.send_message("You cannot play against yourself.", ephemeral=True)
         if opponent.bot:
             return await interaction.response.send_message("You cannot play against a bot.", ephemeral=True)
 
