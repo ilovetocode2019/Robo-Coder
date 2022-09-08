@@ -1,4 +1,4 @@
-<center><img src="https://raw.githubusercontent.com/ilovetocode2019/Robo-Coder/master/assets/commands.gif" width="400"></center>
+<p align="center"><img src="https://raw.githubusercontent.com/ilovetocode2019/Robo-Coder/master/assets/commands.gif" width="400"></p>
 
 # Robo Coder
 
