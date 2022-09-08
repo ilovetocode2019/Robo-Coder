@@ -249,7 +249,7 @@ class Moderation(commands.Cog):
         self.bot = bot
         self.emoji = ":police_car:"
 
-        self.spam_detectors = True
+        self.spam_detectors = {}
 
     @commands.command(name="kick", description="Kick a member from the server")
     @commands.bot_has_permissions(kick_members=True)
