@@ -1,4 +1,4 @@
-<center><img style="width:400px;height:auto;" src="https://raw.githubusercontent.com/ilovetocode2019/Robo-Coder/master/assets/commands.gif"></center>
+<center><img src="https://raw.githubusercontent.com/ilovetocode2019/Robo-Coder/master/assets/commands.gif" width="400"></center>
 
 Robo Coder is a high-quality, multipurpose, and easy-to-use Discord bot. It has everything you need for your Discord server with music, moderation, reaction roles, games, reminders, utility commands, and many other useful features.
 
