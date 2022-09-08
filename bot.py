@@ -70,7 +70,7 @@ class RoboCoder(commands.Bot):
         log.info("Starting aiohttp session")
         self.session = aiohttp.ClientSession()
         if getattr(self.config, "status_hook", None):
-            self.status_webhook = discord.Webhook.from_url(self.status_webhook, adapter=discord.AsyncWebhookAdapter(self.session))
+            self.status_webhook = discord.Webhook.from_url(self.config.status_hook, session=self.session)
         else:
             self.status_webhook = None
 
