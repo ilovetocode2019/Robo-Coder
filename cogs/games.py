@@ -204,15 +204,17 @@ class Games(commands.Cog):
         self.bot.tree.remove_command(self.tictactoe_context_menu.name, type=self.tictactoe_context_menu.type)
 
     def cog_check(self, ctx):
-        return ctx.guild
+        if not ctx.guild:
+            raise commands.NoPrivateMessage()
 
-    @commands.command(name="hangman", description="Play hangman in Discord", invoke_without_command=True)
-    @commands.guild_only()
+        return True
+
+    @commands.command(name="hangman", description="Play hangman in Discord")
     async def hangman(self, ctx):
         try:
             await ctx.author.send("What is your word?")
         except discord.Forbidden:
-            return await ctx.send("You don't have DMs enabled for this server. In order for you to secretly send me your word, either enable DMs in this server or use the `/hangman` slash command.")
+            return await ctx.send("You don't have DMs enabled for this server. In order for you to secretly send me your word, either enable DMs in this server or use the /hangman slash command.")
 
         try:
             message = await self.bot.wait_for("message", check=lambda message: message.channel == ctx.author.dm_channel and message.author.id == ctx.author.id, timeout=180)
@@ -232,7 +234,6 @@ class Games(commands.Cog):
         await interaction.response.send_modal(HangmanStartModal())
 
     @commands.hybrid_command(name="tictactoe", description="Play a game of tic tac toe", aliases=["ttt"])
-    @commands.guild_only()
     async def tictactoe(self, ctx, *, opponent: discord.Member):
         if opponent == ctx.author:
             return await ctx.send("You cannot play against yourself.", ephemeral=True)

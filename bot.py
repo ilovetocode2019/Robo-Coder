@@ -48,7 +48,11 @@ class RoboCoder(commands.Bot):
 
         self.prefixes = config.Config("prefixes.json")
         self.support_server_invite = "https://discord.gg/6jQpPeEtQM"
+        self.cached_errors = {}
         self.players = {}
+
+        self.status_webhook = None
+        self.console = None
 
     async def setup_hook(self):
         logging.info("Setting up bot...")
@@ -69,10 +73,14 @@ class RoboCoder(commands.Bot):
         # Create aiohttp session
         log.info("Starting aiohttp session")
         self.session = aiohttp.ClientSession()
+
+        # Get webhooks
+        log.info("Getting webhooks")
         if getattr(self.config, "status_hook", None):
             self.status_webhook = discord.Webhook.from_url(self.config.status_hook, session=self.session)
-        else:
-            self.status_webhook = None
+
+        if getattr(self.config, "console_hook", None):
+            self.console = discord.Webhook.from_url(self.config.console_hook, session=self.session)
 
         # Create database connection
         log.info("Starting database connection")
@@ -96,7 +104,6 @@ class RoboCoder(commands.Bot):
         log.info(f"Logged in as {self.user.name} - {self.user.id}")
 
         console_id = getattr(self.config, "console", None)
-        self.console = self.get_channel(console_id)
 
         if self.status_webhook:
             await self.status_webhook.send("Recevied READY event")
@@ -137,23 +144,18 @@ class RoboCoder(commands.Bot):
 
     async def stop_players(self):
         player_count = len(self.players)
-        log.info("Stopping %s players.", player_count)
+        log.info("Stopping %s player(s).", player_count)
 
         for player in self.players.copy().values():
             if player.queue:
-                url = await player.save_queue(player)
-                await player.ctx.send(f"Your player was automatically stopped for maintenance. Luckily, I saved the queue to {url}.")
+                url = await player.save_queue()
+                await player.text_channel.send(f"Sorry, your music player had to be stopped for maintenance. Luckily, I saved the queue to {url}.")
             elif player.now:
-                await player.ctx.send(f"Your player was automatically stopped for matinanace.")
+                await player.text_channel.send(f"Sorry, your music player was automatically stopped for maintenance.")
 
             await player.cleanup()
 
         return player_count
-
-    async def post_bin(self, content):
-        async with self.session.post("https://hastebin.com/documents", data=content.encode("utf-8")) as resp:
-            data = await resp.json()
-            return f"<https://hastebin.com/{data['key']}>"
 
     @discord.utils.cached_property
     def config(self):

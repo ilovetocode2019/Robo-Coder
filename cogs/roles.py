@@ -549,6 +549,9 @@ class Roles(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
+        if not payload.guild_id:
+            return
+
         guild = self.bot.get_guild(payload.guild_id)
         member = guild.get_member(payload.user_id)
 
@@ -570,6 +573,9 @@ class Roles(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_reaction_remove(self, payload):
+        if not payload.guild_id:
+            return
+
         guild = self.bot.get_guild(payload.guild_id)
         member = guild.get_member(payload.user_id)
 
@@ -598,6 +604,9 @@ class Roles(commands.Cog):
 
     @commands.Cog.listener()
     async def on_raw_message_delete(self, payload):
+        if not payload.guild_id:
+            return
+
         query = """DELETE FROM reaction_roles
                    WHERE reaction_roles.channel_id=$1 AND reaction_roles.message_id=$2;
                 """

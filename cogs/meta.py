@@ -98,6 +98,9 @@ class Meta(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.HybridCommandError):
+            error = error.original
+
         print(f"Ignoring exception in command {ctx.command}:", file=sys.stderr)
         traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
 
@@ -106,8 +109,8 @@ class Meta(commands.Cog):
         elif isinstance(error, commands.NoPrivateMessage):
             await ctx.send("This command cannot be used in DMs.")
         elif isinstance(error, commands.BotMissingPermissions):
-            perms_text = "\n".join([f"- {perm.replace('_', ' ').capitalize()}" for perm in error.missing_perms])
-            await ctx.send(f"I am missing some permissions:\n {perms_text}") 
+            perms_text = "\n".join([f"- {perm.replace('_', ' ').capitalize()}" for perm in error.missing_permissions], ephemeral=True)
+            await ctx.send(f"I am missing some permissions:\n {perms_text}", ephemeral=True)
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(f"You are missing a required argument: `{error.param.name}`")
         elif isinstance(error, commands.BadUnionArgument):
@@ -124,11 +127,18 @@ class Meta(commands.Cog):
             await ctx.send(f"Command failed while converting {error.converter.__name__}: `{error.original}`")
 
         if isinstance(error, errors.SongError):
-            await ctx.send(f"{error}")
+            await ctx.send(error, ephemeral=True)
         elif isinstance(error, errors.VoiceError) and str(error):
-            await ctx.send(f"{error}")
+            await ctx.send(error, ephemeral=True)
+
+        if isinstance(error, app_commands.TransformerError):
+            await ctx.send(error, ephemeral=True)
+        elif isinstance(error, human_time.BadTimeTransform):
+            await ctx.send(error, ephemeral=True)
 
         if isinstance(error, commands.CommandInvokeError):
+            self.bot.cached_errors[ctx.message.id] = (ctx, error)
+
             em = discord.Embed(
                 title=":warning: Error",
                 description=f"An unexpected error has occured. If you're confused or need help, feel free to [join the support server]({self.bot.support_server_invite}). \n```py\n{error}```",
@@ -141,19 +151,12 @@ class Meta(commands.Cog):
             em = discord.Embed(title=":warning: Command Error", description="", color=discord.Color.gold())
             em.description += f"\nCommand: `{ctx.command}`"
             em.description += f"\nLink: [Jump]({ctx.message.jump_url})"
+            em.description += f"\nMessage ID: `{ctx.message.id}`"
             em.description += f"\n\n```py\n{error}```\n"
 
             if self.bot.console:
                 await self.bot.console.send(embed=em)
-
-    async def on_interaction_error(self, interaction, error):
-        if not interaction.command:
-            return
-
-        print(f"Ignoring exception in slash command {interaction.command.name}:", file=sys.stderr)
-        traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
-
-        if isinstance(error, app_commands.CommandInvokeError):
+        elif isinstance(error, app_commands.CommandInvokeError):
             em = discord.Embed(
                 title=":warning: Error",
                 description=f"An unexpected error has occured. If you're confused or need help, feel free to [join the support server]({self.bot.support_server_invite}). \n```py\n{error}```",
@@ -161,18 +164,23 @@ class Meta(commands.Cog):
             )
             em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.display_avatar.url)
 
-            try:
-                await interaction.response.send_message(embed=em, ephemeral=True)
-            except:
-                await interaction.followup.send(embed=em, ephemeral=True)
+            message = await ctx.send(embed=em)
 
-            em = discord.Embed(title=":warning: Slash Command Error", description="", color=discord.Color.gold())
-            em.description += f"\nCommand: `{interaction.command.name}`"
-            em.description += f"\nLink: [Jump]({interaction.channel.jump_url})"
+            self.bot.cached_errors[message.id] = (ctx, error)
+
+            em = discord.Embed(title=":warning: App Command Error", description="", color=discord.Color.gold())
+            em.description += f"\nCommand: `{ctx.command}`"
+            em.description += f"\nLink: [Jump]({ctx.message.jump_url})"
+            em.description += f"\nMessage ID: `{ctx.message.id}`"
             em.description += f"\n\n```py\n{error}```\n"
 
             if self.bot.console:
                 await self.bot.console.send(embed=em)
+
+    async def on_interaction_error(self, interaction, error):
+        if interaction.command:
+            ctx = await self.bot.get_context(interaction)
+            await self.on_command_error(ctx, error)
 
     @app_commands.command(name="help", description="Get help on the bot")
     async def help(self, interaction):
@@ -200,6 +208,10 @@ class Meta(commands.Cog):
     @commands.hybrid_command(name="support", description="Get a link to join the support server")
     async def support(self, ctx):
         await ctx.send(self.bot.support_server_invite)
+
+    @commands.hybrid_command(name="site", description="Get a link to the Robo Coder website", aliases=["website"])
+    async def site(self, ctx):
+        await ctx.send("https://ilovetocode2019.com/Robo-Coder")
 
     @commands.hybrid_command(name="invite", description="Get a link to add me to your server")
     async def invite(self, ctx):

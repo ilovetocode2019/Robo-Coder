@@ -176,7 +176,6 @@ def timedelta(time, *, when=None, accuracy=3):
 class BadTimeTransform(app_commands.AppCommandError):
     pass
 
-
 class TimeTransformer(app_commands.Transformer):
     async def transform(self, interaction, value):
         now = interaction.created_at.replace(tzinfo=None)

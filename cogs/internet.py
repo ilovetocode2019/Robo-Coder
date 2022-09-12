@@ -683,7 +683,6 @@ class Internet(commands.Cog):
         if not current:
             return []
 
-        cache = list(self._docs_cache[interaction.command.name].items())
         matches = finder(current, self._api_docs, key=lambda t: t[0])[:10]
         return [app_commands.Choice(name=match[0], value=match[0]) for match in matches]
 

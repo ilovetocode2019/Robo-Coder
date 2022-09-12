@@ -56,7 +56,7 @@ class SnoozeModal(discord.ui.Modal, title="Snooze Reminder"):
         self.parent.snooze.disabled = True
         await interaction.response.edit_message(view=self.parent)
 
-        await interaction.followup.send(f"This timer has been snoozed for {human_time.timedelta(timer.expires_at, when=timer.created_at)}.")
+        await interaction.followup.send(f"This timer has been snoozed for {human_time.timedelta(timer.expires_at, when=timer.created_at)}.", ephemeral=True)
 
 class TimerView(discord.ui.View):
     def __init__(self, cog, timer):
@@ -130,7 +130,8 @@ class Timers(commands.Cog):
         created_at = interaction.created_at
 
         timer = await self.create_timer("reminder", [interaction.user.id, interaction.channel_id, None, text], when, created_at)
-        response = await interaction.response.send_message(f"Set a reminder for {human_time.timedelta(timer.expires_at, when=timer.created_at)}: {text}")
+        await interaction.response.send_message(f"Set a reminder for {human_time.timedelta(timer.expires_at, when=timer.created_at)}: {text}")
+        response = await interaction.original_response()
 
         # Update the timer to include the jump_url (from sending the response)
         query = """UPDATE timers
@@ -140,11 +141,6 @@ class Timers(commands.Cog):
         result = await self.bot.db.execute(query, [interaction.user.id, interaction.channel_id, response.jump_url, text], timer.id)
 
         self.restart_loop()
-
-    @remind_set.error
-    async def remind_set_error(self, interaction, error):
-        if isinstance(error, human_time.BadTimeTransform):
-            await interaction.response.send_message(str(error), ephemeral=True)
 
     @remind.command(name="list", description="List your reminders")
     async def remind_list(self, ctx):
