@@ -103,8 +103,6 @@ class RoboCoder(commands.Bot):
     async def on_ready(self):
         log.info(f"Logged in as {self.user.name} - {self.user.id}")
 
-        console_id = getattr(self.config, "console", None)
-
         if self.status_webhook:
             await self.status_webhook.send("Recevied READY event")
 
@@ -147,11 +145,14 @@ class RoboCoder(commands.Bot):
         log.info("Stopping %s player(s).", player_count)
 
         for player in self.players.copy().values():
-            if player.queue:
-                url = await player.save_queue()
-                await player.text_channel.send(f"Sorry, your music player had to be stopped for maintenance. Luckily, I saved the queue to {url}.")
-            elif player.now:
-                await player.text_channel.send(f"Sorry, your music player was automatically stopped for maintenance.")
+            try:
+                if player.queue:
+                    url = await player.save_queue()
+                    await player.text_channel.send(f"Sorry, your music player had to be stopped for maintenance. Luckily, I saved the queue to {url}.")
+                elif player.now:
+                    await player.text_channel.send(f"Sorry, your music player was stopped for maintenance.")
+            except discord.HTTPException:
+                pass
 
             await player.cleanup()
 
