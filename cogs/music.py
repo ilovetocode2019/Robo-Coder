@@ -1014,7 +1014,7 @@ class Music(commands.Cog):
         ctx.player.speed = speed
 
         emoji = ":fast_forward:" if speed >= 1 else ":rewind:"
-        await ctx.send(f"{emoji} Playback speed is now set to {int(speed) if int(speed) == speed else speed}x")
+        await ctx.send(f"{emoji} Playback is now set to {int(speed) if int(speed) == speed else speed}x speed")
 
     @commands.hybrid_command(name="skip", description="Skip the music", aliases=["s"])
     @commands.guild_only()
