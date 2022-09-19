@@ -67,7 +67,7 @@ class TimerView(discord.ui.View):
         if timer.data[2]:
             self.add_item(discord.ui.Button(url=timer.data[2], label="Original Message"))
 
-    @discord.ui.button(label="Snooze", style=discord.ButtonStyle.blurple)
+    @discord.ui.button(label="Snooze", style=discord.ButtonStyle.primary)
     async def snooze(self, interaction, button):
         await interaction.response.send_modal(SnoozeModal(self))
 

@@ -39,7 +39,7 @@ class BaseReactionRoleView(discord.ui.View):
         self.color = color
         self.reaction_roles = reaction_roles or {}
 
-    @discord.ui.button(label="Title", style=discord.ButtonStyle.green, row=1)
+    @discord.ui.button(label="Title", style=discord.ButtonStyle.success, row=1)
     async def change_title(self, interaction, button):
         if self.is_active.is_set():
             return await interaction.response.send_message("Complete the current action first!", ephemeral=True)
@@ -56,7 +56,7 @@ class BaseReactionRoleView(discord.ui.View):
         self.title = message.content
         await self.cleanup_action()
 
-    @discord.ui.button(label="Color", style=discord.ButtonStyle.green, row=1)
+    @discord.ui.button(label="Color", style=discord.ButtonStyle.success, row=1)
     async def change_color(self, interaction, button):
         if self.is_active.is_set():
             return await interaction.response.send_message("Complete the current action first!", ephemeral=True)
@@ -82,7 +82,7 @@ class BaseReactionRoleView(discord.ui.View):
         self.color = color
         await self.cleanup_action()
 
-    @discord.ui.button(label="Add", style=discord.ButtonStyle.green, row=1)
+    @discord.ui.button(label="Add", style=discord.ButtonStyle.success, row=1)
     async def add_reaction_role(self, interaction, button):
         if self.is_active.is_set():
             return await interaction.response.send_message("Complete the current action first!", ephemeral=True)
@@ -150,7 +150,7 @@ class BaseReactionRoleView(discord.ui.View):
         self.reaction_roles[role.id] = emoji
         await self.cleanup_action()
 
-    @discord.ui.button(label="Remove", style=discord.ButtonStyle.red, row=1)
+    @discord.ui.button(label="Remove", style=discord.ButtonStyle.danger, row=1)
     async def remove_reaction_role(self, interaction, button):
         if self.is_active.is_set():
             return await interaction.response.send_message("Complete the current action first!", ephemeral=True)
@@ -219,7 +219,7 @@ class BaseReactionRoleView(discord.ui.View):
                 await self.done()
 
 class ReactionRoleView(BaseReactionRoleView):
-    @discord.ui.button(label="Post", style=discord.ButtonStyle.blurple, row=2)
+    @discord.ui.button(label="Post", style=discord.ButtonStyle.primary, row=2)
     async def post(self, interaction, button):
         if self.is_active.is_set():
             return await interaction.response.send_message("Complete the current action first!", ephemeral=True)
@@ -262,7 +262,7 @@ class ReactionRoleView(BaseReactionRoleView):
         await message.reply(f"Posted reaction role menu to {channel.mention} successfully. Deleting the message will delete and disable the reaction role menu.")
         await self.done()
 
-    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.grey, row=2)
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary, row=2)
     async def cancel(self, interaction, button):
         await interaction.response.send_message("Canceled reaction role creation.")
         await self.done()
@@ -300,7 +300,7 @@ class ReactionRoleEditView(BaseReactionRoleView):
         self.color = color
         self.location = location
 
-    @discord.ui.button(label="Save", style=discord.ButtonStyle.blurple, row=2)
+    @discord.ui.button(label="Save", style=discord.ButtonStyle.primary, row=2)
     async def save(self, interaction, button):
         if self.is_active.is_set():
             return await interaction.response.send_message("Complete the current action first!", ephemeral=True)
@@ -327,7 +327,7 @@ class ReactionRoleEditView(BaseReactionRoleView):
         await self.message.reply("Reaction role menu was updated successfully.")
         await self.done()
 
-    @discord.ui.button(label="Discard", style=discord.ButtonStyle.gray, row=2)
+    @discord.ui.button(label="Discard", style=discord.ButtonStyle.secondary, row=2)
     async def discard(self, interaction, button):
         await interaction.response.send_message("All changes have been discarded.")
         await self.done()
