@@ -25,13 +25,6 @@ class Admin(commands.Cog):
         self.bot = bot
         self.hidden = True
 
-    """
-        self.update_packages_loop.start()
-
-    async def cog_unload(self):
-        self.update_packages_loop.cancel()
-    """
-
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
 
@@ -199,31 +192,6 @@ class Admin(commands.Cog):
     async def logout(self, ctx):
         await ctx.send(":wave: Logging out")
         await self.bot.close()
-
-    """@tasks.loop(hours=12)
-    async def update_packages_loop(self):
-        "Updates outdated packages twice a day."
-        with open("requirements.txt") as file:
-            requirements = file.read().replace("\n", " ")
-
-        command = f"{sys.executable} -m pip install -U pip {requirements}"
-        process = await asyncio.create_subprocess_shell(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        stdout, stderr = await process.communicate()
-        status_code = await process.wait()
-
-        stdout = stdout.decode("utf-8").replace("\n", "").strip()
-        stderr = stderr.decode("utf-8").replace("\n", "").strip()
-
-        if status_code:
-            log.warning("Failed to update packages")
-            print(f"\n$ {command} \n\n[stderr] {stderr}\n\n[status] Return code {status_code}\n", file=sys.stdout)
-
-    @update_packages_loop.before_loop
-    async def wait_to_update(self):
-        await self.bot.wait_until_ready()
-    """
-
 
 async def setup(bot):
     await bot.add_cog(Admin(bot))
