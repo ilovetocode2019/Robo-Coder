@@ -12,6 +12,13 @@ class TicTacToeButton(discord.ui.Button):
         self.space = space
 
     async def callback(self, interaction):
+        if interaction.user not in self.parent.players:
+            return await interaction.response.send_message("You aren't in this game.", ephemeral=True)
+        elif interaction.user != self.parent.players[self.parent.current_player]:
+            return await interaction.response.send_message("It isn't your turn.", ephemeral=True)
+        elif self.parent.board[self.space] is not None:
+            return await interaction.response.defer()
+
         await self.parent.on_action(self.space, self, interaction)
 
 class HangmanStartModal(discord.ui.Modal, title="Start Hangman"):
@@ -49,6 +56,9 @@ class HangmanGuessModal(discord.ui.Modal, title="Hangman Guess"):
         self.parent = parent
 
     async def on_submit(self, interaction):
+        if self.parent.guess.disabled:
+            return await interaction.response.defer()
+
         guess = self.guess.value.lower()
 
         if not guess.isalpha():
@@ -97,7 +107,7 @@ class HangmanView(discord.ui.View):
 
     async def on_timeout(self):
         self.disable_buttons()
-        await self.message.edit(content="This game has ended because it was inactive.", view=self)
+        await self.message.edit(content=f"This game has ended because it was inactive. The word was ||{self.word}||", view=self)
 
     def get_embed(self):
         em = discord.Embed(title="Hangman", description="Use the button below to make a guess.", color=0x96c8da)
@@ -114,9 +124,9 @@ class HangmanView(discord.ui.View):
         em.set_thumbnail(url=f"https://raw.githubusercontent.com/ilovetocode2019/Robo-Coder/master/assets/hangman/hangman{guesses_left}.png")
 
         em.add_field(name="Word", value=discord.utils.escape_markdown(word))
-        em.add_field(name="Incorrect Guesses", value=", ".join(self.incorrect) if self.incorrect else "No incorrect guesses yet.")
+        em.add_field(name="Incorrect Guesses", value=", ".join(self.incorrect) if self.incorrect else "No incorrect guesses yet")
         em.add_field(name="Guesses Left", value=guesses_left)
-        em.add_field(name="Action History", value="\n".join(self.guess_history) if self.guess_history else "No guess history yet.", inline=False)
+        em.add_field(name="Action History", value="\n".join(self.guess_history) if self.guess_history else "No guess history yet", inline=False)
 
         return em
 
@@ -138,17 +148,15 @@ class TicTacToeView(discord.ui.View):
 
     async def on_action(self, space, button, interaction):
         if self.current_player == 0:
-            button.label = "X"
-            button.style = discord.ButtonStyle.danger
-            button.disabled = True
+            button.label = "❌"
             self.board[space] = True
             self.current_player = 1
         elif self.current_player == 1:
-            button.label = "0"
-            button.style = discord.ButtonStyle.success
-            button.disabled = True
+            button.label = "⭕"
             self.board[space] = False
             self.current_player = 0
+
+        button.style = discord.ButtonStyle.secondary
 
         for spaces in [[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]]:
             if self.board[spaces[0]] == self.board[spaces[1]] == self.board[spaces[2]] == True:
@@ -180,16 +188,6 @@ class TicTacToeView(discord.ui.View):
     async def on_timeout(self):
         self.disable_buttons()
         await self.message.edit(content=f"{self.players[0]} :x: vs. {self.players[1]} :o: \nGame is inactive - No winner", view=self)
-
-    async def interaction_check(self, interaction):
-        if interaction.user in self.players and interaction.user != self.players[self.current_player]:
-            await interaction.response.send_message("It isn't your turn.", ephemeral=True)
-            return False
-        elif interaction.user not in self.players:
-            await interaction.response.send_message("You aren't in this game.", ephemeral=True)
-            return False
-        else:
-            return True
 
 class Games(commands.Cog):
     def __init__(self, bot):
@@ -226,11 +224,11 @@ class Games(commands.Cog):
             return await ctx.author.send("The hangman game was not created because your word is invalid. Make sure your word only contains alphabet characters, and has no spaces.")
 
         view = HangmanView(word, ctx.author)
-        await ctx.send(embed=view.get_embed(), view=view)
+        view.message = await ctx.send(embed=view.get_embed(), view=view)
 
     @app_commands.command(name="hangman", description="Start a hangman game")
     @commands.guild_only()
-    async def hangman_slash(self, interaction):
+    async def slash_hangman(self, interaction):
         await interaction.response.send_modal(HangmanStartModal())
 
     @commands.hybrid_command(name="tictactoe", description="Play a game of tic tac toe", aliases=["ttt"])
