@@ -15,7 +15,7 @@ import humanize
 import yt_dlp
 from discord.ext import commands, menus
 
-from .utils import errors, formats, human_time
+from .utils import errors, formats, human_time, spotify
 
 log = logging.getLogger("robo_coder.music")
 
@@ -157,12 +157,12 @@ class MusicAudioSource(discord.FFmpegPCMAudio):
     def __init__(self, filename, *, speed=1, start=0):
         super().__init__(
             filename,
-            before_options=f"-ss {Song.parse_timestamp_duration(start)}" if start != 0 else None,
+            before_options=f"-ss {start}" if start != 0 else None,
             options=f"-vn -filter:a atempo='{speed}'"  if speed != 1 else "-vn"
         )
 
         self.start = start
-        self.position = 0
+        self.position = start * 1000
 
     def read(self):
         ret = super().read()
@@ -239,7 +239,7 @@ class MusicPlayer:
     @property
     def position(self):
         if self.voice.source:
-            return self.voice.source.original.start + ((self.voice.source.original.position / 1000) * self._speed)
+            return (self.voice.source.original.position / 1000) * self._speed
 
     @position.setter
     def position(self, value):
@@ -795,6 +795,12 @@ class Music(commands.Cog):
         self.bot = bot
         self.emoji = ":notes:"
 
+        self.spotify = spotify.Spotify(
+            self.bot.session,
+            client_id=getattr(self.bot.config, "spotify_client_id", None),
+            client_secret=getattr(self.bot.config, "spotify_client_secret", None)
+        )
+
         self.loop._fallback_command.wrapped.cog = self
         self.queue._fallback_command.wrapped.cog = self
 
@@ -894,7 +900,39 @@ class Music(commands.Cog):
         if not ctx.interaction:
             await ctx.send(f":mag: Searching for `{query}`")
 
-        if "list=" in query:
+        spotify_match = re.fullmatch(r"(?:http[s]?://open.spotify.com/)([A-Za-z]+)(?:/)([a-zA-Z0-9]+)(?:.+)", query)
+
+        if spotify_match:
+            resource_type = spotify_match.group(1)
+            resource_id = spotify_match.group(2)
+
+            async with ctx.typing():
+                if resource_type == "track":
+                    tracks = [await self.spotify.get_track(resource_id)]
+                elif resource_type == "album":
+                    tracks = await self.spotify.get_album(resource_id)
+                elif resource_type == "playlist":
+                    tracks = await self.spotify.get_playlist(resource_id)
+                else:
+                    return await ctx.send(f"The only supported Spotify links are tracks, albums, and playlists.")
+
+            songs = [await Song.from_query(ctx, track) for track in tracks]
+
+            if resource_type in ("playlist", "album"):
+                for song in songs:
+                    await ctx.player.queue.put(song)
+
+                await ctx.send(f":notepad_spiral: Finished downloading {formats.plural(len(songs)):song} from Spotify")
+            else:
+                song = songs[0]
+                await ctx.player.queue.put(song)
+
+                if ctx.player.is_playing:
+                    await ctx.send(f":page_facing_up: Enqueued `{song.title}`")
+                elif ctx.interaction:
+                    song.interaction = ctx.interaction
+
+        elif "list=" in query:
             if not ctx.interaction:
                 await ctx.send(":globe_with_meridians: Downloading playlist")
 
@@ -926,9 +964,11 @@ class Music(commands.Cog):
 
         async with ctx.typing():
             try:
-                songs = [await Song.from_query(ctx, query) for query in await self.get_bin(url=url)]
+                queries = await self.get_bin(url=url)
             except:
                 return await ctx.send("I couldn't fetch that bin. Make sure the URL is valid.")
+
+            songs = [await Song.from_query(ctx, query) for query in queries]
 
             for song in songs:
                 await ctx.player.queue.put(song)

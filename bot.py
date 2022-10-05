@@ -62,14 +62,6 @@ class RoboCoder(commands.Bot):
         await self.load_extension("jishaku")
         self.get_cog("Jishaku").hidden = True
 
-        # Load extensions
-        log.info("Loading extensions")
-        for extension in extensions:
-            try:
-                await self.load_extension(extension)
-            except Exception as exc:
-                log.info("Couldn't load extension %s", extension, exc_info=exc)
-
         # Create aiohttp session
         log.info("Starting aiohttp session")
         self.session = aiohttp.ClientSession()
@@ -97,8 +89,16 @@ class RoboCoder(commands.Bot):
             self.default_emojis = json.load(file)
 
         # Uptime
-        log.info("Setup is complete; logging uptime")
+        log.info("Recording uptime")
         self.uptime = datetime.datetime.utcnow()
+
+        # Load extensions
+        log.info("Loading extensions")
+        for extension in extensions:
+            try:
+                await self.load_extension(extension)
+            except Exception as exc:
+                log.info("Couldn't load extension %s", extension, exc_info=exc)
 
     async def on_ready(self):
         log.info(f"Logged in as {self.user.name} - {self.user.id}")
