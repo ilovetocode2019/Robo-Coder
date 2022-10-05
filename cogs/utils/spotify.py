@@ -1,6 +1,9 @@
 import base64
 import time
 
+class ResourceNotFound(Exception):
+    pass
+
 class Spotify:
     BASE_URL = "https://api.spotify.com/v1/"
 
@@ -15,7 +18,7 @@ class Spotify:
         token = await self.get_token()
         async with self.session.get(f"{self.BASE_URL}tracks/{track_id}", headers={"Authorization": f"Bearer {token}"}) as resp:
             if resp.status == 400:
-                return None
+                raise ResourceNotFound("This Spotify track URL is invalid.")
 
             track = await resp.json()
             return f"{track['name']} - {track['artists'][0]['name']}"
@@ -23,8 +26,8 @@ class Spotify:
     async def get_album(self, album_id):
         token = await self.get_token()
         async with self.session.get(f"{self.BASE_URL}albums/{album_id}/tracks", headers={"Authorization": f"Bearer {token}"}) as resp:
-            if resp.status == 400:
-                return []
+            if resp.status == 404:
+                raise ResourceNotFound("This Spotify album URL is invalid.")
 
             tracks = await resp.json()
             return [f"{track['name']} - {track['artists'][0]['name']}" for track in tracks["items"]]
@@ -32,8 +35,8 @@ class Spotify:
     async def get_playlist(self, playlist_id):
         token = await self.get_token()
         async with self.session.get(f"{self.BASE_URL}playlists/{playlist_id}/tracks", headers={"Authorization": f"Bearer {token}"}) as resp:
-            if resp.status == 400:
-                return []
+            if resp.status == 404:
+                raise ResourceNotFound("This Spotify private URL is invalid or the playlist might be private.")
 
             tracks = await resp.json()
             return [f"{track['track']['name']} - {track['track']['artists'][0]['name']}" for track in tracks["items"]]

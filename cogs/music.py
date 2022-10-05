@@ -907,22 +907,25 @@ class Music(commands.Cog):
             resource_id = spotify_match.group(2)
 
             async with ctx.typing():
-                if resource_type == "track":
-                    tracks = [await self.spotify.get_track(resource_id)]
-                elif resource_type == "album":
-                    tracks = await self.spotify.get_album(resource_id)
-                elif resource_type == "playlist":
-                    tracks = await self.spotify.get_playlist(resource_id)
-                else:
-                    return await ctx.send(f"The only supported Spotify links are tracks, albums, and playlists.")
-
-            songs = [await Song.from_query(ctx, track) for track in tracks]
+                try:
+                    if resource_type == "track":
+                        tracks = [await self.spotify.get_track(resource_id)]
+                    elif resource_type == "album":
+                        tracks = await self.spotify.get_album(resource_id)
+                    elif resource_type == "playlist":
+                        tracks = await self.spotify.get_playlist(resource_id)
+                    else:
+                        return await ctx.send(f"The only supported Spotify links are tracks, albums, and playlists.")
+                except spotify.ResourceNotFound as exc:
+                    return await ctx.send(str(exc))
 
             if resource_type in ("playlist", "album"):
-                for song in songs:
-                    await ctx.player.queue.put(song)
+                for track in tracks:
+                    async with ctx.typing():
+                        song = await Song.from_query(ctx, track)
+                        await ctx.player.queue.put(song)
 
-                await ctx.send(f":notepad_spiral: Finished downloading {formats.plural(len(songs)):song} from Spotify")
+                await ctx.send(f":notepad_spiral: Finished downloading {formats.plural(len(tracks)):song} from Spotify")
             else:
                 song = songs[0]
                 await ctx.player.queue.put(song)
@@ -968,9 +971,8 @@ class Music(commands.Cog):
             except:
                 return await ctx.send("I couldn't fetch that bin. Make sure the URL is valid.")
 
-            songs = [await Song.from_query(ctx, query) for query in queries]
-
-            for song in songs:
+            for query in queries:
+                song = await Song.from_query(ctx, query)
                 await ctx.player.queue.put(song)
 
         await ctx.send(f":notepad_spiral: Finished downloading {formats.plural(len(songs)):song} from bin")
