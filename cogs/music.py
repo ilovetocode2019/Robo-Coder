@@ -457,26 +457,27 @@ class Song:
         return em
 
     @classmethod
-    async def from_query(cls, ctx, search):
+    async def from_query(cls, ctx, search,  *, search_only=False):
         # Check if the search and result is already cached in the database
         possible_song = await cls.from_alias(ctx, search)
         if possible_song:
             return await cls.confirm_download(ctx, possible_song)
 
         # This checks to see if the query is a youtube song name or id that is already cached in the database and returns the result if any is found
-        youtube_id = cls.parse_youtube_id(search) or search
-        query = """SELECT *
-                   FROM songs
-                   WHERE songs.song_id=$1 AND songs.extractor='youtube';
-                """
-        record = await ctx.bot.db.fetchrow(query, youtube_id)
-        if record:
-            await cls.create_alias(ctx, search, record["id"])
-            song = cls.from_record(record, ctx)
-            return await cls.confirm_download(ctx, song)
+        if not search_only:
+            youtube_id = cls.parse_youtube_id(search) or search
+            query = """SELECT *
+                    FROM songs
+                    WHERE songs.song_id=$1 AND songs.extractor='youtube';
+                    """
+            record = await ctx.bot.db.fetchrow(query, youtube_id)
+            if record:
+                await cls.create_alias(ctx, search, record["id"])
+                song = cls.from_record(record, ctx)
+                return await cls.confirm_download(ctx, song)
 
         # Resolve the query into a full Song, so we can search the database
-        song = await cls.resolve_query(ctx, search)
+        song = await cls.resolve_query(ctx, search, ytsearch=search_only)
         query = """SELECT *
                    FROM songs
                    WHERE songs.song_id=$1 AND songs.extractor=$2;
@@ -502,8 +503,8 @@ class Song:
         return cls(ctx, data=data, filename=song.filename)
 
     @classmethod
-    async def resolve_query(cls, ctx, search):
-        partial = functools.partial(cls.ytdl.extract_info, search, download=False)
+    async def resolve_query(cls, ctx, search, *, ytsearch=False):
+        partial = functools.partial(cls.ytdl.extract_info, f"{'ytsearch:' if ytsearch else ''}{search}", download=False)
         try:
             info = await ctx.bot.loop.run_in_executor(None, partial)
         except yt_dlp.DownloadError as exc:
@@ -919,21 +920,20 @@ class Music(commands.Cog):
                 except spotify.ResourceNotFound as exc:
                     return await ctx.send(str(exc))
 
-            if resource_type in ("playlist", "album"):
-                for track in tracks:
-                    async with ctx.typing():
-                        song = await Song.from_query(ctx, track)
+                if resource_type in ("playlist", "album"):
+                    for track in tracks:
+                        song = await Song.from_query(ctx, track, search_only=True)
                         await ctx.player.queue.put(song)
 
-                await ctx.send(f":notepad_spiral: Finished downloading {formats.plural(len(tracks)):song} from Spotify")
-            else:
-                song = songs[0]
-                await ctx.player.queue.put(song)
+                    await ctx.send(f":notepad_spiral: Finished downloading {formats.plural(len(tracks)):song} from Spotify")
+                else:
+                    song = await Song.from_query(ctx, tracks[0], search_only=True)
+                    await ctx.player.queue.put(song)
 
-                if ctx.player.is_playing:
-                    await ctx.send(f":page_facing_up: Enqueued `{song.title}`")
-                elif ctx.interaction:
-                    song.interaction = ctx.interaction
+                    if ctx.player.is_playing:
+                        await ctx.send(f":page_facing_up: Enqueued `{song.title}`")
+                    elif ctx.interaction:
+                        song.interaction = ctx.interaction
 
         elif "list=" in query:
             if not ctx.interaction:
@@ -1044,11 +1044,15 @@ class Music(commands.Cog):
 
     @commands.hybrid_command(name="speed", description="Change the playback speed of the song", aliases=["speedup", "slowdown"])
     @commands.guild_only()
-    async def speed(self, ctx, *, speed: float):
+    async def speed(self, ctx, *, speed: typing.Optional[float]):
         if ctx.author not in ctx.player.channel.members:
             return await ctx.send("You are not listening to the music")
         elif not ctx.player.now:
             return await ctx.send("Nothing is playing")
+
+        if not speed:
+            emoji = ":fast_forward:" if ctx.player.speed >= 1 else ":rewind:"
+            return await ctx.send(f"{emoji} Playback speed is set to {int(ctx.player.speed) if int(ctx.player.speed) == ctx.player.speed else ctx.player.speed}x speed")
 
         if speed < 0.5 or speed > 2:
             return await ctx.send("Playback speed must from 0.5x to 2x.")
@@ -1453,9 +1457,9 @@ class Music(commands.Cog):
                 log.info("Timed out while waiting for someone to join %s.", player)
                 if player.queue:
                     url = await player.save_queue()
-                    await player.text_channel.send(f"I left `{player.voice.channel}` because no one was listening. The queue has been saved to {url}.")
+                    await player.text_channel.send(f"I left `{player.voice.channel.mention}` because no one was listening. The queue has been saved to {url}.")
                 elif player.now:
-                    await player.text_channel.send(f"I left `{player.voice.channel}` because it no one was listening.")
+                    await player.text_channel.send(f"I left `{player.voice.channel.mention}` because it no one was listening.")
                 await player.cleanup()
 
                 return
