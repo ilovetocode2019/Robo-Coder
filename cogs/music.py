@@ -1457,9 +1457,9 @@ class Music(commands.Cog):
                 log.info("Timed out while waiting for someone to join %s.", player)
                 if player.queue:
                     url = await player.save_queue()
-                    await player.text_channel.send(f"I left `{player.voice.channel.mention}` because no one was listening. The queue has been saved to {url}.")
+                    await player.text_channel.send(f"I left {player.voice.channel.mention} because no one was listening. The queue has been saved to {url}.")
                 elif player.now:
-                    await player.text_channel.send(f"I left `{player.voice.channel.mention}` because it no one was listening.")
+                    await player.text_channel.send(f"I left {player.voice.channel.mention} because it no one was listening.")
                 await player.cleanup()
 
                 return
