@@ -50,7 +50,7 @@ class Tools(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.hybrid_command(name="userinfo", description="Get info on a user", aliases=["ui", "whois"])
-    async def userinfo(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, discord.User]]):
+    async def userinfo(self, ctx, *, user: typing.Union[discord.Member, discord.User] = commands.Author):
         if not user:
             user = ctx.author
 
@@ -142,7 +142,7 @@ class Tools(commands.Cog):
         await ctx.send(embed=em)
 
     @commands.hybrid_command(name="avatar", description="View someone's avatar")
-    async def avatar(self, ctx, *, user: typing.Optional[typing.Union[discord.Member, discord.User]]):
+    async def avatar(self, ctx, *, user: typing.Union[discord.Member, discord.User] = commands.Author):
         if not user:
             user = ctx.author
 
