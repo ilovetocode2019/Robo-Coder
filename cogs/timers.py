@@ -29,7 +29,7 @@ class RemindContextMenuModal(discord.ui.Modal, title="Remind Me"):
         created_at = interaction.created_at
 
         timer = await self.cog.create_timer("reminder", [interaction.user.id, interaction.channel_id, self.message.jump_url, self.message.content or "..."], future_time.time, created_at)
-        await interaction.response.send_message(f"Alright, I'll remind you about {self.message.jump_url} in {human_time.timedelta(timer.expires_at, when=timer.created_at)}.")
+        await interaction.response.send_message(f"Alright, I'll remind you about {self.message.jump_url} in {human_time.timedelta(timer.expires_at, when=timer.created_at)}.", ephemeral=True)
 
 class SnoozeModal(discord.ui.Modal, title="Snooze Reminder"):
     duration = discord.ui.TextInput(
@@ -103,11 +103,11 @@ class Timers(commands.Cog):
         self.timers_pending.set()
         self.loop = self.bot.loop.create_task(self.run_timers())
 
-        self.remind_context_menu = app_commands.ContextMenu(name="Remind Later", callback=self.context_menu_remind)
-        self.bot.tree.add_command(self.remind_context_menu)
+        self._remind_context_menu = app_commands.ContextMenu(name="Remind Later", callback=self.context_menu_remind)
+        self.bot.tree.add_command(self._remind_context_menu)
 
     async def cog_unload(self):
-        self.bot.tree.remove_command(self.remind_context_menu.name, type=self.remind_context_menu.type)
+        self.bot.tree.remove_command(self._remind_context_menu.name, type=self._remind_context_menu.type)
 
     async def cog_unload(self):
         self.loop.cancel()
