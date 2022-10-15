@@ -18,6 +18,8 @@ from PIL import Image
 
 from .utils import formats
 
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0"
+
 LANGUAGES = {
     "af": "afrikaans",
     "sq": "albanian",
@@ -142,19 +144,55 @@ class JumpBackView(discord.ui.View):
         super().__init__()
         self.add_item(discord.ui.Button(url=jump_url, label="Original Message"))
 
-class GoogleResultPages(menus.ListPageSource):
-    def __init__(self, entries, query):
-        super().__init__(entries, per_page=1)
+class GoogleResultView(discord.ui.View):
+    def __init__(self, author_id, results):
+        super().__init__()
+        self.author_id = author_id
+        self.entries = results
 
-        self.entries = entries
-        self.query = query
+        self.current_page = 0
 
-    async def format_page(self, menu, entry):
+    @discord.ui.button(label="Previous", style=discord.ButtonStyle.primary)
+    async def previous(self, interaction, button):
+        if self.current_page == 0:
+            return await interaction.response.defer()
+
+        self.current_page -= 1
+        await interaction.response.edit_message(embed=self.embed)
+
+    @discord.ui.button(label="Next", style=discord.ButtonStyle.primary)
+    async def next_(self, interaction, button):
+        if self.current_page == len(self.entries) - 1:
+            return await interaction.response.defer()
+
+        self.current_page += 1
+        await interaction.response.edit_message(embed=self.embed)
+
+    async def interaction_check(self, interaction):
+        if interaction.user.id == self.author_id:
+            return True
+        else:
+            await interaction.response.send_message("Sorry, you're not allowed to use these buttons.", empheral=True)
+            return False
+
+    async def on_timeout(self):
+        self.disable_buttons()
+        await self.message.edit(view=self)
+
+    def disable_buttons(self):
+        for item in self.children:
+            item.disabled = True
+
+    @property
+    def embed(self):
+        entry = self.entries[self.current_page]
+
         em = discord.Embed(**entry, color=0x4285F3)
-        em.set_author(name=f"Results for '{self.query}'")
-        em.set_footer(text=f"{entry['url']} | Result {menu.current_page+1}/{len(self.entries)}")
+        em.set_author(name=entry["url"])
+        em.set_footer(text=f"Result {self.current_page + 1}/{len(self.entries)}")
 
         return em
+
 
 class DocumentationPages(menus.ListPageSource):
     def __init__(self, entries, *, query):
@@ -232,11 +270,18 @@ class Internet(commands.Cog):
         self.emoji = ":globe_with_meridians:"
 
         self.translator = googletrans.Translator()
-        self.translate_context_menu = app_commands.ContextMenu(name="Translate", callback=self.context_menu_translate)
-        self.bot.tree.add_command(self.translate_context_menu)
+
+        """
+        self._translate_context_menu = app_commands.ContextMenu(name="Translate", callback=self.context_menu_translate)
+        self.bot.tree.add_command(self._translate_context_menu)
+
+        self._google_context_menu = app_commands.ContextMenu(name="Google Search", callback=self.context_menu_google)
+        self.bot.tree.add_command(self._google_context_menu)
 
     async def cog_unload(self):
-        self.bot.tree.remove_command(self.translate_context_menu.name, type=self.translate_context_menu.type)
+        self.bot.tree.remove_command(self._translate_context_menu.name, type=self._translate_context_menu.type)
+        self.bot.tree.remove_command(self._google_context_menu.name, type=self._google_context_menu.type)
+    """
 
     def parse_object_inv(self, stream, url):
         # key: URL
@@ -372,12 +417,12 @@ class Internet(commands.Cog):
         matches = finder(current, cache, key=lambda t: t[0])[:10]
         return [app_commands.Choice(name=match[0], value=match[0]) for match in matches]
 
-    @commands.command(name="google", description="Search google", aliases=["g"])
+    @commands.hybrid_command(name="google", description="Search something using google", aliases=["g"])
     @commands.cooldown(1, 20, commands.BucketType.user)
     async def google(self, ctx, *, query):
         async with ctx.typing():
-            params = {"q": query, "safe": "on", "lr": "lang_en", "hl": "en"}
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:95.0) Gecko/20100101 Firefox/95.0"}
+            """params = {"q": query, "safe": "on", "lr": "lang_en", "hl": "en"}
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:105.0) Gecko/20100101 Firefox/105.0"}
 
             # Request for search results page
             async with self.bot.session.get("https://google.com/search", params=params, headers=headers) as resp:
@@ -394,25 +439,24 @@ class Internet(commands.Cog):
                 root = etree.fromstring(html, etree.HTMLParser())
 
             # Search results
-            results = [g.find(".//div[@class='tF2Cxc']") for g in root.findall(".//div[@class='g']")]
-            if results and results[0] == results[1]:
-                results = results[1:]
-
             entries = []
+            print(root.find(".//div[@class='g Ww4FFb vt6azd tF2Cxc']"))
 
             # Parse results
-            for result in results:
-                if result is not None:
-                    link = result.find(".//div[@class='yuRUbf']/a")
+            for result in root.findall(".//div[@class='g Ww4FFb vt6azd tF2Cxc']"):
+                link = result.find(".//div[@class='yuRUbf']/a")
 
-                    href = link.get("href")
-                    h3 = link.find(".//h3[@class='LC20lb MBeuO DKV0Md']")
-                    cite = link.find(".//cite[@role='text']")
+                href = link.get("href")
+                h3 = link.find(".//h3[@class='LC20lb MBeuO DKV0Md']")
+                cite = link.find(".//cite[@role='text']")
 
-                    preview = result.find(".//div[@class='VwiC3b yXK7lf MUxGbd yDYNvb lyLwlc lEBKkf']")
-                    entries.append({"title": h3.text, "description": f"`{cite.text}` \n\n{' '.join(preview.itertext()) if preview is not None else 'No information is available for this page.'}", "url": href})
+                preview = result.find(".//div[@class='VwiC3b yXK7lf MUxGbd yDYNvb lyLwlc lEBKkf']")
+                entries.append({"title": h3.text, "description": f"`{cite.text}` \n\n{' '.join(preview.itertext()) if preview is not None else 'No information is available for this page.'}", "url": href})
 
-            """# Format results
+            if not entries:
+                return await ctx.send("No results found.")
+
+            # Format results
             search_results = "\n".join([f"[{result['title']}]({result['url']})" for result in entries[:5]])
 
             if not search_results.strip():
@@ -564,11 +608,50 @@ class Internet(commands.Cog):
 
                 return await ctx.send(embed=em)"""
 
-            if not results:
-                return await ctx.send("No results found.")
+        entries = await self.scrape_google_results(query)
 
-        pages = menus.MenuPages(GoogleResultPages(entries, query), clear_reactions_after=True)
-        await pages.start(ctx)
+        if not entries:
+            return await ctx.send("No search results were found.")
+
+        view = GoogleResultView(ctx.author.id, entries)
+        view.mesasge = await ctx.send(embed=view.embed, view=view)
+
+    async def context_menu_google(self, interaction, message: discord.Message):
+        if not message.content:
+            return await interaction.response.send_message("There is no text to search in this message.", ephemeral=True)
+
+        entries = await self.scrape_google_results(message.content)
+
+        if not entries:
+            return await interaction.response.send_message("No search results were found.")
+
+        view = GoogleResultView(interaction.user.id, entries)
+        view.mesasge = await interaction.response.send_message(embed=view.embed, view=view, ephemeral=True)
+
+    async def scrape_google_results(self, query):
+        params = {"q": query, "safe": "on", "lr": "lang_en", "hl": "en"}
+        headers = {"User-Agent": USER_AGENT}
+
+        async with self.bot.session.get("https://google.com/search", params=params, headers=headers) as resp:
+            if resp.status != 200:
+                raise RuntimeError(f"Failed to fetch google search results (status code {resp.status_code})")
+
+            html = await resp.text("utf-8")
+            root = etree.fromstring(html, etree.HTMLParser())
+
+        entries = []
+
+        for result in root.findall(".//div[@class='g Ww4FFb vt6azd tF2Cxc']"):
+            link = result.find(".//div[@class='yuRUbf']/a")
+
+            href = link.get("href")
+            h3 = link.find(".//h3[@class='LC20lb MBeuO DKV0Md']")
+            cite = link.find(".//cite[@role='text']")
+
+            preview = result.find(".//div[@class='VwiC3b yXK7lf MUxGbd yDYNvb lyLwlc lEBKkf']")
+            entries.append({"title": h3.text, "description": f"`{cite.text}` \n\n{' '.join(preview.itertext()) if preview is not None else 'No information is available for this page.'}", "url": href})
+
+        return entries
 
     @commands.hybrid_command(name="translate", description="Translate something using google translate")
     @commands.cooldown(1, 20, commands.BucketType.user)
@@ -636,20 +719,20 @@ class Internet(commands.Cog):
 
     @commands.hybrid_group(name="docs", fallback="latest", description="Search the discord.py docs", invoke_without_command=True)
     @app_commands.autocomplete(obj=slash_docs_autocomplete)
-    async def docs(self, ctx, *, obj: typing.Optional[str]):
+    async def docs(self, ctx, *, obj: str = None):
         await self.do_docs(ctx, "latest", obj)
 
     @docs.command(name="python", description="Search the python docs", aliases=["py"])
     @app_commands.autocomplete(obj=slash_docs_autocomplete)
-    async def docs_python(self, ctx, *, obj: typing.Optional[str]):
+    async def docs_python(self, ctx, *, obj: str = None):
         await self.do_docs(ctx, "python", obj)
 
     @docs.command(name="telegram", with_app_command=False, description="Search the telegram.py docs", aliases=["telegrampy", "telegram.py", "tpy"], hidden=True)
-    async def docs_telegram(self, ctx, *, obj: typing.Optional[str]):
+    async def docs_telegram(self, ctx, *, obj: str = None):
         await self.do_docs(ctx, "tpy", obj)
 
     @commands.hybrid_command(name="api", description="Search the Discord API docs", aliases=["dapi", "discord"])
-    async def api(self, ctx, *, obj: typing.Optional[str]):
+    async def api(self, ctx, *, obj: str = None):
         if not obj:
             return await ctx.send("https://discord.com/developers/docs/intro")
 
@@ -687,7 +770,7 @@ class Internet(commands.Cog):
         return [app_commands.Choice(name=match[0], value=match[0]) for match in matches]
 
     @commands.hybrid_command(name="faq", description="Search the discord.py faq")
-    async def faq(self, ctx, *, query: typing.Optional[str]):
+    async def faq(self, ctx, *, query: str = None):
         if not query:
             return await ctx.send("https://discordpy.readthedocs.io/en/latest/faq.html")
 
@@ -756,17 +839,12 @@ class Internet(commands.Cog):
                     return await ctx.send("This Roblox user is banned.")
 
             # Get information about the user from the website profile page
-            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:86.0) Gecko/20100101 Firefox/86.0"}
+            headers = {"User-Agent": USER_AGENT}
             async with self.bot.session.get(f"{base_url}/profile", headers=headers) as resp:
                 if resp.status != 200:
                     return await ctx.send(f"Failed to fetch user data (error code {resp.status}).")
 
                 html = await resp.text("utf-8")
-
-                # Debugging
-                with open("roblox.html", "w", encoding="utf-8") as file:
-                    file.write(html)
-
                 root = etree.fromstring(html, etree.HTMLParser())
 
             premium = root.find(".//span[@class='icon-premium-medium']")
@@ -775,7 +853,7 @@ class Internet(commands.Cog):
             display_name = root.find(".//div[@class='profile-display-name font-caption-body text text-overflow']")
 
             em = discord.Embed(title=f"{'<:roblox_premium:809089466056310834> ' if premium is not None else ''}{display_name.text.strip()}", description="", url=f"{base_url}/profile", color=0x96c8da)
-            em.set_author(name=f"@{profile['Username']}")
+            em.set_author(name=profile["Username"])
             em.set_thumbnail(url=f"https://www.roblox.com/bust-thumbnail/image?userId={profile['Id']}&width=420&height=420&format=png")
             em.set_thumbnail(url=f"https://www.roblox.com/outfit-thumbnail/image?userOutfitId={profile['Id']}&width=420&height=420&format=png")
             em.set_thumbnail(url=f"https://www.roblox.com/headshot-thumbnail/image?userId={profile['Id']}&width=420&height=420&format=png")
@@ -835,19 +913,6 @@ class Internet(commands.Cog):
             async with self.bot.session.get(f"https://api.mojang.com/user/profiles/{uuid}/names") as resp:
                 name_history = await resp.json()
 
-            names = []
-            for name_data in reversed(name_history):
-                timestamp = name_data.get("changedToAt")
-                old_name = discord.utils.escape_markdown(name_data["name"])
-
-                if timestamp:
-                    seconds = timestamp / 1000
-                    time = datetime.datetime.fromtimestamp(seconds + (timestamp % 1000.0) / 1000.0)
-                    time = time.strftime("%m/%d/%y")
-                    names.append(f"{old_name} ({time})")
-                else:
-                    names.append(old_name)
-
             async with self.bot.session.get(f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid}") as resp:
                 data = await resp.json()
 
@@ -874,7 +939,6 @@ class Internet(commands.Cog):
 
             em = discord.Embed(title=name, color=0x96c8da)
             em.set_thumbnail(url="attachment://face.png")
-            em.add_field(name="Names", value="\n".join(names))
             em.set_footer(text=f"ID: {uuid}")
 
         await ctx.send(embed=em, file=discord.File(output, filename="face.png"))
@@ -921,7 +985,7 @@ class Internet(commands.Cog):
 
     @commands.hybrid_command(name="pypi", description="Search for a project on PyPI", aliases=["pip", "project"])
     @commands.cooldown(3, 20, commands.BucketType.user)
-    async def pypi(self, ctx, project, release: typing.Optional[str]):
+    async def pypi(self, ctx, project, release: str = None):
         async with ctx.typing():
             if release:
                 url = f"https://pypi.org/pypi/{project}/{release}/json"
