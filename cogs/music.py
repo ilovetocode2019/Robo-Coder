@@ -1419,7 +1419,6 @@ class Music(commands.Cog):
             await member.request_to_speak()
 
     @play.before_invoke
-    @playbin.before_invoke
     @search.before_invoke
     async def create_player(self, ctx):
         if ctx.guild.id not in self.bot.players:
@@ -1448,7 +1447,6 @@ class Music(commands.Cog):
     @now.before_invoke
     @next_.before_invoke
     @queue.before_invoke
-    @queue_save.before_invoke
     @queue_remove.before_invoke
     @queue_clear.before_invoke
     async def get_player(self, ctx):
