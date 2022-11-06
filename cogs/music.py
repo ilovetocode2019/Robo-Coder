@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import functools
+import io
 import itertools
 import logging
 import os
@@ -150,7 +151,7 @@ class MusicVoiceClient(discord.VoiceClient):
         player = self.client.players.get(self.guild.id)
 
         if player:
-            log.info("VOICE CLIENT: Cleaning up left-over voice client in %s. This might be caused, by a force disconnect.", player)
+            log.info("VOICE CLIENT: Cleaning up left-over voice client in %s. This might be caused by a force disconnect.", player)
             await player.cleanup()
 
 class MusicAudioSource(discord.FFmpegPCMAudio):
@@ -161,7 +162,6 @@ class MusicAudioSource(discord.FFmpegPCMAudio):
             options=f"-vn -filter:a atempo='{speed}'"  if speed != 1 else "-vn"
         )
 
-        self.start = start
         self.position = start * 1000
 
     def read(self):
@@ -379,18 +379,6 @@ class MusicPlayer:
 
         log.info("Disconnecting from %s", self)
         await self.voice.disconnect()
-
-    async def save_queue(self):
-        queue = [song.url for song in self.queue]
-
-        if self.looping_queue:
-            queue = [self.now.url] + queue
-
-        content = "\n".join(queue)
-
-        async with self.bot.session.post("https://hastebin.com/documents", data=content.encode("utf-8")) as resp:
-            data = await resp.json()
-            return f"<https://hastebin.com/{data['key']}>"
 
 class Song:
     __slots__ = ("_data", "interaction", "filename", "requester", "song_id", "extractor",
@@ -956,27 +944,6 @@ class Music(commands.Cog):
             elif ctx.interaction:
                 song.interaction = ctx.interaction
 
-    @commands.hybrid_command(name="playbin", description="Play a list of songs", aliases=["pb"])
-    @commands.guild_only()
-    async def playbin(self, ctx, url: PossibleURL):
-        if ctx.author not in ctx.player.channel.members:
-            return await ctx.send("You are not listening to the music")
-
-        if not ctx.interaction:
-            await ctx.send(":globe_with_meridians: Downloading bin")
-
-        async with ctx.typing():
-            try:
-                queries = await self.get_bin(url=url)
-            except:
-                return await ctx.send("I couldn't fetch that bin. Make sure the URL is valid.")
-
-            for query in queries:
-                song = await Song.from_query(ctx, query)
-                await ctx.player.queue.put(song)
-
-        await ctx.send(f":notepad_spiral: Finished downloading {formats.plural(len(songs)):song} from bin")
-
     @commands.hybrid_command(name="search", description="Search for a song on youtube")
     @commands.guild_only()
     async def search(self, ctx, *, query):
@@ -1213,14 +1180,6 @@ class Music(commands.Cog):
             song = ctx.player.queue[position-1]
             await ctx.send(embed=song.embed)
 
-    @queue.command(name="save", description="Save the queue")
-    async def queue_save(self, ctx):
-        if ctx.player.queue:
-            url = await ctx.player.save_queue()
-            await ctx.send(f"I saved the queue to {url}")
-        else:
-            await ctx.send("No queue to save")
-
     @queue.command(name="remove", description="Remove a song from the queue")
     async def queue_remove(self, ctx, position: int):
         if ctx.author not in ctx.player.channel.members:
@@ -1259,17 +1218,8 @@ class Music(commands.Cog):
 
             log.info("Disconnecting from %s normally.", player)
 
-            if player.queue:
-                url = await player.save_queue()
-            else:
-                url = None
-
             await player.cleanup()
-
-            if url:
-                await ctx.send(f"Disconnected from {channel.mention} and saved the queue to {url}")
-            else:
-                await ctx.send(f"Disconnected from {channel.mention}")
+            await ctx.send(f"Disconnected from {channel.mention}")
 
             log.info("Disconnected from %s normally.", player)
 
@@ -1455,12 +1405,12 @@ class Music(commands.Cog):
             except asyncio.TimeoutError:
                 # Disconnect because there was no activity for 3 minutes
                 log.info("Timed out while waiting for someone to join %s.", player)
-                if player.queue:
-                    url = await player.save_queue()
-                    await player.text_channel.send(f"I left {player.voice.channel.mention} because no one was listening. The queue has been saved to {url}.")
-                elif player.now:
-                    await player.text_channel.send(f"I left {player.voice.channel.mention} because it no one was listening.")
+                now_playing = player.now
+
                 await player.cleanup()
+
+                if now_playing:
+                    await player.text_channel.send(f"I left {player.voice.channel.mention} because it no one was listening.")
 
                 return
 
@@ -1518,15 +1468,6 @@ class Music(commands.Cog):
             raise errors.VoiceError("I'm not connected to any voice channel.")
 
         ctx.player = player
-
-    async def get_bin(self, url):
-        parsed = urllib.parse.urlparse(url)
-        newpath = "/raw" + parsed.path
-        url = parsed.scheme + "://" + parsed.netloc + newpath
-        async with self.bot.session.get(url) as response:
-            data = await response.read()
-            data = data.decode("utf-8")
-            return data.split("\n")
 
 async def setup(bot):
     await bot.add_cog(Music(bot))

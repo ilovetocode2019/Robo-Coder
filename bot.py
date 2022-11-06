@@ -145,14 +145,11 @@ class RoboCoder(commands.Bot):
         log.info("Stopping %s player(s).", player_count)
 
         for player in self.players.copy().values():
-            try:
-                if player.queue:
-                    url = await player.save_queue()
-                    await player.text_channel.send(f"Sorry, your music player had to be stopped for maintenance. Luckily, I saved the queue to {url}.")
-                elif player.now:
+            if player.now:
+                try:
                     await player.text_channel.send(f"Sorry, your music player was stopped for maintenance.")
-            except discord.HTTPException:
-                pass
+                except discord.HTTPException:
+                    pass
 
             await player.cleanup()
 
