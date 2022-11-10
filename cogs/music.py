@@ -854,7 +854,7 @@ class Music(commands.Cog):
                 log.warning("Requesting to speak in %s because we weren't able to un-suppress", player)
                 await ctx.me.request_to_speak()
 
-        if ctx.command not in [self.play, self.playbin, self.search] or not ctx.interaction:
+        if ctx.command not in [self.play, self.search] or not ctx.interaction:
             await ctx.send(f"Connected to {channel.mention}")
 
         log.info("Successfully connected to channel ID %s (guild ID %s)", channel.id, ctx.guild.id)
