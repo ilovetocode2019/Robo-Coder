@@ -416,7 +416,7 @@ class Moderation(commands.Cog):
     async def mute_role_set(self, ctx, *, role: discord.Role):
         if role.is_default() or role.managed:
             return await ctx.send(":x: Cannot use this role")
-        elif role > ctx.author.top_role:
+        elif role > ctx.author.top_role and ctx.author != ctx.guild.owner:
             return await ctx.send(":x: This role is higher than your highest role")
         elif role > ctx.me.top_role:
             return await ctx.send(":x: This role is higher than my highest role")

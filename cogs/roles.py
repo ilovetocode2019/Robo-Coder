@@ -107,7 +107,7 @@ class BaseReactionRoleView(discord.ui.View):
                     message = await message.reply(":x: That role is already in this reaction role menu. Try again.")
                 elif role.is_default() or role.managed:
                     message = await message.reply(":x: You cannot use this role as a reaction role. Try again.")
-                elif role > self.ctx.author.top_role:
+                elif role > self.ctx.author.top_role and ctx.author != ctx.guild.owner:
                     return await message.reply(":x: This role is higher than your highest role.")
                 elif role > self.ctx.me.top_role:
                     return await message.reply(":x: This role is higher than my highest role.")
@@ -482,7 +482,7 @@ class Roles(commands.Cog):
     async def autorole_add(self, ctx, *, role: discord.Role):
         if role.is_default() or role.managed:
             return await ctx.send("You can't use this role as an autorole.")
-        elif role > ctx.author.top_role:
+        elif role > ctx.author.top_role and ctx.author != ctx.guild.owner:
             return await ctx.send("This role is higher than your highest role.")
         elif role > ctx.me.top_role:
             return await ctx.send("This role is higher than my highest role.")
