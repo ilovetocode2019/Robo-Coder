@@ -108,9 +108,9 @@ class BaseReactionRoleView(discord.ui.View):
                 elif role.is_default() or role.managed:
                     message = await message.reply(":x: You cannot use this role as a reaction role. Try again.")
                 elif role > self.ctx.author.top_role:
-                    return await ctx.send(":x: This role is higher than your highest role")
+                    return await message.reply(":x: This role is higher than your highest role.")
                 elif role > self.ctx.me.top_role:
-                    return await ctx.send(":x: This role is higher than my highest role")
+                    return await message.reply(":x: This role is higher than my highest role.")
 
                 else:
                     break
@@ -188,6 +188,7 @@ class BaseReactionRoleView(discord.ui.View):
             return True
         else:
             await interaction.response.send_message("Sorry, you're not allowed to use these buttons.", empheral=True)
+            return
 
     async def on_error(self, interaction, error, item):
         if isinstance(error, asyncio.TimeoutError):
@@ -365,12 +366,14 @@ class Roles(commands.Cog):
         self.emoji  = ":label:"
 
     @commands.group(name="reactionrole", description="Allow server members to assign specified roles to themselves through reactions", aliases=["reactionroles"], invoke_without_command=True)
+    @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def reactionrole(self, ctx):
         await ctx.send_help(ctx.command)
 
     @reactionrole.command(name="create", description="Set up a reaction role menu for server members to assign themselves roles.")
+    @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def reactionrole_create(self, ctx):
@@ -453,6 +456,7 @@ class Roles(commands.Cog):
         await ctx.send("Reaction role menu was synced, and any issues should be fixed.")
 
     @commands.hybrid_group(name="autorole", description="Automaticly assign roles to users with they join", aliases=["autoroles"], invoke_without_command=True)
+    @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     @commands.bot_has_permissions(manage_roles=True)
     async def autorole(self, ctx):
