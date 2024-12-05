@@ -790,9 +790,6 @@ class Music(commands.Cog):
             client_secret=getattr(self.bot.config, "spotify_client_secret", None)
         )
 
-        self.loop._fallback_command.wrapped.cog = self
-        self.queue._fallback_command.wrapped.cog = self
-
     def cog_check(self, ctx):
         if not ctx.guild:
             raise commands.NoPrivateMessage()
