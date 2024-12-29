@@ -1,4 +1,5 @@
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 import aiohttp
@@ -36,64 +37,83 @@ extensions = [
     "cogs.tools"
 ]
 
+class RoboCoderTree(app_commands.CommandTree):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._cached_commands = {}
+
+    async def sync(self, *, guild = None):
+        commands = await super().sync(guild=guild)
+        self._cached_commands[guild.id if guild else None] = commands
+        return commands
+
+    async def fetch_commands(self, *, guild = None):
+        commands = await super().fetch_commands(guild=guild)
+        self._cached_commands[guild.id if guild else None] = commands
+        return commands
+
+    async def mention_for(self, name, *, guild = None):
+        if guild not in self._cached_commands:
+            await self.fetch_commands(guild=guild)
+
+        command = discord.utils.get(self._cached_commands[guild], name=name)
+        return command.mention if command else None
+
 class RoboCoder(commands.Bot):
     def __init__(self):
-        intents = discord.Intents.default()
-        intents.members = True
-        intents.message_content = True
+        intents = discord.Intents.all()
+        intents.presences = False
+        intents.typing = False
 
-        allowed_mentions = discord.AllowedMentions(everyone=False, users=True, roles=False, replied_user=False)
-
-        super().__init__(command_prefix=get_prefix, description="A multipurpose Discord bot", case_insensitive=True, intents=intents, allowed_mentions=allowed_mentions)
+        super().__init__(
+            command_prefix=get_prefix,
+            description="A multipurpose Discord bot",
+            case_insensitive=True,
+            intents=intents,
+            allowed_mentions=discord.AllowedMentions(
+                everyone=False,
+                users=True,
+                roles=False,
+                replied_user=False
+            ),
+            allowed_installs=app_commands.AppInstallationType(guild=True, user=False),
+            allowed_contexts=app_commands.AppCommandContext(
+                guild=True,
+                dm_channel=True,
+                private_channel=True
+            ),
+            tree_cls=RoboCoderTree
+        )
 
         self.prefixes = config.Config("prefixes.json")
         self.support_server_invite = "https://discord.gg/6jQpPeEtQM"
-        self.cached_errors = {}
         self.players = {}
-
         self.status_webhook = None
         self.console = None
 
     async def setup_hook(self):
-        logging.info("Setting up bot...")
+        logging.info("Setting up bot now")
 
-        # Load Jishaku
-        log.info("Loading jishaku")
         await self.load_extension("jishaku")
         self.get_cog("Jishaku").hidden = True
 
-        # Create aiohttp session
-        log.info("Starting aiohttp session")
         self.session = aiohttp.ClientSession()
-
-        # Get webhooks
-        log.info("Getting webhooks")
-        if getattr(self.config, "status_hook", None):
-            self.status_webhook = discord.Webhook.from_url(self.config.status_hook, session=self.session)
-
-        if getattr(self.config, "console_hook", None):
-            self.console = discord.Webhook.from_url(self.config.console_hook, session=self.session)
-
-        # Create database connection
-        log.info("Starting database connection")
         async def init(connection): await connection.set_type_codec("jsonb", schema="pg_catalog", encoder=json.dumps, decoder=json.loads, format="text")
         self.db = await asyncpg.create_pool(self.config.database_uri, init=init)
 
         with open("schema.sql") as file:
             schema = file.read()
             await self.db.execute(schema)
-
-        # Load emojis
-        log.info("Loading emojis")
         with open("assets/emojis.json") as file:
             self.default_emojis = json.load(file)
 
-        # Uptime
-        log.info("Recording uptime")
-        self.uptime = datetime.datetime.utcnow()
+        if getattr(self.config, "status_hook", None):
+            self.status_webhook = discord.Webhook.from_url(self.config.status_hook, session=self.session)
+        if getattr(self.config, "console_hook", None):
+            self.console = discord.Webhook.from_url(self.config.console_hook, session=self.session)
 
-        # Load extensions
-        log.info("Loading extensions")
+        self.uptime = discord.utils.utcnow()
+
         for extension in extensions:
             try:
                 await self.load_extension(extension)
@@ -104,7 +124,7 @@ class RoboCoder(commands.Bot):
         log.info(f"Logged in as {self.user.name} - {self.user.id}")
 
         if self.status_webhook:
-            await self.status_webhook.send("Recevied READY event")
+            await self.status_webhook.send("Received guilds from Discord")
 
     async def on_connect(self):
         if self.status_webhook:
@@ -145,12 +165,6 @@ class RoboCoder(commands.Bot):
         log.info("Stopping %s player(s).", player_count)
 
         for player in self.players.copy().values():
-            if player.now:
-                try:
-                    await player.text_channel.send(f"Sorry, your music player was stopped for maintenance.")
-                except discord.HTTPException:
-                    pass
-
             await player.cleanup()
 
         return player_count
