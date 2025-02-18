@@ -48,3 +48,8 @@ expires_at TIMESTAMP
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS unique_songs_index ON songs (song_id, extractor);
+
+CREATE TABLE IF NOT EXISTS message_logs (
+    guild_id BIGINT PRIMARY KEY,
+    channel_id BIGINT
+);

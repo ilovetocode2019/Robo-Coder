@@ -34,7 +34,8 @@ extensions = [
     "cogs.music",
     "cogs.roles",
     "cogs.timers",
-    "cogs.tools"
+    "cogs.tools",
+    "cogs.logging"
 ]
 
 class RoboCoderTree(app_commands.CommandTree):
