@@ -23,7 +23,7 @@ log = logging.getLogger("robo_coder.admin")
 class Admin(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.hidden = True
+        self.emoji = ":computer:"
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)

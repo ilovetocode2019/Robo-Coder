@@ -1,3 +1,4 @@
+import discord
 import datetime
 import re
 
@@ -23,7 +24,7 @@ class ShortTime:
            re.VERBOSE)
 
     def __init__(self, argument, *, now=None):
-        now = now or datetime.datetime.utcnow()
+        now = now or discord.utils.utcnow()
         match = self.regex.fullmatch(argument)
         if not match or not match.group(0):
             raise commands.BadArgument("You provided an invalid time")
@@ -45,7 +46,7 @@ class HumanTime:
     calendar = parsedatetime.Calendar(version=parsedatetime.VERSION_CONTEXT_STYLE)
 
     def __init__(self, argument, *, now=None):
-        now = now or datetime.datetime.utcnow()
+        now = now or discord.utils.utcnow()
         time, context = self.calendar.parseDT(argument, sourceTime=now)
         if not context.hasDateOrTime:
             # No date or time data
@@ -65,7 +66,7 @@ class Time:
     """Attempts to parse the time using HumanTime and then ShortTime."""
 
     def __init__(self, argument, *, now=None):
-        now = now or datetime.datetime.utcnow()
+        now = now or discord.utils.utcnow()
         try:
             # Attempt to parse the time through ShortTime
             parsed = ShortTime(argument, now=now)
@@ -92,7 +93,7 @@ class TimeWithContent(Time):
     """Attempts to parse a time by using ShortTime regex or parsedatetime.Calendar.nlp and then stripping the content from the time."""
 
     def __init__(self, argument, *, now=None):
-        now = now or datetime.datetime.utcnow()
+        now = now or discord.utils.utcnow()
 
         # Attempt to parse the time using ShortTime regex
         match = ShortTime.regex.match(argument)
@@ -137,7 +138,7 @@ class TimeWithContent(Time):
         self.content = content
 
 def timedelta(time, *, when=None, accuracy=3):
-    now = when or datetime.datetime.utcnow()
+    now = when or discord.utils.utcnow()
 
     # Get rid of microseconds
     now = now.replace(microsecond=0)

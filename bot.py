@@ -68,7 +68,7 @@ class RoboCoder(commands.Bot):
 
         super().__init__(
             command_prefix=get_prefix,
-            description="A multipurpose Discord bot",
+            description="A multipurpose bot. Likes to code for fun.",
             case_insensitive=True,
             intents=intents,
             allowed_mentions=discord.AllowedMentions(
@@ -96,7 +96,6 @@ class RoboCoder(commands.Bot):
         logging.info("Setting up bot now")
 
         await self.load_extension("jishaku")
-        self.get_cog("Jishaku").hidden = True
 
         self.session = aiohttp.ClientSession()
         async def init(connection): await connection.set_type_codec("jsonb", schema="pg_catalog", encoder=json.dumps, decoder=json.loads, format="text")

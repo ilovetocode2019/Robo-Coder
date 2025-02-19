@@ -8,44 +8,48 @@ from discord.ext import commands
 
 from .utils import errors, formats, human_time, menus
 
-class Prefix(commands.Converter):
+
+class PrefixConverter(commands.Converter):
     async def convert(self, ctx, prefix):
         if discord.utils.escape_mentions(prefix) != prefix:
             raise commands.BadArgument("Prefix can't include a mention")
         return prefix
 
+
 class RoboCoderHelpCommand(commands.HelpCommand):
-    bottom_text = "\n\nKey: `<required> [optional]`. **Remove <> and [] when using the command**."
+    bottom_text = "Usage: <required argument> [optional argument]. Remove brackets when using the command."
 
     async def send_bot_help(self, mapping):
         ctx = self.context
         bot = ctx.bot
 
+        cogs = {command.cog.qualified_name: command.cog for command in await self.filter_commands(bot.commands) if hasattr(command.cog, "emoji")}
+        lines = [f"{cog.emoji} {name}" for name, cog in sorted(cogs.items())]
+
         em = discord.Embed(
-            title=f"{bot.user.name} Help",
-            description=f"{bot.description}. Use `{ctx.clean_prefix}help [command]` or `{ctx.clean_prefix}help [Category]` for more specific help. If you have any questions or issues, feel free to [join the support server]({bot.support_server_invite}).",
+            title="Help",
+            description=f"{bot.description}\n\nFor more specific help, use `{ctx.clean_prefix}help [command]` or `{ctx.clean_prefix}help [Category]`. Feel free to [join the support server]({bot.support_server_invite}) if you have questions.",
             color=0x96c8da
         )
+        em.add_field(name="Categories", value="\n".join(lines))
+        em.set_footer(text=self.bottom_text)
 
-        message = ""
-        for name, cog in sorted(bot.cogs.items()):
-            if not getattr(cog, "hidden", False):
-                message += f"\n{getattr(cog, 'emoji', '')} {cog.qualified_name}"
-        em.add_field(name="Categories", value=message)
-        em.set_footer(text=bot.user.name, icon_url=bot.user.display_avatar.url)
         await ctx.send(embed=em)
 
     async def send_cog_help(self, cog):
         ctx = self.context
         bot = ctx.bot
-
-        em = discord.Embed(title=f"{getattr(cog, 'emoji', '')} {cog.qualified_name}", description="\n", color=0x96c8da)
         commands = await self.filter_commands(cog.walk_commands())
-        for command in commands:
-            em.description += f"\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
 
-        em.description += self.bottom_text
-        em.set_footer(text=bot.user.name, icon_url=bot.user.display_avatar.url)
+        em = discord.Embed(
+            title=f"{getattr(cog, 'emoji', '')} {cog.qualified_name}",
+            description=cog.description + "\n" if cog.description is not None else "",
+            color=0x96c8da
+        )
+        em.set_footer(text=self.bottom_text)
+
+        for command in commands:
+            em.description += f"\n\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
 
         await ctx.send(embed=em)
 
@@ -53,30 +57,38 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         ctx = self.context
         bot = ctx.bot
 
-        em = discord.Embed(title=f"{command.name} {command.signature.strip()}", description=command.description or "", color=0x96c8da)
-        if command.aliases:
-            em.description += f"\nAliases: {', '.join(command.aliases)}"
-        em.description += self.bottom_text
-        em.set_footer(text=bot.user.name, icon_url=bot.user.display_avatar.url)
+        em = discord.Embed(
+            title=f"{command.name} {command.signature.strip()}",
+            description=command.description,
+            color=0x96c8da
+        )
+        em.set_footer(text=self.bottom_text)
+
+        if len(command.aliases) > 0:
+            em.add_field(name="Aliases", value = ", ".join(command.aliases))
 
         await ctx.send(embed=em)
 
     async def send_group_help(self, group):
         ctx = self.context
         bot = ctx.bot
-
-        em = discord.Embed(title=f"{group.name} {group.signature.strip()}", description=group.description or "", color=0x96c8da)
-        if group.aliases:
-            em.description += f"\nAliases: {', '.join(group.aliases)} \n"
-
         commands = await self.filter_commands(group.commands)
-        for command in commands:
-            em.description += f"\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
 
-        em.description += self.bottom_text
-        em.set_footer(text=bot.user.name, icon_url=bot.user.display_avatar.url)
+        em = discord.Embed(
+            title=f"{group.name} {group.signature.strip()}",
+            description=group.description + "\n" if group.description is not None else "",
+            color=0x96c8da
+        )
+        em.set_footer(text=self.bottom_text)
+
+        for command in commands:
+            em.description += f"\n\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
+
+        if len(group.aliases) > 0:
+            em.add_field(name="Aliases", value = ", ".join(group.aliases))
 
         await ctx.send(embed=em)
+
 
 class Meta(commands.Cog):
     """Stuff related to the bot itself."""
@@ -137,8 +149,6 @@ class Meta(commands.Cog):
             await ctx.send(error, ephemeral=True)
 
         if isinstance(error, commands.CommandInvokeError):
-            self.bot.cached_errors[ctx.message.id] = (ctx, error)
-
             em = discord.Embed(
                 title=":warning: Error",
                 description=f"An unexpected error has occured. If you're confused or need help, feel free to [join the support server]({self.bot.support_server_invite}). \n```py\n{error}```",
@@ -166,8 +176,6 @@ class Meta(commands.Cog):
 
             message = await ctx.send(embed=em)
 
-            self.bot.cached_errors[message.id] = (ctx, error)
-
             em = discord.Embed(title=":warning: App Command Error", description="", color=discord.Color.gold())
             em.description += f"\nCommand: `{ctx.command}`"
             em.description += f"\nLink: [Jump]({ctx.message.jump_url})"
@@ -178,42 +186,33 @@ class Meta(commands.Cog):
                 await self.bot.console.send(embed=em)
 
     async def on_interaction_error(self, interaction, error):
-        if interaction.command:
+        if interaction.command is not None:
             ctx = await self.bot.get_context(interaction)
             await self.on_command_error(ctx, error)
 
-    @app_commands.command(name="help", description="Get help on the bot")
-    async def help(self, interaction):
-        em = discord.Embed(
-            title=f"{self.bot.user.name} Help",
-            description=f"{self.bot.description}. If you have any questions or issues, feel free to [join the support server]({self.bot.support_server_invite}). \n\nIn order to use slash commands, type / and then the command name to use a command, or type / and then select the {self.bot.user.mention} section to view a list of commands. \n\nDiscord may remove prefixed commands in the future, so slash commands are the recommended way to use commands.",
-            color=0x96c8da
+    @commands.command(description="Provides general information about me", aliases=["hello", "hi"])
+    async def about(self, ctx):
+        message = (
+            "Hey, I'm Robo Coder! "
+            "I was created by Nathan on October 31st 2019. "
+            f"You can hang out with me in [my server](<{self.bot.support_server_invite}>). "
+            f"Type `{ctx.prefix}help` to get started."
         )
-        em.set_footer(text=self.bot.user.name, icon_url=self.bot.user.display_avatar.url)
+        await ctx.send(message)
 
-        await interaction.response.send_message(embed=em)
-
-    @commands.hybrid_command(name="hi", description="Say hello", aliases=["hello"])
-    async def hi(self, ctx):
-        await ctx.send(f":wave: Hello, I am Robo Coder!\nTo get more info type: {ctx.prefix}help")
-
-    @commands.hybrid_command(name="ping", description="Check my latency")
+    @commands.command(description="Check my latency")
     async def ping(self, ctx):
         await ctx.send(f"My latency is {int(self.bot.latency*1000)}ms")
 
-    @commands.hybrid_command(name="uptime", description="Get the uptime", aliases=["up"], invoke_without_command=True)
+    @commands.command(description="Get the uptime", aliases=["up"], invoke_without_command=True)
     async def uptime(self, ctx):
         await ctx.send(f"I started up {human_time.timedelta(self.bot.uptime, accuracy=None)}")
 
-    @commands.hybrid_command(name="support", description="Get a link to join the support server")
+    @commands.command(description="Get a link to join the support server")
     async def support(self, ctx):
         await ctx.send(self.bot.support_server_invite)
 
-    @commands.hybrid_command(name="site", description="Get a link to the Robo Coder website", aliases=["website"])
-    async def site(self, ctx):
-        await ctx.send("https://ilovetocode2019.com/Robo-Coder")
-
-    @commands.hybrid_command(name="invite", description="Get a link to add me to your server")
+    @commands.command(description="Get a link to add me to your server")
     async def invite(self, ctx):
         perms  = discord.Permissions.none()
         perms.kick_members = True
@@ -237,50 +236,48 @@ class Meta(commands.Cog):
         invite = discord.utils.oauth_url(self.bot.user.id, permissions=perms)
         await ctx.send(f"<{invite}>")
 
-    @commands.hybrid_command(name="code", description="Find out what I'm made of")
+    @commands.command(description="Gives an overview of the codebase")
     async def code(self, ctx):
         file_count = 0
         line_count = 0
-        comment_count = 0
         class_count = 0
         function_count = 0
 
         for root, directories, files in os.walk("."):
             if "venv" in directories:
                 directories.remove("venv")
-
             for filename in files:
                 if filename.endswith(".py"):
                     path = os.path.join(root, filename)
                     file_count += 1
-
                     with open(path, encoding="utf-8") as file:
                         for counter, line in enumerate(file):
                             line = line.strip()
                             line_count += 1
 
-                            if line.startswith("#"):
-                                comment_count += 1
-                            elif line.startswith("class"):
+                            if line.startswith("class "):
                                 class_count += 1
-                            elif line.startswith("def"):
+                            if line.startswith("def "):
                                 function_count += 1
 
-        em = discord.Embed(title="Code", description=f"I am made of {line_count} of python code, spread across {file_count} files", color=0x96c8da)
-        em.add_field(name="Files", value=file_count)
-        em.add_field(name="Lines", value=line_count)
-        em.add_field(name="Comments", value=comment_count)
-        em.add_field(name="Classes", value=class_count)
-        em.add_field(name="Functions", value=function_count)
+        em = discord.Embed(
+            title="Codebase Overview",
+            description=f"I'm crafted with discord.py v{discord.__version__} and Python v{sys.version_info[0]}.{sys.version_info[1]}.{sys.version_info[2]}",
+            color=0x96c8da
+        )
+        em.add_field(name="Files", value=file_count, inline=False)
+        em.add_field(name="Lines", value=line_count, inline=False)
+        em.add_field(name="Classes", value=class_count, inline=False)
+        em.add_field(name="Functions", value=function_count, inline=False)
         await ctx.send(embed=em)
 
-    @commands.group(name="prefix", description="Manage custom prefixes for this server", invoke_without_command=True)
+    @commands.group(description="Manages custom prefixes for the server", invoke_without_command=True)
     async def prefix(self, ctx):
         await ctx.send_help(ctx.command)
 
-    @prefix.command(name="add", description="Add a prefix to this server")
+    @prefix.command(name="add", description="Adds a prefix to the server")
     @commands.has_permissions(manage_guild=True)
-    async def prefix_add(self, ctx, *, prefix: Prefix):
+    async def prefix_add(self, ctx, *, prefix: PrefixConverter):
         prefixes = self.bot.get_guild_prefixes(ctx.guild.id)
         if prefix in prefixes:
             return await ctx.send("That prefix is already added.")
@@ -293,22 +290,24 @@ class Meta(commands.Cog):
 
         await ctx.send(f"Added the prefix `{prefix}`.")
 
-    @prefix.command(name="remove", description="Remove a prefix from this server")
+    @prefix.command(name="remove", description="Remove a prefix from the server")
     @commands.has_permissions(manage_guild=True)
-    async def prefix_remove(self, ctx, *, prefix: Prefix):
+    async def prefix_remove(self, ctx, *, prefix: PrefixConverter):
         prefixes = self.bot.get_guild_prefixes(ctx.guild.id)
+
         if prefix not in prefixes:
-            return await ctx.send("That prefix is not added.")
+            return await ctx.send("That prefix is not added")
 
         prefixes.remove(prefix)
         await self.bot.prefixes.add(ctx.guild.id, prefixes)
 
         await ctx.send(f"Removed the prefix `{prefix}`.")
 
-    @prefix.command(name="default", description="Set a prefix as the first prefix")
+    @prefix.command(name="default", description="Set a prefix as the first prefix for the server")
     @commands.has_permissions(manage_guild=True)
-    async def prefix_default(self, ctx, *, prefix: Prefix):
+    async def prefix_default(self, ctx, *, prefix: PrefixConverter):
         prefixes = self.bot.get_guild_prefixes(ctx.guild.id)
+
         if prefix in prefixes:
             prefixes.remove(prefix)
 
@@ -320,44 +319,37 @@ class Meta(commands.Cog):
 
         await ctx.send(f"Set `{prefix}` as the default prefix.")
 
-    @prefix.command(name="clear", description="Clear all the prefixes in this server")
+    @prefix.command(name="clear", description="Removes all the prefixes from the server")
     @commands.has_permissions(manage_guild=True)
     async def prefix_clear(self, ctx):
         result = await menus.Confirm("Are you sure you want to clear all your prefixes?").prompt(ctx)
-        if not result:
+
+        if result is False:
             return await ctx.send("Aborting")
 
         await self.bot.prefixes.add(ctx.guild.id, [])
         await ctx.send(f"Removed all prefixes.")
 
-    @prefix.command(name="reset", description="Reset the custom server prefixes to the default prefixes")
+    @prefix.command(name="reset", description="Resets the server prefixes")
     @commands.has_permissions(manage_guild=True)
     async def prefix_reset(self, ctx):
         result = await menus.Confirm("Are you sure you want to reset your prefixes to the default prefixes?").prompt(ctx)
-        if not result:
+
+        if result is False:
             return await ctx.send("Aborting")
 
         await self.bot.prefixes.remove(ctx.guild.id)
         await ctx.send(f"Reset prefixes to default prefixes.")
 
-    @prefix.command(name="list", description="View the prefixes in this server")
+    @prefix.command(name="list", description="Shows the server prefies")
     async def prefix_list(self, ctx):
         prefixes = await self.bot.get_prefix(ctx.message)
         prefixes.pop(0)
 
-        em = discord.Embed(title="Prefixes", description="\n".join(prefixes), color=0x96c8da)
+        em = discord.Embed(title="Prefixes", description="\n".join(f"- {prefix}" for prefix in prefixes), color=0x96c8da)
         em.set_footer(text=f"{formats.plural(len(prefixes), end='es'):prefix}")
         await ctx.send(embed=em)
 
-    @commands.command(name="prefixes", description="View the prefixes in this server")
-    async def prefixes(self, ctx):
-        await ctx.invoke(self.prefix_list)
-
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.content in (f"<@{self.bot.user.id}>", f"<@!{self.bot.user.id}>") and not message.author.bot:
-            prefix = self.bot.get_guild_prefix(message.guild.id)
-            await message.reply(f":wave: Hello, I'm Robo Coder!\nTo get more info type: {prefix}help")
 
 async def setup(bot):
     await bot.add_cog(Meta(bot))
