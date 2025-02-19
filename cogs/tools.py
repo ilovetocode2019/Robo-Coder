@@ -23,7 +23,7 @@ class Tools(commands.Cog):
     @commands.guild_only()
     async def serverinfo(self, ctx):
         async with ctx.typing():
-            color = await self.average_image_color(ctx.guild.icon.with_format("png"))
+            color = await self.average_image_color(ctx.guild.icon)
 
         static_emojis = len([emoji for emoji in ctx.guild.emojis if not emoji.animated])
         static_emojis_percentage = int(static_emojis / ctx.guild.emoji_limit * 100)
@@ -122,11 +122,11 @@ class Tools(commands.Cog):
         async with ctx.typing():
             color = await self.average_image_color(user.avatar)
 
-        avatar_formats = ["PNG", "JPG", "WEB"]
+        avatar_formats = ["PNG", "JPG", "WEBP"]
         if user.display_avatar.is_animated():
             avatar_formats.append("GIF")
 
-        formats_text = [f"[{avatar_formats}]({user.display_avatar.with_format(avatar_format)})" for avatar_format in avatar_formats]
+        formats_text = [f"[{avatar_format}]({user.display_avatar.with_format(avatar_format.lower())})" for avatar_format in avatar_formats]
 
         em = discord.Embed(description=f"View as {formats.join(formats_text, last="or")}", color=color)
         em.set_author(name=user.display_name, icon_url=user.display_avatar.url)
@@ -164,7 +164,8 @@ class Tools(commands.Cog):
         if icon is None:
             return
 
-        content = await icon.read()
+        png_icon = icon.with_format("png")
+        content = await png_icon.read()
         image = await asyncio.to_thread(Image.open, io.BytesIO(content))
         resized = await asyncio.to_thread(image.resize, (1, 1))
         color = await asyncio.to_thread(resized.getpixel, (0, 0))
