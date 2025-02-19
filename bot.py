@@ -1,6 +1,6 @@
 import discord
-from discord import app_commands
 from discord.ext import commands
+from discord import app_commands
 
 import aiohttp
 import asyncpg
@@ -8,21 +8,12 @@ import datetime
 import json
 import logging
 import sys
+import time
 
 from cogs.utils import config
 
 log = logging.getLogger("robo_coder")
 logging.basicConfig(level=logging.INFO, format="(%(asctime)s) %(levelname)s %(message)s", datefmt="%m/%d/%y - %H:%M:%S %Z")
-
-def get_prefix(bot, message):
-    default_prefixes = getattr(bot.config, "default_prefixes", ["r!", "r."])
-
-    prefixes = [f"<@!{bot.user.id}> ", f"<@{bot.user.id}> "]
-    if message.guild:
-        prefixes.extend(bot.prefixes.get(message.guild.id, default_prefixes))
-    else:
-        prefixes.extend(default_prefixes + ["!"])
-    return prefixes
 
 extensions = [
     "cogs.admin",
@@ -38,9 +29,25 @@ extensions = [
     "cogs.logging"
 ]
 
+
+def get_prefix(bot, message):
+    default_prefixes = getattr(bot.config, "default_prefixes", ["r!", "r."])
+
+    prefixes = [f"<@!{bot.user.id}> ", f"<@{bot.user.id}> "]
+    if message.guild:
+        prefixes.extend(bot.prefixes.get(message.guild.id, default_prefixes))
+    else:
+        prefixes.extend(default_prefixes + ["!"])
+    return prefixes
+
+
 class RoboCoderTree(app_commands.CommandTree):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, client):
+        super().__init__(
+            client,
+            allowed_installs=app_commands.AppInstallationType(guild=True, user=False),
+            allowed_contexts=app_commands.AppCommandContext(guild=True, dm_channel=True, private_channel=True)
+        )
         self._cached_commands = {}
 
     async def sync(self, *, guild = None):
@@ -60,6 +67,7 @@ class RoboCoderTree(app_commands.CommandTree):
         command = discord.utils.get(self._cached_commands[guild], name=name)
         return command.mention if command else None
 
+
 class RoboCoder(commands.Bot):
     def __init__(self):
         intents = discord.Intents.all()
@@ -71,87 +79,119 @@ class RoboCoder(commands.Bot):
             description="A multipurpose bot. Likes to code for fun.",
             case_insensitive=True,
             intents=intents,
-            allowed_mentions=discord.AllowedMentions(
-                everyone=False,
-                users=True,
-                roles=False,
-                replied_user=False
-            ),
-            allowed_installs=app_commands.AppInstallationType(guild=True, user=False),
-            allowed_contexts=app_commands.AppCommandContext(
-                guild=True,
-                dm_channel=True,
-                private_channel=True
-            ),
+            allowed_mentions=discord.AllowedMentions(everyone=False, users=True, roles=False, replied_user=False),
             tree_cls=RoboCoderTree
         )
 
-        self.prefixes = config.Config("prefixes.json")
         self.support_server_invite = "https://discord.gg/6jQpPeEtQM"
         self.players = {}
-        self.status_webhook = None
-        self.console = None
+
+        self.global_cooldowns = {}
 
     async def setup_hook(self):
-        logging.info("Setting up bot now")
-
-        await self.load_extension("jishaku")
-
+        self.prefixes = config.Config("prefixes.json")
+        self.blacklist = config.Config("blacklist.json")
+        self.uptime = discord.utils.utcnow()
         self.session = aiohttp.ClientSession()
-        async def init(connection): await connection.set_type_codec("jsonb", schema="pg_catalog", encoder=json.dumps, decoder=json.loads, format="text")
+
+        if self.config.console_webhook_url is not None:
+            self.console = discord.Webhook.from_url(self.config.console_webhook_url, session=self.session)
+        else:
+            self.console = None
+
+        async def init(connection):
+            await connection.set_type_codec(
+                "jsonb",
+                schema="pg_catalog",
+                encoder=json.dumps,
+                decoder=json.loads,
+                format="text"
+            )
         self.db = await asyncpg.create_pool(self.config.database_uri, init=init)
 
         with open("schema.sql") as file:
             schema = file.read()
             await self.db.execute(schema)
+
         with open("assets/emojis.json") as file:
             self.default_emojis = json.load(file)
 
-        if getattr(self.config, "status_hook", None):
-            self.status_webhook = discord.Webhook.from_url(self.config.status_hook, session=self.session)
-        if getattr(self.config, "console_hook", None):
-            self.console = discord.Webhook.from_url(self.config.console_hook, session=self.session)
-
-        self.uptime = discord.utils.utcnow()
+        await self.load_extension("jishaku")
 
         for extension in extensions:
             try:
                 await self.load_extension(extension)
             except Exception as exc:
-                log.info("Couldn't load extension %s", extension, exc_info=exc)
+                log.info("Failure while loading extension %s.", extension, exc_info=exc)
 
     async def on_ready(self):
-        log.info(f"Logged in as {self.user.name} - {self.user.id}")
+        log.info(f"Logged in as {self.user.name} - {self.user.id}.")
 
-        if self.status_webhook:
-            await self.status_webhook.send("Received guilds from Discord")
+    async def on_guild_join(self):
+        if guild.id in self.blacklist:
+            await guild.leave()
 
-    async def on_connect(self):
-        if self.status_webhook:
-            await self.status_webhook.send("Connected to Discord")
+    async def get_blacklisted(self, resource):
+        blacklisted = self.blacklist.get(resource.id)
 
-    async def on_disconnect(self):
-        if self.status_webhook and not self.session.closed:
-            await self.status_webhook.send("Disconnected from Discord")
+        if blacklisted is not True and blacklisted is not None and time.time() > blacklisted:
+            await self.blacklist.remove(resource.id)
+        else:
+            return blacklisted
 
-    async def on_resumed(self):
-        if self.status_webhook:
-            await self.status_webhook.send("Resumed connection with Discord")
+    async def process_commands(self, message):
+        if message.author.bot:
+            return
 
-    def run(self):
-        super().run(self.config.token)
+        ctx = await self.get_context(message)
+
+        if not ctx.valid:
+            return
+        elif await self.get_blacklisted(message.author) is not None:
+            return log.warning("Ignoring command from blacklisted user %s (%s).", message.author.name, message.author.id)
+        elif await self.get_blacklisted(message.guild) is not None:
+            return log.warning("Ignoring command in blacklisted guild %s (%s).", message.guild.name, message.guild.id)
+
+        if message.author.id not in self.global_cooldowns:
+            self.global_cooldowns[message.author.id] = commands.Cooldown(rate=15, per=12)
+
+        if message.author.id != self.owner_id:
+            cooldown = self.global_cooldowns[message.author.id]
+            cooldown.update_rate_limit(message.created_at.timestamp())
+            tokens = cooldown.get_tokens(message.created_at.timestamp())
+
+            if tokens == 0:
+                log.warning("User %s (%s) has been permanently blacklisted for spamming.", message.author.name, message.author.id)
+                await self.blacklist.add(message.author.id, True)
+                return await message.reply(
+                    f"You are now permanently blacklisted. You may appeal "
+                    f"[here](<{self.support_server_invite}>), **only** with a legitimate reason."
+                )
+            elif tokens == 5:
+                retry_after = int(cooldown.per - (message.created_at.timestamp() - cooldown._window)) + 1
+                log.warning("User %s (%s) is being ratelimited for spamming with %s seconds remaining.", message.author.name, message.author.id, retry_after)
+                return await message.reply(
+                    f"You are now on global cooldown for {retry_after} more seconds "
+                    "as a result of spamming. "
+                    "You will be permanently blacklisted from using commands if you continue."
+                )
+            elif tokens < 5:
+                return
+
+            for user_id, cooldown in self.global_cooldowns.copy().items():
+                if message.created_at.timestamp() > cooldown._last + cooldown.per:
+                    del self.global_cooldowns[user_id]
+
+        await self.invoke(ctx)
 
     async def close(self):
-        log.info("Logged out of Discord")
-
-        if self.status_webhook:
-            await self.status_webhook.send("Logging out of Discord")
-
         await self.stop_players()
         await self.db.close()
         await self.session.close()
-
         await super().close()
+
+    def run(self):
+        super().run(self.config.token)
 
     def get_guild_prefix(self, guild_id):
         prefixes = self.get_guild_prefixes(guild_id) or [self.user.mention]

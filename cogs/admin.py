@@ -1,59 +1,58 @@
+import discord
+from discord.ext import commands, tasks
+
 import asyncio
+import datetime
+import humanize
 import importlib
 import io
-import logging
 import os
 import re
+import psutil
 import subprocess
 import sys
 import time
 import traceback
-
-import discord
-import humanize
-import psutil
-from discord.ext import commands, tasks
 from jishaku import codeblocks
+from typing import Union
 
-from .utils import formats, menus
-
-log = logging.getLogger("robo_coder.admin")
+from .utils import formats, human_time, menus
 
 
 class Admin(commands.Cog):
+    """Private administrative commands."""
+
+    emoji = "\N{PERSONAL COMPUTER}"
+
     def __init__(self, bot):
         self.bot = bot
-        self.emoji = ":computer:"
 
     async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
 
-    @commands.command(name="reload", description="Reload an extension")
+    @commands.command(description="Reloads an extension")
     async def reload(self, ctx, *extensions):
-        extensions = extensions or list(self.bot.extensions)
+        if len(extensions) == 0:
+            extensions = self.bot.extensions.values()
 
-        if len(extensions) == 1:
-            extension = extensions[0]
-
-            try:
-                await self.bot.reload_extension(extension)
-                await ctx.send(f":repeat: Reloaded `{extension}`")
-            except commands.ExtensionError as exc:
-                full = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
-                await ctx.send(f":warning: Couldn't reload `{extension}`\n```py\n{full}```")
-        else:
+        if len(extensions) > 1:
             message = []
             for extension in extensions:
                 try:
                     await self.bot.reload_extension(extension)
                     message.append(f":repeat: Reloaded `{extension}`")
                 except commands.ExtensionError as exc:
-                    full = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
-                    message.append(f":warning: Couldn't reload `{extension}`")
-
+                    message.append(f":warning: Failed to reload `{extension}`")
             await ctx.send("\n\n".join(message))
+        else:
+            try:
+                await self.bot.reload_extension(extensions[0])
+                await ctx.send(f":repeat: Reloaded `{extensions[0]}`")
+            except commands.ExtensionError as exc:
+                full = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
+                await ctx.send(f":warning: Couldn't reload `{extensions[0]}`\n```py\n{full}```")
 
-    @commands.command(name="load", description="Load an extension")
+    @commands.command(description="Loads an extension")
     async def load(self, ctx, extension):
         try:
             await self.bot.load_extension(extension)
@@ -62,7 +61,7 @@ class Admin(commands.Cog):
             full = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
             await ctx.send(f":warning: Couldn't load `{extension}`\n```py\n{full}```")
 
-    @commands.command(name="unload", description="Unload an extension")
+    @commands.command(description="Unloads an extension")
     async def unload(self, ctx, extension):
         try:
             await self.bot.unload_extension(extension)
@@ -71,7 +70,7 @@ class Admin(commands.Cog):
             full = "".join(traceback.format_exception(type(exc), exc, exc.__traceback__, 1))
             await ctx.send(f":warning: Couldn't unload `{extension}`\n```py\n{full}```")
 
-    @commands.command(name="update", description="Update the bot from GitHub")
+    @commands.command(description="Pulls the latest changes and reloads affected extensions")
     async def update(self, ctx):
         async with ctx.typing():
             # Run git pull to update bot
@@ -94,7 +93,7 @@ class Admin(commands.Cog):
             modules.sort(reverse=True)
 
         if not modules:
-            return await ctx.send("Nothing to update")
+            return await ctx.send("Already up-to-date")
 
         joined = "\n".join([module for is_module, module in modules])
         result = await menus.Confirm(f"Are you sure you want to update the followings modules?\n{joined}").prompt(ctx)
@@ -136,7 +135,7 @@ class Admin(commands.Cog):
 
         await ctx.send(message)
 
-    @commands.command(name="sql", description="Run some sql")
+    @commands.command(description="Executes a sql query on the database")
     async def sql(self, ctx, *, code: codeblocks.codeblock_converter):
         _, query = code
 
@@ -174,24 +173,56 @@ class Admin(commands.Cog):
         except discord.HTTPException:
             await ctx.send(file=discord.File(io.BytesIO(str(results).encode("utf-8")), filename="result.txt"))
 
-    @commands.command(name="process", description="View system stats", aliases=["system", "health"])
+    @commands.command(description="Displays operating system stats", aliases=["system", "health"])
     async def process(self, ctx):
         em = discord.Embed(title="Process", color=0x96c8da)
         em.add_field(name="CPU", value=f"{psutil.cpu_percent()}% used with {formats.plural(psutil.cpu_count()):CPU}")
-
         mem = psutil.virtual_memory()
         em.add_field(name="Memory", value=f"{humanize.naturalsize(mem.used)}/{humanize.naturalsize(mem.total)} ({mem.percent}% used)")
-
         disk = psutil.disk_usage("/")
         em.add_field(name="Disk", value=f"{humanize.naturalsize(disk.used)}/{humanize.naturalsize(disk.total)} ({disk.percent}% used)")
-
         await ctx.send(embed=em)
 
-    @commands.command(name="logout", description="Logs out the bot")
+    @commands.command(description="Logs out the bot")
     @commands.is_owner()
     async def logout(self, ctx):
         await ctx.send(":wave: Logging out")
         await self.bot.close()
+
+    @commands.command(description="Adds a user or server to the blacklist", aliases=["block"], invoke_without_subcommand=True)
+    async def blacklist(self, ctx, entity: Union[discord.User, discord.Guild, discord.Object], *, until: human_time.FutureTime = None):
+        if await self.bot.get_blacklisted(entity) is not None:
+            return await ctx.send("\N{CROSS MARK} Entity is already blacklisted")
+
+        if isinstance(entity, discord.Guild):
+            await entity.leave()
+
+        if until is not None:
+            await self.bot.blacklist.add(entity.id, until.time.timestamp())
+            await ctx.send(f"\N{WHITE HEAVY CHECK MARK} Entity added to blacklist until {discord.utils.format_dt(until.time)}")
+        else:
+            await self.bot.blacklist.add(entity.id, True)
+            await ctx.send("\N{WHITE HEAVY CHECK MARK} Entity permanently added to blacklist")
+
+    @commands.command(description="Shows the blacklist of a user", aliases=["blocked"])
+    async def blacklisted(self, ctx, *, entity: Union[discord.User, discord.Guild, discord.Object]):
+        blacklisted = await self.bot.get_blacklisted(entity)
+
+        if blacklisted is None:
+            await ctx.send("Entity is not blacklisted")
+        elif blacklisted is True:
+            await ctx.send("Entity is permanently blacklisted")
+        else:
+            until = datetime.datetime.fromtimestamp(blacklisted, tz=datetime.UTC)
+            await ctx.send(f"Entity is blacklisted until {discord.utils.format_dt(until)}")
+
+    @commands.command(description="Removes a user or server from the blacklist", aiases=["unblock"])
+    async def unblacklist(self, ctx, *, entity: Union[discord.User, discord.Guild, discord.Object]):
+        if await self.bot.get_blacklisted(entity) is None:
+            return await ctx.send("\N{CROSS MARK} Entity is not blacklisted")
+
+        await self.bot.blacklist.remove(entity.id)
+        await ctx.send("\N{WHITE HEAVY CHECK MARK} Entity removed from blacklist")
 
 async def setup(bot):
     await bot.add_cog(Admin(bot))

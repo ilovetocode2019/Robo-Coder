@@ -3,17 +3,12 @@ import json
 import os
 
 class Config:
-    """Represents a configuration file."""
-
     def __init__(self, filename):
         self.filename = filename
         self.lock = asyncio.Lock()
+        self._load()
 
-        self.load()
-
-    def load(self):
-        """Loads the data from the file."""
-
+    def _load(self):
         if os.path.exists(self.filename):
             with open(self.filename, "r") as file:
                 self.data = json.load(file)
@@ -21,23 +16,15 @@ class Config:
             self.data = {}
 
     def dump(self):
-        """Dumps the data into the file."""
-
         with open(self.filename, "w") as file:
             json.dump(self.data, file)
 
     async def add(self, key, value):
-        """Safely add adds a key."""
-
-        # Use lock to insure that we don't modify the file twice at the same time
         async with self.lock:
             self.data[str(key)] = value
             self.dump()
 
     async def remove(self, key):
-        """Safely removes a key."""
-
-        # Use lock to insure that we don't modify the file twice at the same time
         async with self.lock:
             if str(key) not in self.data:
                 return
@@ -46,8 +33,6 @@ class Config:
             self.dump()
 
     def get(self, key, default=None):
-        """Gets an item from the data."""
-
         return self.data.get(str(key), default)
 
     def __getitem__(self, key):
