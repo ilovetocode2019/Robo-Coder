@@ -103,7 +103,7 @@ class Tools(commands.Cog):
                 if offset == position:
                     username = str(user)
                     joins.append(f"**{discord.utils.escape_markdown(username)} (#{position+1})**")
-                elif 0 <= position < len(sorted_members):
+                elif 0 <= offset < len(sorted_members):
                     username = str(sorted_members[offset])
                     joins.append(f"{discord.utils.escape_markdown(username)}")
 
