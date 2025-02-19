@@ -1,10 +1,10 @@
-import os
-import sys
-import traceback
-
 import discord
 from discord import app_commands
 from discord.ext import commands
+
+import os
+import sys
+import traceback
 
 from .utils import errors, formats, human_time, menus
 
@@ -42,14 +42,34 @@ class RoboCoderHelpCommand(commands.HelpCommand):
         commands = await self.filter_commands(cog.walk_commands())
 
         em = discord.Embed(
-            title=f"{getattr(cog, 'emoji', '')} {cog.qualified_name}",
-            description=cog.description + "\n" if cog.description is not None else "",
+            title=f"Category: {cog.qualified_name}",
+            description=f"**{cog.description}**\n" if len(cog.description) > 0 else "",
             color=0x96c8da
         )
         em.set_footer(text=self.bottom_text)
 
         for command in commands:
-            em.description += f"\n\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
+            em.description += f"\n`{self.get_command_signature(command).strip()}` {"-" if command.description else ""} {command.description}"
+
+        await ctx.send(embed=em)
+
+    async def send_group_help(self, group):
+        ctx = self.context
+        bot = ctx.bot
+        commands = await self.filter_commands(group.commands)
+
+        em = discord.Embed(
+            title=f"{group.name} {group.signature.strip()}",
+            description=f"**{group.description}**\n" if len(group.description) > 0 else "",
+            color=0x96c8da
+        )
+        em.set_footer(text=self.bottom_text)
+
+        for command in commands:
+            em.description += f"\n`{self.get_command_signature(command).strip()}` {"-" if command.description else ""} {command.description}"
+
+        if len(group.aliases) > 0:
+            em.add_field(name="Aliases", value = ", ".join(group.aliases))
 
         await ctx.send(embed=em)
 
@@ -69,29 +89,9 @@ class RoboCoderHelpCommand(commands.HelpCommand):
 
         await ctx.send(embed=em)
 
-    async def send_group_help(self, group):
-        ctx = self.context
-        bot = ctx.bot
-        commands = await self.filter_commands(group.commands)
-
-        em = discord.Embed(
-            title=f"{group.name} {group.signature.strip()}",
-            description=group.description + "\n" if group.description is not None else "",
-            color=0x96c8da
-        )
-        em.set_footer(text=self.bottom_text)
-
-        for command in commands:
-            em.description += f"\n\n`{self.get_command_signature(command).strip()}` {'-' if command.description else ''} {command.description}"
-
-        if len(group.aliases) > 0:
-            em.add_field(name="Aliases", value = ", ".join(group.aliases))
-
-        await ctx.send(embed=em)
-
 
 class Meta(commands.Cog):
-    """Stuff related to the bot itself."""
+    """General commands related to the bot itself."""
 
     def __init__(self, bot):
         self.bot = bot
