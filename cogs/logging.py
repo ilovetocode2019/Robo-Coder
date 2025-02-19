@@ -47,8 +47,8 @@ class Logging(commands.Cog):
         self.bot = bot
         self.emoji = ":notepad_spiral:"
 
-    async def cog_check(self, ctx):
-        return ctx.guild.id in self.bot.config.logging_guild_ids
+    def cog_check(self, ctx):
+        return ctx.guild is not None and ctx.guild.id in self.bot.config.logging_guild_ids
 
     @cache.cache()
     async def get_message_log(self, guild_id):
@@ -66,9 +66,9 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
-        if message.guild.id not in self.bot.config.logging_guild_ids:
+        if message.guild is None or message.guild.id not in self.bot.config.logging_guild_ids:
             return
-        elif message.author.bot is True:
+        elif message.author.bot:
             return
 
         log = await self.get_message_log(message.guild.id)
@@ -85,9 +85,9 @@ class Logging(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_edit(self, before, after):
-        if after.guild.id not in self.bot.config.logging_guild_ids:
+        if after.guild is None or after.guild.id not in self.bot.config.logging_guild_ids:
             return
-        elif after.author.bot is True:
+        elif after.author.bot:
             return
 
         log = await self.get_message_log(after.guild.id)
