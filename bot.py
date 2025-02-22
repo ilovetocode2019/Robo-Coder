@@ -1,6 +1,7 @@
 import discord
-from discord.ext import commands
 from discord import app_commands
+from discord.ext import commands
+
 
 import aiohttp
 import asyncpg
@@ -147,15 +148,16 @@ class RoboCoder(commands.Bot):
 
         if not ctx.valid:
             return
-        elif await self.get_blacklisted(message.author) is not None:
-            return log.warning("Ignoring command from blacklisted user %s (%s).", message.author.name, message.author.id)
-        elif await self.get_blacklisted(message.guild) is not None:
-            return log.warning("Ignoring command in blacklisted guild %s (%s).", message.guild.name, message.guild.id)
-
-        if message.author.id not in self.global_cooldowns:
-            self.global_cooldowns[message.author.id] = commands.Cooldown(rate=15, per=12)
 
         if message.author.id != self.owner_id:
+            if await self.get_blacklisted(message.author) is not None:
+                return log.warning("Ignoring command from blacklisted user %s (%s).", message.author.name, message.author.id)
+            if message.guild is not None and await self.get_blacklisted(message.guild) is not None:
+                return log.warning("Ignoring command in blacklisted guild %s (%s).", message.guild.name, message.guild.id)
+
+            if message.author.id not in self.global_cooldowns:
+                self.global_cooldowns[message.author.id] = commands.Cooldown(rate=15, per=12)
+
             cooldown = self.global_cooldowns[message.author.id]
             cooldown.update_rate_limit(message.created_at.timestamp())
             tokens = cooldown.get_tokens(message.created_at.timestamp())
@@ -178,6 +180,7 @@ class RoboCoder(commands.Bot):
             elif tokens < 5:
                 return
 
+            # remove "dead" cooldowns
             for user_id, cooldown in self.global_cooldowns.copy().items():
                 if message.created_at.timestamp() > cooldown._last + cooldown.per:
                     del self.global_cooldowns[user_id]
